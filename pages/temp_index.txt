@@ -1,0 +1,435 @@
+﻿import { useState, useEffect } from 'react';
+import Head from 'next/head';
+import { useWebSocket } from '../hooks/useWebSocket';
+import { Menu, Bell, Search, TrendingUp, TrendingDown, DollarSign, Euro, Coins, Gem, Star, Maximize2, Phone, Mail, MapPin, Clock, Facebook, Twitter, Instagram, Youtube, CheckCircle } from 'lucide-react';
+
+export default function Home() {
+  const { prices, isConnected } = useWebSocket();
+  const [filter, setFilter] = useState('all');
+  const [search, setSearch] = useState('');
+  const [mounted, setMounted] = useState(false);
+  const [favorites, setFavorites] = useState([]);
+  const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
+  const [logoBase64, setLogoBase64] = useState('');
+  const [logoHeight, setLogoHeight] = useState(48);
+  const [logoWidth, setLogoWidth] = useState('auto');
+
+  useEffect(() => {
+    setMounted(true);
+    // LocalStorage'dan favorileri yÃ¼kle
+    const savedFavorites = localStorage.getItem('favorites');
+    if (savedFavorites) {
+      setFavorites(JSON.parse(savedFavorites));
+    }
+    
+    // Logo'yu yÃ¼kle
+    fetch('http://localhost:5000/api/settings')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setLogoBase64(data.data.logoBase64 || '');
+          setLogoHeight(data.data.logoHeight || 48);
+          setLogoWidth(data.data.logoWidth || 'auto');
+        }
+      })
+      .catch(err => console.error('Logo yÃ¼kleme hatasÄ±:', err));
+  }, []);
+
+  // Favorileri kaydet
+  const toggleFavorite = (code) => {
+    let newFavorites;
+    if (favorites.includes(code)) {
+      newFavorites = favorites.filter(f => f !== code);
+    } else {
+      newFavorites = [...favorites, code];
+    }
+    setFavorites(newFavorites);
+    localStorage.setItem('favorites', JSON.stringify(newFavorites));
+  };
+
+  const formatPrice = (price) => {
+    if (!price) return '-';
+    return new Intl.NumberFormat('tr-TR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 4
+    }).format(price);
+  };
+
+  // Featured 3 cards
+  const featured = [
+    prices.find(p => p.code === 'USDTRY') || { code: 'USDTRY', name: 'Amerikan DolarÄ±', calculatedSatis: 0, calculatedAlis: 0 },
+    prices.find(p => p.code === 'EURTRY') || { code: 'EURTRY', name: 'Euro', calculatedSatis: 0, calculatedAlis: 0 },
+    prices.find(p => p.code === 'GBPTRY') || { code: 'GBPTRY', name: 'Ä°ngiliz Sterlini', calculatedSatis: 0, calculatedAlis: 0 }
+  ];
+
+  const filteredPrices = prices.filter(p => {
+    if (showOnlyFavorites && !favorites.includes(p.code)) return false;
+    if (filter !== 'all' && p.category !== filter) return false;
+    if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !p.code.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
+
+  const getChangePercent = (code) => {
+    if (!mounted) return 0;
+    const hash = code.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const change = ((hash % 200) / 100 - 1).toFixed(2);
+    return parseFloat(change);
+  };
+
+  const getIcon = (code) => {
+    if (code.includes('USD')) return <DollarSign size={18} strokeWidth={2} />;
+    if (code.includes('EUR')) return <Euro size={18} strokeWidth={2} />;
+    if (code.includes('ALTIN') || code.includes('GOLD') || code.includes('ONS')) return <Coins size={18} strokeWidth={2} />;
+    if (code.includes('GUMUS') || code.includes('SILVER')) return <Gem size={18} strokeWidth={2} />;
+    return <DollarSign size={18} strokeWidth={2} />;
+  };
+
+  return (
+    <>
+      <Head>
+        <title>HAREM - CanlÄ± DÃ¶viz ve AltÄ±n FiyatlarÄ±</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <style>{`
+          #price-table-container:fullscreen {
+            background: white;
+            padding: 2rem;
+            overflow-y: auto;
+          }
+          #price-table-container:fullscreen .fullscreen-hide {
+            display: none !important;
+          }
+          #price-table-container:fullscreen .price-table-content {
+            max-width: 100%;
+            margin: 0 auto;
+          }
+        `}</style>
+      </Head>
+
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+        {/* Top Navbar - KaranlÄ±k Tema */}
+        <nav className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 border-b border-gray-700 sticky top-0 z-50 fullscreen-hide">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="flex items-center justify-between h-16">
+              {/* Logo & Nav Links */}
+              <div className="flex items-center space-x-8">
+                <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-3">
+                    {logoBase64 ? (
+                      <img 
+                        src={logoBase64} 
+                        alt="Logo" 
+                        className="object-contain" 
+                        style={{ 
+                          height: `${logoHeight}px`, 
+                          width: logoWidth === 'auto' ? 'auto' : `${logoWidth}px`,
+                          maxWidth: '300px'
+                        }} 
+                      />
+                    ) : (
+                      <>
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-gradient-to-r from-amber-400 to-amber-600 rounded-full blur-md opacity-40"></div>
+                          <svg width="48" height="48" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" className="relative">
+                            <circle cx="20" cy="20" r="18" fill="url(#gold-gradient)" stroke="#d97706" strokeWidth="2.5"/>
+                            <circle cx="20" cy="20" r="12" fill="none" stroke="#d97706" strokeWidth="2"/>
+                            <defs>
+                              <linearGradient id="gold-gradient" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+                                <stop offset="0%" stopColor="#fbbf24"/>
+                                <stop offset="50%" stopColor="#f59e0b"/>
+                                <stop offset="100%" stopColor="#d97706"/>
+                              </linearGradient>
+                            </defs>
+                          </svg>
+                        </div>
+                        <div>
+                          <h1 className="text-2xl font-bold text-white" style={{fontFamily: 'serif', letterSpacing: '0.5px'}}>NOMANOÄLU</h1>
+                          <p className="text-xs text-amber-400 font-semibold tracking-wider">Kuyumculuk</p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                <div className="hidden md:flex items-center space-x-1">
+                  <a href="#" className="px-4 py-2 text-sm font-medium text-white hover:text-amber-400 hover:bg-gray-800 rounded-lg transition-colors">
+                    Piyasalar
+                  </a>
+                  <a href="#" className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
+                    Grafikler
+                  </a>
+                  <a href="#" className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
+                    Alarmlar
+                  </a>
+                </div>
+              </div>
+
+              {/* Right Side */}
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2 text-xs">
+                  <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                  <span className="text-gray-300 font-medium hidden sm:block">
+                    {isConnected ? 'CanlÄ±' : 'BaÄŸlantÄ± Yok'}
+                  </span>
+                </div>
+
+                <button className="relative p-2 hover:bg-gray-800 rounded-lg transition-colors group">
+                  <Bell size={20} className="text-gray-300 group-hover:text-white" strokeWidth={2} />
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                </button>
+
+                <button className="p-2 hover:bg-gray-800 rounded-lg transition-colors group">
+                  <Menu size={20} className="text-gray-300 group-hover:text-white" strokeWidth={2} />
+                </button>
+              </div>
+            </div>
+          </div>
+        </nav>
+
+
+        {/* Main Content */}
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          {/* Fiyat Tablosu + SaÄŸ Panel */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            {/* Sol: Fiyat Tablosu */}
+            <div className="lg:col-span-2" id="price-table-container">
+              <div className="price-table-content">
+              {/* Favorilerim BaÅŸlÄ±k */}
+              {showOnlyFavorites && (
+                <div className="mb-6 fullscreen-hide">
+                  <h2 className="text-2xl font-bold text-gray-900 flex items-center space-x-2">
+                    <Star size={24} className="fill-amber-500 text-amber-500" strokeWidth={2} />
+                    <span>Favorilerim</span>
+                  </h2>
+                  <p className="text-gray-500 text-sm mt-1">
+                    {favorites.length === 0 
+                      ? 'HenÃ¼z favori eklemediniz. FiyatlarÄ±n yanÄ±ndaki yÄ±ldÄ±za tÄ±klayarak favori ekleyebilirsiniz.'
+                      : `${favorites.length} favori fiyat gÃ¶rÃ¼ntÃ¼leniyor`
+                    }
+                  </p>
+                </div>
+              )}
+
+          {/* Filters & Search */}
+          <div className="bg-white rounded-lg border border-gray-200 p-3 mb-4 fullscreen-hide">
+            <div className="flex flex-col md:flex-row gap-3">
+              {/* Filter Buttons */}
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => { setFilter('all'); setShowOnlyFavorites(false); }}
+                  className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                    filter === 'all' && !showOnlyFavorites
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  TÃ¼mÃ¼
+                </button>
+                <button
+                  onClick={() => { setFilter('altin'); setShowOnlyFavorites(false); }}
+                  className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                    filter === 'altin' && !showOnlyFavorites
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  AltÄ±n
+                </button>
+                <button
+                  onClick={() => { setFilter('doviz'); setShowOnlyFavorites(false); }}
+                  className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                    filter === 'doviz' && !showOnlyFavorites
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  DÃ¶viz
+                </button>
+                <button
+                  onClick={() => { setFilter('gumus'); setShowOnlyFavorites(false); }}
+                  className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                    filter === 'gumus' && !showOnlyFavorites
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  GÃ¼mÃ¼ÅŸ
+                </button>
+                <button
+                  onClick={() => { setShowOnlyFavorites(true); setFilter('all'); }}
+                  className={`px-3 py-1.5 rounded text-xs font-medium transition-colors flex items-center space-x-1.5 ${
+                    showOnlyFavorites
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  <Star size={14} strokeWidth={2} className={favorites.length > 0 && showOnlyFavorites ? 'fill-white text-white' : favorites.length > 0 ? 'fill-amber-500 text-amber-500' : ''} />
+                  <span>Favoriler</span>
+                  {favorites.length > 0 && (
+                    <span className="text-xs font-bold">
+                      ({favorites.length})
+                    </span>
+                  )}
+                </button>
+              </div>
+
+              {/* Search */}
+              <div className="relative flex-1 min-w-[200px]">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} strokeWidth={2} />
+                <input
+                  type="text"
+                  placeholder="Arama..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full pl-9 pr-3 py-1.5 bg-gray-100 border-0 rounded text-gray-900 placeholder-gray-500 text-sm focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 transition-all"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Price Table - Paribu Style */}
+          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+            {/* Table Header */}
+            <div className="bg-gray-50 border-b border-gray-200 px-4 py-2.5">
+              <div className="grid grid-cols-12 gap-3 text-xs font-medium text-gray-500 uppercase">
+                <div className="col-span-4">ÃœrÃ¼n AdÄ±</div>
+                <div className="col-span-2 text-right">AlÄ±ÅŸ FiyatÄ±</div>
+                <div className="col-span-3 text-right">SatÄ±ÅŸ FiyatÄ±</div>
+                <div className="col-span-2 text-right">DeÄŸiÅŸim</div>
+                <div className="col-span-1"></div>
+              </div>
+            </div>
+
+            {/* Table Body */}
+            {prices.length === 0 ? (
+              <div className="text-center py-16">
+                <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-gray-200 border-t-blue-600"></div>
+                <p className="text-gray-500 mt-3 text-sm">Fiyatlar yÃ¼kleniyor...</p>
+              </div>
+            ) : filteredPrices.length === 0 ? (
+              <div className="text-center py-12">
+                <Star size={40} className="mx-auto text-gray-300 mb-3" strokeWidth={2} />
+                <p className="text-gray-600 text-sm">
+                  {showOnlyFavorites 
+                    ? 'HenÃ¼z favori eklemediniz' 
+                    : 'SonuÃ§ bulunamadÄ±'
+                  }
+                </p>
+                {showOnlyFavorites && (
+                  <button
+                    onClick={() => setShowOnlyFavorites(false)}
+                    className="mt-3 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded transition-colors"
+                  >
+                    TÃ¼m Fiyatlara DÃ¶n
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-100">
+                {filteredPrices.map((price) => {
+                  const change = getChangePercent(price.code);
+                  const isPositive = change >= 0;
+                  const currentTime = new Date().toLocaleTimeString('tr-TR', {hour: '2-digit', minute: '2-digit'});
+                  const isFavorite = favorites.includes(price.code);
+
+                  return (
+                      <div 
+                      key={price.code} 
+                      className="px-6 py-3.5 hover:bg-gray-50 transition-colors border-b border-gray-100 group"
+                    >
+                      <div className="grid grid-cols-12 gap-4 items-center">
+                        {/* Birim + Saat */}
+                        <div className="col-span-5">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                              {/* Favori Butonu */}
+                              <button
+                                onClick={() => toggleFavorite(price.code)}
+                                className="p-1 hover:bg-gray-100 rounded transition-colors"
+                              >
+                                <Star 
+                                  size={18} 
+                                  strokeWidth={2}
+                                  className={`transition-all ${
+                                    isFavorite 
+                                      ? 'fill-amber-500 text-amber-500' 
+                                      : 'text-gray-300 hover:text-amber-400'
+                                  }`}
+                                />
+                              </button>
+
+                              <div className="w-10 h-10 rounded-md bg-gray-100 flex items-center justify-center text-gray-600">
+                                {getIcon(price.code)}
+                              </div>
+                              <div>
+                                <p className="text-gray-900 font-semibold text-sm">{price.code}</p>
+                                <p className="text-gray-500 text-xs mt-0.5">{price.name}</p>
+                              </div>
+                            </div>
+                            
+                            {/* Saat Bilgisi */}
+                            <div className="text-gray-400 text-xs font-medium">
+                              {currentTime}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* AlÄ±ÅŸ */}
+                        <div className="col-span-2 text-right">
+                          <p className="text-gray-900 font-semibold text-base tabular-nums">
+                            â‚º{formatPrice(price.calculatedAlis)}
+                          </p>
+                        </div>
+
+                        {/* SatÄ±ÅŸ */}
+                        <div className="col-span-3 text-right">
+                          <p className="text-gray-900 font-bold text-base tabular-nums">
+                            â‚º{formatPrice(price.calculatedSatis)}
+                          </p>
+                        </div>
+
+                        {/* DeÄŸiÅŸim */}
+                        <div className="col-span-2 text-right">
+                          {price.direction && (price.direction.alis === 'up' || price.direction.satis === 'up') ? (
+                            <div className="inline-flex items-center space-x-1 px-3 py-1.5 rounded-md bg-green-50">
+                              <TrendingUp size={16} strokeWidth={2.5} className="text-green-600" />
+                              <span className="text-xs font-semibold text-green-700">YÃ¼kseliÅŸ</span>
+                            </div>
+                          ) : price.direction && (price.direction.alis === 'down' || price.direction.satis === 'down') ? (
+                            <div className="inline-flex items-center space-x-1 px-3 py-1.5 rounded-md bg-red-50">
+                              <TrendingDown size={16} strokeWidth={2.5} className="text-red-600" />
+                              <span className="text-xs font-semibold text-red-700">DÃ¼ÅŸÃ¼ÅŸ</span>
+                            </div>
+                          ) : (
+                            <div className="inline-flex items-center px-3 py-1.5 rounded-md bg-gray-50">
+                              <span className="text-xs font-medium text-gray-500">â€”</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Table Footer */}
+            {filteredPrices.length > 0 && (
+              <div className="bg-gray-50 border-t border-gray-200 px-6 py-4 text-center fullscreen-hide">
+                <button
+                  id="fullscreen-btn"
+                  onClick={() => {
+                    const priceTable = document.getElementById('price-table-container');
+                    if (document.fullscreenElement) {
+                      document.exitFullscreen();
+                    } else {
+                      priceTable.requestFullscreen();
+                    }
+                  }}
+                  className="inline-flex items-center space-x-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition-all shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  aria-label="Tam ekran moduna geÃ§"
+                >
+                  <Maximize2 size={18} strokeWidth={2} />
+                  <span className="text-base">Tam Ekran GÃ¶rÃ¼nÃ¼m</span>
+                </button>
+              </div>
+            )}
