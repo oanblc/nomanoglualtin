@@ -22,6 +22,18 @@ export default function AdminDashboard() {
   const [logoHeight, setLogoHeight] = useState(48); // px
   const [logoWidth, setLogoWidth] = useState('auto'); // 'auto' veya px değeri
 
+  // İletişim Bilgileri state
+  const [contactPhone, setContactPhone] = useState('+90 (XXX) XXX XX XX');
+  const [contactEmail, setContactEmail] = useState('info@nomanoglu.com');
+  const [contactAddress, setContactAddress] = useState('Istanbul, Turkiye');
+  const [workingHours, setWorkingHours] = useState('Pzt - Cmt: 09:00 - 19:00');
+  const [workingHoursNote, setWorkingHoursNote] = useState('Pazar: Kapali');
+  const [socialFacebook, setSocialFacebook] = useState('');
+  const [socialTwitter, setSocialTwitter] = useState('');
+  const [socialInstagram, setSocialInstagram] = useState('');
+  const [socialYoutube, setSocialYoutube] = useState('');
+  const [socialWhatsapp, setSocialWhatsapp] = useState('905322904601');
+
   // Tab state
   const [activeTab, setActiveTab] = useState('prices'); // 'prices' | 'family' | 'articles' | 'branches' | 'settings'
 
@@ -162,10 +174,22 @@ export default function AdminDashboard() {
       }
 
       if (settingsRes.data.success) {
-        setMaxDisplayItems(settingsRes.data.data.maxDisplayItems || 20);
-        setLogoBase64(settingsRes.data.data.logoBase64 || '');
-        setLogoHeight(settingsRes.data.data.logoHeight || 48);
-        setLogoWidth(settingsRes.data.data.logoWidth || 'auto');
+        const s = settingsRes.data.data;
+        setMaxDisplayItems(s.maxDisplayItems || 20);
+        setLogoBase64(s.logoBase64 || '');
+        setLogoHeight(s.logoHeight || 48);
+        setLogoWidth(s.logoWidth || 'auto');
+        // İletişim bilgileri
+        setContactPhone(s.contactPhone || '+90 (XXX) XXX XX XX');
+        setContactEmail(s.contactEmail || 'info@nomanoglu.com');
+        setContactAddress(s.contactAddress || 'Istanbul, Turkiye');
+        setWorkingHours(s.workingHours || 'Pzt - Cmt: 09:00 - 19:00');
+        setWorkingHoursNote(s.workingHoursNote || 'Pazar: Kapali');
+        setSocialFacebook(s.socialFacebook || '');
+        setSocialTwitter(s.socialTwitter || '');
+        setSocialInstagram(s.socialInstagram || '');
+        setSocialYoutube(s.socialYoutube || '');
+        setSocialWhatsapp(s.socialWhatsapp || '905322904601');
         console.log('✅ Ayarlar yüklendi');
       }
 
@@ -311,7 +335,17 @@ export default function AdminDashboard() {
         maxDisplayItems,
         logoBase64,
         logoHeight,
-        logoWidth
+        logoWidth,
+        contactPhone,
+        contactEmail,
+        contactAddress,
+        workingHours,
+        workingHoursNote,
+        socialFacebook,
+        socialTwitter,
+        socialInstagram,
+        socialYoutube,
+        socialWhatsapp
       });
       alert('Ayarlar kaydedildi!');
       loadData();
@@ -1442,6 +1476,134 @@ export default function AdminDashboard() {
                       value={maxDisplayItems}
                       onChange={(e) => setMaxDisplayItems(parseInt(e.target.value) || 20)}
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg bg-white text-gray-900 text-center text-2xl font-bold focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-all"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* İletişim Bilgileri */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+              <div className="bg-white rounded-xl border border-gray-200 p-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center space-x-2">
+                  <Phone size={20} />
+                  <span>İletişim Bilgileri</span>
+                </h3>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Telefon</label>
+                    <input
+                      type="text"
+                      value={contactPhone}
+                      onChange={(e) => setContactPhone(e.target.value)}
+                      placeholder="+90 (XXX) XXX XX XX"
+                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">E-posta</label>
+                    <input
+                      type="email"
+                      value={contactEmail}
+                      onChange={(e) => setContactEmail(e.target.value)}
+                      placeholder="info@example.com"
+                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Adres</label>
+                    <input
+                      type="text"
+                      value={contactAddress}
+                      onChange={(e) => setContactAddress(e.target.value)}
+                      placeholder="Istanbul, Turkiye"
+                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Calisma Saatleri</label>
+                    <input
+                      type="text"
+                      value={workingHours}
+                      onChange={(e) => setWorkingHours(e.target.value)}
+                      placeholder="Pzt - Cmt: 09:00 - 19:00"
+                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Calisma Saatleri Notu</label>
+                    <input
+                      type="text"
+                      value={workingHoursNote}
+                      onChange={(e) => setWorkingHoursNote(e.target.value)}
+                      placeholder="Pazar: Kapali"
+                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-all"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Sosyal Medya */}
+              <div className="bg-white rounded-xl border border-gray-200 p-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center space-x-2">
+                  <Mail size={20} />
+                  <span>Sosyal Medya</span>
+                </h3>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">WhatsApp Numarasi</label>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-gray-500">+</span>
+                      <input
+                        type="text"
+                        value={socialWhatsapp}
+                        onChange={(e) => setSocialWhatsapp(e.target.value)}
+                        placeholder="905XXXXXXXXX"
+                        className="flex-1 px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-all"
+                      />
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">Ulke kodu ile birlikte (ornek: 905322904601)</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Facebook URL</label>
+                    <input
+                      type="url"
+                      value={socialFacebook}
+                      onChange={(e) => setSocialFacebook(e.target.value)}
+                      placeholder="https://facebook.com/..."
+                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Twitter URL</label>
+                    <input
+                      type="url"
+                      value={socialTwitter}
+                      onChange={(e) => setSocialTwitter(e.target.value)}
+                      placeholder="https://twitter.com/..."
+                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Instagram URL</label>
+                    <input
+                      type="url"
+                      value={socialInstagram}
+                      onChange={(e) => setSocialInstagram(e.target.value)}
+                      placeholder="https://instagram.com/..."
+                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Youtube URL</label>
+                    <input
+                      type="url"
+                      value={socialYoutube}
+                      onChange={(e) => setSocialYoutube(e.target.value)}
+                      placeholder="https://youtube.com/..."
+                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-all"
                     />
                   </div>
                 </div>
