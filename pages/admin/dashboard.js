@@ -32,6 +32,7 @@ export default function AdminDashboard() {
   const [socialTwitter, setSocialTwitter] = useState('');
   const [socialInstagram, setSocialInstagram] = useState('');
   const [socialYoutube, setSocialYoutube] = useState('');
+  const [socialTiktok, setSocialTiktok] = useState('');
   const [socialWhatsapp, setSocialWhatsapp] = useState('905322904601');
 
   // Tab state
@@ -189,6 +190,7 @@ export default function AdminDashboard() {
         setSocialTwitter(s.socialTwitter || '');
         setSocialInstagram(s.socialInstagram || '');
         setSocialYoutube(s.socialYoutube || '');
+        setSocialTiktok(s.socialTiktok || '');
         setSocialWhatsapp(s.socialWhatsapp || '905322904601');
         console.log('✅ Ayarlar yüklendi');
       }
@@ -345,6 +347,7 @@ export default function AdminDashboard() {
         socialTwitter,
         socialInstagram,
         socialYoutube,
+        socialTiktok,
         socialWhatsapp
       });
       alert('Ayarlar kaydedildi!');
@@ -1603,6 +1606,16 @@ export default function AdminDashboard() {
                       value={socialYoutube}
                       onChange={(e) => setSocialYoutube(e.target.value)}
                       placeholder="https://youtube.com/..."
+                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">TikTok URL</label>
+                    <input
+                      type="url"
+                      value={socialTiktok}
+                      onChange={(e) => setSocialTiktok(e.target.value)}
+                      placeholder="https://tiktok.com/@..."
                       className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-all"
                     />
                   </div>

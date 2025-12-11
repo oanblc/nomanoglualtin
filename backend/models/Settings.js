@@ -65,6 +65,10 @@ const settingsSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  socialTiktok: {
+    type: String,
+    default: ''
+  },
   socialWhatsapp: {
     type: String,
     default: '905322904601'

@@ -20,6 +20,7 @@ export function SettingsProvider({ children }) {
   const [socialTwitter, setSocialTwitter] = useState('');
   const [socialInstagram, setSocialInstagram] = useState('');
   const [socialYoutube, setSocialYoutube] = useState('');
+  const [socialTiktok, setSocialTiktok] = useState('');
   const [socialWhatsapp, setSocialWhatsapp] = useState('');
 
   useEffect(() => {
@@ -43,6 +44,7 @@ export function SettingsProvider({ children }) {
           setSocialTwitter(s.socialTwitter || '');
           setSocialInstagram(s.socialInstagram || '');
           setSocialYoutube(s.socialYoutube || '');
+          setSocialTiktok(s.socialTiktok || '');
           setSocialWhatsapp(s.socialWhatsapp || '');
         }
         setIsLoaded(true);
@@ -57,7 +59,7 @@ export function SettingsProvider({ children }) {
     <SettingsContext.Provider value={{
       logoBase64, logoHeight, logoWidth, isLoaded,
       contactPhone, contactEmail, contactAddress, workingHours, workingHoursNote,
-      socialFacebook, socialTwitter, socialInstagram, socialYoutube, socialWhatsapp
+      socialFacebook, socialTwitter, socialInstagram, socialYoutube, socialTiktok, socialWhatsapp
     }}>
       {children}
     </SettingsContext.Provider>
