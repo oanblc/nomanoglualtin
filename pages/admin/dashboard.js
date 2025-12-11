@@ -17,14 +17,13 @@ export default function AdminDashboard() {
   const [lastUpdate, setLastUpdate] = useState(null);
   const [timeSinceUpdate, setTimeSinceUpdate] = useState('');
   const [maxDisplayItems, setMaxDisplayItems] = useState(20);
-  const [showSettings, setShowSettings] = useState(false);
   const [logoBase64, setLogoBase64] = useState('');
   const [logoFile, setLogoFile] = useState(null);
   const [logoHeight, setLogoHeight] = useState(48); // px
   const [logoWidth, setLogoWidth] = useState('auto'); // 'auto' veya px değeri
 
   // Tab state
-  const [activeTab, setActiveTab] = useState('prices'); // 'prices' | 'family' | 'articles' | 'branches'
+  const [activeTab, setActiveTab] = useState('prices'); // 'prices' | 'family' | 'articles' | 'branches' | 'settings'
 
   // Drag & Drop state
   const [draggedItem, setDraggedItem] = useState(null);
@@ -308,14 +307,13 @@ export default function AdminDashboard() {
 
   const saveSettings = async () => {
     try {
-      await axios.post(`${apiUrl}/api/settings`, { 
-        maxDisplayItems, 
+      await axios.post(`${apiUrl}/api/settings`, {
+        maxDisplayItems,
         logoBase64,
         logoHeight,
         logoWidth
       });
       alert('Ayarlar kaydedildi!');
-      setShowSettings(false);
       loadData();
     } catch (error) {
       console.error('Ayar kaydetme hatası:', error);
@@ -607,7 +605,7 @@ export default function AdminDashboard() {
                 </div>
                 
                 <button
-                  onClick={() => setShowSettings(true)}
+                  onClick={() => setActiveTab('settings')}
                   className="flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors font-medium"
                   title="Ayarlar"
                 >
@@ -680,6 +678,19 @@ export default function AdminDashboard() {
                 <div className="flex items-center space-x-2">
                   <Building2 size={18} />
                   <span>Şubeler</span>
+                </div>
+              </button>
+              <button
+                onClick={() => setActiveTab('settings')}
+                className={`px-6 py-4 font-semibold text-sm border-b-2 transition-colors ${
+                  activeTab === 'settings'
+                    ? 'border-amber-500 text-amber-600'
+                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                }`}
+              >
+                <div className="flex items-center space-x-2">
+                  <Settings size={18} />
+                  <span>Ayarlar</span>
                 </div>
               </button>
             </nav>
@@ -1257,6 +1268,198 @@ export default function AdminDashboard() {
             )}
           </>
           )}
+
+          {/* ==================== AYARLAR TAB ==================== */}
+          {activeTab === 'settings' && (
+          <>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Ayarlar</h2>
+                <p className="text-gray-600 mt-1">Genel site ayarlarını buradan yönetin</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Logo Ayarları */}
+              <div className="bg-white rounded-xl border border-gray-200 p-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center space-x-2">
+                  <Settings size={20} />
+                  <span>Logo Ayarları</span>
+                </h3>
+                <p className="text-sm text-gray-500 mb-4">
+                  Anasayfa header'ında görünecek logoyu yükleyin (Önerilen: 500KB)
+                </p>
+
+                {logoBase64 ? (
+                  <div className="space-y-4">
+                    <div className="border-2 border-gray-200 rounded-lg p-4 bg-gray-50">
+                      <div className="flex items-center justify-center h-32 bg-white rounded-lg">
+                        <img
+                          src={logoBase64}
+                          alt="Logo"
+                          className="object-contain"
+                          style={{
+                            height: `${logoHeight}px`,
+                            width: logoWidth === 'auto' ? 'auto' : `${logoWidth}px`,
+                            maxHeight: '112px',
+                            maxWidth: '100%'
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex space-x-2">
+                      <label className="flex-1 cursor-pointer">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleLogoUpload}
+                          className="hidden"
+                        />
+                        <div className="w-full px-4 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors font-medium text-center border border-blue-200">
+                          Değiştir
+                        </div>
+                      </label>
+                      <button
+                        onClick={removeLogo}
+                        className="px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors font-medium border border-red-200"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+
+                    {/* Logo Boyut Ayarları */}
+                    <div className="border-t border-gray-200 pt-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-3">
+                        Logo Boyutu
+                      </label>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        {/* Yükseklik */}
+                        <div>
+                          <label className="block text-xs text-gray-600 mb-2">Yükseklik (px)</label>
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="range"
+                              min="24"
+                              max="120"
+                              value={logoHeight}
+                              onChange={(e) => setLogoHeight(parseInt(e.target.value))}
+                              className="flex-1"
+                            />
+                            <input
+                              type="number"
+                              min="24"
+                              max="120"
+                              value={logoHeight}
+                              onChange={(e) => setLogoHeight(parseInt(e.target.value) || 48)}
+                              className="w-16 px-2 py-1 border border-gray-300 rounded text-center text-sm font-semibold text-gray-900 bg-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Genişlik */}
+                        <div>
+                          <label className="block text-xs text-gray-600 mb-2">Genişlik</label>
+                          <div className="flex items-center space-x-2">
+                            <select
+                              value={logoWidth === 'auto' ? 'auto' : 'custom'}
+                              onChange={(e) => {
+                                if (e.target.value === 'auto') {
+                                  setLogoWidth('auto');
+                                } else {
+                                  setLogoWidth(200);
+                                }
+                              }}
+                              className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm font-medium text-gray-900 bg-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
+                            >
+                              <option value="auto">Otomatik</option>
+                              <option value="custom">Özel</option>
+                            </select>
+                            {logoWidth !== 'auto' && (
+                              <input
+                                type="number"
+                                min="50"
+                                max="400"
+                                value={logoWidth}
+                                onChange={(e) => setLogoWidth(parseInt(e.target.value) || 200)}
+                                className="w-16 px-2 py-1 border border-gray-300 rounded text-center text-sm font-semibold text-gray-900 bg-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
+                              />
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 flex items-center space-x-2 text-xs text-gray-500">
+                        <AlertCircle size={14} />
+                        <span>
+                          Mevcut: {logoHeight}px × {logoWidth === 'auto' ? 'Otomatik' : `${logoWidth}px`}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoUpload}
+                      className="hidden"
+                    />
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 hover:border-amber-500 hover:bg-amber-50 transition-all">
+                      <div className="flex flex-col items-center space-y-3">
+                        <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
+                          <Plus size={32} className="text-gray-400" />
+                        </div>
+                        <div className="text-center">
+                          <p className="text-sm font-medium text-gray-700">Logo Yükle</p>
+                          <p className="text-xs text-gray-500 mt-1">PNG, JPG (Önerilen: maks 500KB)</p>
+                        </div>
+                      </div>
+                    </div>
+                  </label>
+                )}
+              </div>
+
+              {/* Diğer Ayarlar */}
+              <div className="bg-white rounded-xl border border-gray-200 p-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center space-x-2">
+                  <TrendingUp size={20} />
+                  <span>Görüntüleme Ayarları</span>
+                </h3>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Maksimum Görüntülenecek Ürün Sayısı
+                    </label>
+                    <p className="text-xs text-gray-500 mb-3">
+                      Anasayfada en fazla kaç fiyat gösterilsin? (TV ekranları için)
+                    </p>
+                    <input
+                      type="number"
+                      min="1"
+                      max="100"
+                      value={maxDisplayItems}
+                      onChange={(e) => setMaxDisplayItems(parseInt(e.target.value) || 20)}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg bg-white text-gray-900 text-center text-2xl font-bold focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-all"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Kaydet Butonu */}
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={saveSettings}
+                className="flex items-center space-x-2 px-8 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-semibold shadow-sm"
+              >
+                <Save size={20} />
+                <span>Ayarları Kaydet</span>
+              </button>
+            </div>
+          </>
+          )}
         </main>
 
         {/* Modal */}
@@ -1444,199 +1647,6 @@ export default function AdminDashboard() {
                 >
                   <Save size={18} />
                   <span>{editingPrice ? 'Güncelle' : 'Kaydet'}</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Ayarlar Modal */}
-        {showSettings && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl max-w-md w-full">
-              <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-2xl">
-                <h2 className="text-xl font-bold text-gray-900">Ayarlar</h2>
-                <button
-                  onClick={() => setShowSettings(false)}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-
-              <div className="p-6 space-y-6">
-                {/* Logo Yükleme */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Logo
-                  </label>
-                  <p className="text-xs text-gray-500 mb-3">
-                    Anasayfa header'ında görünecek logoyu yükleyin (Önerilen: 500KB)
-                  </p>
-                  
-                  {logoBase64 ? (
-                    <div className="space-y-3">
-                      <div className="border-2 border-gray-200 rounded-lg p-4 bg-gray-50">
-                        <div className="flex items-center justify-center h-32 bg-white rounded-lg">
-                          <img 
-                            src={logoBase64} 
-                            alt="Logo" 
-                            className="object-contain"
-                            style={{ 
-                              height: `${logoHeight}px`, 
-                              width: logoWidth === 'auto' ? 'auto' : `${logoWidth}px`,
-                              maxHeight: '112px',
-                              maxWidth: '100%'
-                            }} 
-                          />
-                        </div>
-                      </div>
-                      <div className="flex space-x-2">
-                        <label className="flex-1 cursor-pointer">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleLogoUpload}
-                            className="hidden"
-                          />
-                          <div className="w-full px-4 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors font-medium text-center border border-blue-200">
-                            Değiştir
-                          </div>
-                        </label>
-                        <button
-                          onClick={removeLogo}
-                          className="px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors font-medium border border-red-200"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <label className="cursor-pointer">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleLogoUpload}
-                        className="hidden"
-                      />
-                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 hover:border-amber-500 hover:bg-amber-50 transition-all">
-                        <div className="flex flex-col items-center space-y-3">
-                          <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
-                            <Plus size={32} className="text-gray-400" />
-                          </div>
-                          <div className="text-center">
-                            <p className="text-sm font-medium text-gray-700">Logo Yükle</p>
-                            <p className="text-xs text-gray-500 mt-1">PNG, JPG (Önerilen: maks 500KB)</p>
-                          </div>
-                        </div>
-                      </div>
-                    </label>
-                  )}
-                </div>
-
-                {/* Logo Boyut Ayarları */}
-                {logoBase64 && (
-                  <div className="border-t border-gray-200 pt-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-3">
-                      Logo Boyutu
-                    </label>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      {/* Yükseklik */}
-                      <div>
-                        <label className="block text-xs text-gray-600 mb-2">Yükseklik (px)</label>
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="range"
-                            min="24"
-                            max="120"
-                            value={logoHeight}
-                            onChange={(e) => setLogoHeight(parseInt(e.target.value))}
-                            className="flex-1"
-                          />
-                          <input
-                            type="number"
-                            min="24"
-                            max="120"
-                            value={logoHeight}
-                            onChange={(e) => setLogoHeight(parseInt(e.target.value) || 48)}
-                            className="w-16 px-2 py-1 border border-gray-300 rounded text-center text-sm font-semibold text-gray-900 bg-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Genişlik */}
-                      <div>
-                        <label className="block text-xs text-gray-600 mb-2">Genişlik</label>
-                        <div className="flex items-center space-x-2">
-                          <select
-                            value={logoWidth === 'auto' ? 'auto' : 'custom'}
-                            onChange={(e) => {
-                              if (e.target.value === 'auto') {
-                                setLogoWidth('auto');
-                              } else {
-                                setLogoWidth(200);
-                              }
-                            }}
-                            className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm font-medium text-gray-900 bg-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
-                          >
-                            <option value="auto">Otomatik</option>
-                            <option value="custom">Özel</option>
-                          </select>
-                          {logoWidth !== 'auto' && (
-                            <input
-                              type="number"
-                              min="50"
-                              max="400"
-                              value={logoWidth}
-                              onChange={(e) => setLogoWidth(parseInt(e.target.value) || 200)}
-                              className="w-16 px-2 py-1 border border-gray-300 rounded text-center text-sm font-semibold text-gray-900 bg-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
-                            />
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-3 flex items-center space-x-2 text-xs text-gray-500">
-                      <AlertCircle size={14} />
-                      <span>
-                        Mevcut: {logoHeight}px × {logoWidth === 'auto' ? 'Otomatik' : `${logoWidth}px`}
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                <div className="border-t border-gray-200 pt-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Maksimum Görüntülenecek Ürün Sayısı
-                  </label>
-                  <p className="text-xs text-gray-500 mb-3">
-                    Anasayfada en fazla kaç fiyat gösterilsin? (TV ekranları için)
-                  </p>
-                  <input
-                    type="number"
-                    min="1"
-                    max="100"
-                    value={maxDisplayItems}
-                    onChange={(e) => setMaxDisplayItems(parseInt(e.target.value) || 20)}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg bg-white text-gray-900 text-center text-2xl font-bold focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-all"
-                  />
-                </div>
-              </div>
-
-              <div className="bg-gray-50 border-t border-gray-200 px-6 py-4 flex items-center justify-end space-x-3 rounded-b-2xl">
-                <button
-                  onClick={() => setShowSettings(false)}
-                  className="px-6 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition-colors font-medium"
-                >
-                  İptal
-                </button>
-                <button
-                  onClick={saveSettings}
-                  className="flex items-center space-x-2 px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-semibold"
-                >
-                  <Save size={18} />
-                  <span>Kaydet</span>
                 </button>
               </div>
             </div>
