@@ -1,0 +1,26 @@
+[
+  {
+    "id": "1",
+    "label": "1967'den Beri",
+    "title": "Yarım asırlık deneyim.",
+    "description": "1967'den bugüne güvenilir hizmet anlayışı.",
+    "icon": "TrendingUp",
+    "order": 1
+  },
+  {
+    "id": "2",
+    "label": "Geniş Ağ",
+    "title": "19 mağaza, 6 üretim tesisi.",
+    "description": "Adana, Mersin, Osmaniye ve İstanbul'da geniş hizmet ağı.",
+    "icon": "CheckCircle",
+    "order": 2
+  },
+  {
+    "id": "3",
+    "label": "Global Pazar",
+    "title": "Uluslararası ihracat.",
+    "description": "Birçok ülkeye kaliteli ürün ihracatı.",
+    "icon": "Star",
+    "order": 3
+  }
+]

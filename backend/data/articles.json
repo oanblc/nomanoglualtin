@@ -1,0 +1,30 @@
+[
+  {
+    "id": "1",
+    "category": "Yatırım",
+    "title": "Altın Yatırımı Rehberi",
+    "description": "Altına yatırım yaparken dikkat edilmesi gereken temel konular.",
+    "content": "Altın, tarihin her döneminde değerli bir yatırım aracı olmuştur. Bu rehberde, altın yatırımının temel prensiplerini, avantajlarını ve dikkat edilmesi gereken noktaları detaylı şekilde inceleyeceğiz.\n\n**Neden Altın?**\n\nAltın, ekonomik belirsizlik dönemlerinde güvenli liman olarak kabul edilir. Enflasyona karşı koruma sağlar ve portföy çeşitlendirmesi için idealdir.\n\n**Yatırım Seçenekleri:**\n\n1. **Fiziksel Altın:** Külçe, gram, çeyrek gibi fiziksel altın ürünleri\n2. **Altın Hesabı:** Bankalarda açılan altın hesapları\n3. **Altın Fonu:** Borsa yatırım fonları üzerinden altına yatırım\n\n**Dikkat Edilmesi Gerekenler:**\n\n- Piyasa koşullarını takip edin\n- Uzun vadeli düşünün\n- Portföyünüzün tamamını altına yatırmayın\n- Güvenilir kuyumculardan alım yapın",
+    "icon": "Coins",
+    "order": 1,
+    "updatedAt": "2025-11-29T17:54:00.655Z"
+  },
+  {
+    "id": "2",
+    "category": "Karşılaştırma",
+    "title": "Külçe mi Ziynet mi?",
+    "description": "Yatırım aracı olarak külçe altın ve ziynet altını karşılaştırması.",
+    "content": "Altın yatırımı yaparken en sık sorulan sorulardan biri: Külçe altın mı, ziynet altını mı almalıyım? Her ikisinin de avantajları ve dezavantajları vardır.\n\n**Külçe Altın:**\n\n**Avantajları:**\n- Daha düşük işçilik maliyeti\n- Has altın (%99.9 saflıkta)\n- Daha likit, kolay alım-satım\n- Yatırım amaçlı tercih edilir\n\n**Dezavantajları:**\n- Saklama sorunu\n- Takı olarak kullanılamaz\n\n**Ziynet Altını:**\n\n**Avantajları:**\n- Hem yatırım hem süs eşyası\n- Günlük kullanılabilir\n- Hediye olarak değerli\n\n**Dezavantajları:**\n- Yüksek işçilik maliyeti\n- Daha düşük saflık (14-22 ayar)\n- Satarken işçilik kaybı\n\n**Sonuç:** Sadece yatırım amaçlıysa külçe, hem kullanım hem yatırım istiyorsanız ziynet altını tercih edilebilir.",
+    "icon": "Gem",
+    "order": 2
+  },
+  {
+    "id": "3",
+    "category": "Piyasa",
+    "title": "Döviz Kurları Nasıl Belirlenir?",
+    "description": "Döviz kurlarını etkileyen faktörler ve piyasa dinamikleri.",
+    "content": "Döviz kurları, ülkelerin para birimlerinin birbirine göre değerini belirler. Peki bu kurlar nasıl oluşur ve ne etkiler?\n\n**Temel Faktörler:**\n\n**1. Arz ve Talep**\nEn temel belirleyici faktör. Bir para birimine olan talep artarsa değeri yükselir.\n\n**2. Faiz Oranları**\nYüksek faiz oranları, o ülkenin para birimine olan talebi artırır.\n\n**3. Enflasyon**\nYüksek enflasyon, para biriminin değerini düşürür.\n\n**4. Ekonomik Göstergeler**\n- GSYH büyümesi\n- İşsizlik oranları\n- Cari açık/fazla\n- Sanayi üretimi\n\n**5. Politik Faktörler**\n- Seçimler\n- Hükümet politikaları\n- Jeopolitik riskler\n\n**6. Merkez Bankası Politikaları**\nPara politikası kararları, faiz değişimleri ve rezerv yönetimi.\n\n**Piyasa Mekanizması:**\n\nDöviz kurları, dünya genelinde 7/24 işlem gören forex piyasalarında belirlenir. Merkez bankaları müdahale edebilse de, genel olarak serbest piyasa koşulları geçerlidir.",
+    "icon": "TrendingUp",
+    "order": 3
+  }
+]
