@@ -8,19 +8,19 @@ export function SettingsProvider({ children }) {
   const [logoWidth, setLogoWidth] = useState('auto');
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // İletişim Bilgileri
-  const [contactPhone, setContactPhone] = useState('+90 (XXX) XXX XX XX');
-  const [contactEmail, setContactEmail] = useState('info@nomanoglu.com');
-  const [contactAddress, setContactAddress] = useState('Istanbul, Turkiye');
-  const [workingHours, setWorkingHours] = useState('Pzt - Cmt: 09:00 - 19:00');
-  const [workingHoursNote, setWorkingHoursNote] = useState('Pazar: Kapali');
+  // İletişim Bilgileri - boş başla, API'den gelsin
+  const [contactPhone, setContactPhone] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
+  const [contactAddress, setContactAddress] = useState('');
+  const [workingHours, setWorkingHours] = useState('');
+  const [workingHoursNote, setWorkingHoursNote] = useState('');
 
-  // Sosyal Medya
+  // Sosyal Medya - boş başla, API'den gelsin
   const [socialFacebook, setSocialFacebook] = useState('');
   const [socialTwitter, setSocialTwitter] = useState('');
   const [socialInstagram, setSocialInstagram] = useState('');
   const [socialYoutube, setSocialYoutube] = useState('');
-  const [socialWhatsapp, setSocialWhatsapp] = useState('905322904601');
+  const [socialWhatsapp, setSocialWhatsapp] = useState('');
 
   useEffect(() => {
     // Ayarları sadece bir kez yükle
@@ -32,18 +32,18 @@ export function SettingsProvider({ children }) {
           setLogoBase64(s.logoBase64 || '');
           setLogoHeight(s.logoHeight || 48);
           setLogoWidth(s.logoWidth || 'auto');
-          // İletişim bilgileri
-          setContactPhone(s.contactPhone || '+90 (XXX) XXX XX XX');
-          setContactEmail(s.contactEmail || 'info@nomanoglu.com');
-          setContactAddress(s.contactAddress || 'Istanbul, Turkiye');
-          setWorkingHours(s.workingHours || 'Pzt - Cmt: 09:00 - 19:00');
-          setWorkingHoursNote(s.workingHoursNote || 'Pazar: Kapali');
-          // Sosyal medya
+          // İletişim bilgileri - sadece API'den gelen değerler
+          setContactPhone(s.contactPhone || '');
+          setContactEmail(s.contactEmail || '');
+          setContactAddress(s.contactAddress || '');
+          setWorkingHours(s.workingHours || '');
+          setWorkingHoursNote(s.workingHoursNote || '');
+          // Sosyal medya - sadece API'den gelen değerler
           setSocialFacebook(s.socialFacebook || '');
           setSocialTwitter(s.socialTwitter || '');
           setSocialInstagram(s.socialInstagram || '');
           setSocialYoutube(s.socialYoutube || '');
-          setSocialWhatsapp(s.socialWhatsapp || '905322904601');
+          setSocialWhatsapp(s.socialWhatsapp || '');
         }
         setIsLoaded(true);
       })

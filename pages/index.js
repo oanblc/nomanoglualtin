@@ -611,46 +611,54 @@ export default function Home() {
                 </h4>
                 
                 <div className="space-y-3">
-                  <div className="flex items-start space-x-3">
-                    <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                      <Phone size={16} className="text-gray-600" strokeWidth={2} />
+                  {contactPhone && (
+                    <div className="flex items-start space-x-3">
+                      <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                        <Phone size={16} className="text-gray-600" strokeWidth={2} />
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 mb-0.5">Telefon</p>
+                        <p className="text-sm font-semibold text-gray-900">{contactPhone}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-xs text-gray-500 mb-0.5">Telefon</p>
-                      <p className="text-sm font-semibold text-gray-900">{contactPhone}</p>
-                    </div>
-                  </div>
+                  )}
 
-                  <div className="flex items-start space-x-3">
-                    <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                      <Mail size={16} className="text-gray-600" strokeWidth={2} />
+                  {contactEmail && (
+                    <div className="flex items-start space-x-3">
+                      <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                        <Mail size={16} className="text-gray-600" strokeWidth={2} />
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 mb-0.5">E-posta</p>
+                        <p className="text-sm font-semibold text-gray-900">{contactEmail}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-xs text-gray-500 mb-0.5">E-posta</p>
-                      <p className="text-sm font-semibold text-gray-900">{contactEmail}</p>
-                    </div>
-                  </div>
+                  )}
 
-                  <div className="flex items-start space-x-3">
-                    <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                      <MapPin size={16} className="text-gray-600" strokeWidth={2} />
+                  {contactAddress && (
+                    <div className="flex items-start space-x-3">
+                      <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                        <MapPin size={16} className="text-gray-600" strokeWidth={2} />
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 mb-0.5">Adres</p>
+                        <p className="text-sm font-semibold text-gray-900">{contactAddress}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-xs text-gray-500 mb-0.5">Adres</p>
-                      <p className="text-sm font-semibold text-gray-900">{contactAddress}</p>
-                    </div>
-                  </div>
+                  )}
 
-                  <div className="flex items-start space-x-3">
-                    <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                      <Clock size={16} className="text-gray-600" strokeWidth={2} />
+                  {workingHours && (
+                    <div className="flex items-start space-x-3">
+                      <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                        <Clock size={16} className="text-gray-600" strokeWidth={2} />
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 mb-0.5">Çalışma Saatleri</p>
+                        <p className="text-sm font-semibold text-gray-900">{workingHours}</p>
+                        {workingHoursNote && <p className="text-xs text-gray-500 mt-1">{workingHoursNote}</p>}
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-xs text-gray-500 mb-0.5">Çalışma Saatleri</p>
-                      <p className="text-sm font-semibold text-gray-900">{workingHours}</p>
-                      <p className="text-xs text-gray-500 mt-1">{workingHoursNote}</p>
-                    </div>
-                  </div>
+                  )}
                 </div>
 
                 <div className="mt-5 pt-5 border-t border-gray-200">
@@ -1133,22 +1141,28 @@ export default function Home() {
               <div>
                 <h4 className="text-gray-900 font-bold mb-4 text-sm uppercase tracking-wider">İletişim</h4>
                 <ul className="space-y-3">
-                  <li className="flex items-start space-x-3">
-                    <MapPin size={18} className="text-gray-900 flex-shrink-0 mt-0.5" strokeWidth={2} />
-                    <span className="text-sm text-gray-800">{contactAddress}</span>
-                  </li>
-                  <li className="flex items-center space-x-3">
-                    <Phone size={18} className="text-gray-900 flex-shrink-0" strokeWidth={2} />
-                    <a href={`tel:${contactPhone}`} className="text-sm text-gray-800 hover:text-gray-900 hover:underline transition-colors">
-                      {contactPhone}
-                    </a>
-                  </li>
-                  <li className="flex items-center space-x-3">
-                    <Mail size={18} className="text-gray-900 flex-shrink-0" strokeWidth={2} />
-                    <a href={`mailto:${contactEmail}`} className="text-sm text-gray-800 hover:text-gray-900 hover:underline transition-colors">
-                      {contactEmail}
-                    </a>
-                  </li>
+                  {contactAddress && (
+                    <li className="flex items-start space-x-3">
+                      <MapPin size={18} className="text-gray-900 flex-shrink-0 mt-0.5" strokeWidth={2} />
+                      <span className="text-sm text-gray-800">{contactAddress}</span>
+                    </li>
+                  )}
+                  {contactPhone && (
+                    <li className="flex items-center space-x-3">
+                      <Phone size={18} className="text-gray-900 flex-shrink-0" strokeWidth={2} />
+                      <a href={`tel:${contactPhone}`} className="text-sm text-gray-800 hover:text-gray-900 hover:underline transition-colors">
+                        {contactPhone}
+                      </a>
+                    </li>
+                  )}
+                  {contactEmail && (
+                    <li className="flex items-center space-x-3">
+                      <Mail size={18} className="text-gray-900 flex-shrink-0" strokeWidth={2} />
+                      <a href={`mailto:${contactEmail}`} className="text-sm text-gray-800 hover:text-gray-900 hover:underline transition-colors">
+                        {contactEmail}
+                      </a>
+                    </li>
+                  )}
                 </ul>
 
                 {/* WhatsApp Destek */}
