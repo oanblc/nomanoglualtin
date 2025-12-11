@@ -53,36 +53,47 @@ export const useWebSocket = () => {
     newSocket.on('disconnect', () => {
       console.log('❌ WebSocket bağlantısı kesildi');
       setIsConnected(false);
-      // Bağlantı kesildiğinde fiyatları silme, eski fiyatları koru
+      // Bağlantı kesildiğinde önceki fiyatları koru
+      if (previousPricesRef.current.length > 0) {
+        setPrices(previousPricesRef.current);
+      }
     });
 
     newSocket.on('priceUpdate', (data) => {
-      if (data && data.prices && data.prices.length > 0) {
-        const visiblePrices = data.prices.filter(p => p.isVisible);
+      // Veri kontrolü - boş veya geçersiz veri gelirse önceki fiyatları koru
+      if (!data || !data.prices || !Array.isArray(data.prices)) {
+        console.log('⚠️ Geçersiz veri formatı, önceki fiyatlar korunuyor');
+        return;
+      }
 
-        // Sadece geçerli veri varsa güncelle
-        if (visiblePrices.length > 0) {
-          setPrices(visiblePrices);
-          previousPricesRef.current = visiblePrices;
-          setLastUpdate(data.meta?.time || Date.now());
+      const visiblePrices = data.prices.filter(p => p.isVisible);
 
-          // Cache'e kaydet
-          try {
-            localStorage.setItem(CACHE_KEY, JSON.stringify(visiblePrices));
-            localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
-          } catch (err) {
-            console.error('Cache yazma hatası:', err);
-          }
-        } else {
-          // Boş veri gelirse önceki fiyatları koru
-          console.log('⚠️ Boş fiyat verisi geldi, önceki fiyatlar korunuyor');
+      // Sadece geçerli veri varsa güncelle
+      if (visiblePrices.length > 0) {
+        setPrices(visiblePrices);
+        previousPricesRef.current = visiblePrices;
+        setLastUpdate(data.meta?.time || Date.now());
+
+        // Cache'e kaydet
+        try {
+          localStorage.setItem(CACHE_KEY, JSON.stringify(visiblePrices));
+          localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
+        } catch (err) {
+          console.error('Cache yazma hatası:', err);
         }
+      } else if (previousPricesRef.current.length > 0) {
+        // Boş veri gelirse önceki fiyatları geri yükle
+        console.log('⚠️ Boş fiyat verisi geldi, önceki fiyatlar geri yükleniyor');
+        setPrices(previousPricesRef.current);
       }
     });
 
     newSocket.on('connect_error', (error) => {
       console.error('WebSocket bağlantı hatası:', error);
-      // Hata durumunda da fiyatları koru
+      // Hata durumunda önceki fiyatları koru
+      if (previousPricesRef.current.length > 0) {
+        setPrices(previousPricesRef.current);
+      }
     });
 
     setSocket(newSocket);
