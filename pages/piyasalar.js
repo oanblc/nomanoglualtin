@@ -15,6 +15,8 @@ export default function Piyasalar() {
   const [logoHeight, setLogoHeight] = useState(48);
   const [logoWidth, setLogoWidth] = useState('auto');
   const [activeAlarmsCount, setActiveAlarmsCount] = useState(0);
+  const [priceOrder, setPriceOrder] = useState([]); // Sabit sıralama
+  const [isInitialLoad, setIsInitialLoad] = useState(true); // İlk yükleme durumu
 
   useEffect(() => {
     setMounted(true);
@@ -51,6 +53,15 @@ export default function Piyasalar() {
     return () => clearInterval(interval);
   }, []);
 
+  // İlk yüklemede sıralamayı belirle
+  useEffect(() => {
+    if (isInitialLoad && prices.length > 0) {
+      const sortedPrices = [...prices].sort((a, b) => (a.order || 0) - (b.order || 0));
+      setPriceOrder(sortedPrices.map(p => p.code));
+      setIsInitialLoad(false);
+    }
+  }, [prices, isInitialLoad]);
+
   // Favorileri kaydet
   const toggleFavorite = (code) => {
     let newFavorites;
@@ -71,6 +82,7 @@ export default function Piyasalar() {
     }).format(price);
   };
 
+  // Sabit sıralamayı kullanarak filtrele - kayma olmasın
   const filteredPrices = prices
     .filter(p => {
       if (showOnlyFavorites && !favorites.includes(p.code)) return false;
@@ -78,7 +90,18 @@ export default function Piyasalar() {
       if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !p.code.toLowerCase().includes(search.toLowerCase())) return false;
       return true;
     })
-    .sort((a, b) => (a.order || 0) - (b.order || 0));
+    .sort((a, b) => {
+      // Eğer sabit sıralama varsa onu kullan, yoksa order'a göre sırala
+      if (priceOrder.length > 0) {
+        const indexA = priceOrder.indexOf(a.code);
+        const indexB = priceOrder.indexOf(b.code);
+        // Yeni ürünler sona eklensin
+        if (indexA === -1) return 1;
+        if (indexB === -1) return -1;
+        return indexA - indexB;
+      }
+      return (a.order || 0) - (b.order || 0);
+    });
 
   const getIcon = (code) => {
     if (code.includes('USD')) return <DollarSign size={18} strokeWidth={2} />;
@@ -321,7 +344,7 @@ export default function Piyasalar() {
                 </div>
 
                 {/* Table Body */}
-                {prices.length === 0 ? (
+                {isInitialLoad && prices.length === 0 ? (
                   <div className="text-center py-16">
                     <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-gray-200 border-t-blue-600"></div>
                     <p className="text-gray-500 mt-3 text-sm">Fiyatlar yükleniyor...</p>

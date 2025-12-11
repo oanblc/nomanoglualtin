@@ -7,6 +7,8 @@ import { Menu, Bell, Search, TrendingUp, TrendingDown, DollarSign, Euro, Coins, 
 export default function Home() {
   const { prices: websocketPrices, isConnected, lastUpdate: wsLastUpdate } = useWebSocket();
   const [prices, setPrices] = useState([]);
+  const [priceOrder, setPriceOrder] = useState([]); // Fiyat sıralamasını sabit tut
+  const [isInitialLoad, setIsInitialLoad] = useState(true); // İlk yükleme durumu
   const [lastUpdate, setLastUpdate] = useState(null);
   const [timeSinceUpdate, setTimeSinceUpdate] = useState('');
   const [filter, setFilter] = useState('all');
@@ -31,7 +33,14 @@ export default function Home() {
     if (websocketPrices && websocketPrices.length > 0) {
       // Ana sayfada sadece custom fiyatları göster
       const customPrices = websocketPrices.filter(p => p.isCustom === true);
-      
+
+      // İlk yüklemede sıralamayı belirle ve kaydet
+      if (isInitialLoad && customPrices.length > 0) {
+        const sortedPrices = [...customPrices].sort((a, b) => (a.order || 0) - (b.order || 0));
+        setPriceOrder(sortedPrices.map(p => p.code));
+        setIsInitialLoad(false);
+      }
+
       // Fiyat değişimlerini tespit et ve highlight et
       const newHighlighted = {};
       customPrices.forEach(newPrice => {
@@ -44,11 +53,11 @@ export default function Home() {
           }, 1000);
         }
       });
-      
+
       if (Object.keys(newHighlighted).length > 0) {
         setHighlightedPrices(prev => ({ ...prev, ...newHighlighted }));
       }
-      
+
       setPrices(customPrices);
       setLastUpdate(new Date());
       console.log(`📊 Ana sayfa: ${customPrices.length} custom fiyat gösteriliyor (${websocketPrices.length} toplam fiyat)`);
@@ -193,6 +202,7 @@ export default function Home() {
     prices.find(p => p.code === 'GBPTRY') || { code: 'GBPTRY', name: 'İngiliz Sterlini', calculatedSatis: 0, calculatedAlis: 0 }
   ];
 
+  // Sabit sıralamayı kullanarak filtrele - kayma olmasın
   const filteredPrices = prices
     .filter(p => {
       if (showOnlyFavorites && !favorites.includes(p.code)) return false;
@@ -200,7 +210,18 @@ export default function Home() {
       if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !p.code.toLowerCase().includes(search.toLowerCase())) return false;
       return true;
     })
-    .sort((a, b) => (a.order || 0) - (b.order || 0)); // Admin paneldeki sıralamaya göre
+    .sort((a, b) => {
+      // Eğer sabit sıralama varsa onu kullan, yoksa order'a göre sırala
+      if (priceOrder.length > 0) {
+        const indexA = priceOrder.indexOf(a.code);
+        const indexB = priceOrder.indexOf(b.code);
+        // Yeni ürünler sona eklensin
+        if (indexA === -1) return 1;
+        if (indexB === -1) return -1;
+        return indexA - indexB;
+      }
+      return (a.order || 0) - (b.order || 0);
+    });
 
   const getChangePercent = (code) => {
     if (!mounted) return 0;
@@ -482,7 +503,7 @@ export default function Home() {
           {/* Price Table - Paribu Style */}
           <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
             {/* Table Body */}
-            {prices.length === 0 ? (
+            {isInitialLoad && prices.length === 0 ? (
               <div className="text-center py-16">
                 <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-gray-200 border-t-blue-600"></div>
                 <p className="text-gray-500 mt-3 text-sm">Fiyatlar yükleniyor...</p>
