@@ -388,79 +388,16 @@ export default function Home() {
                 </div>
               )}
 
-          {/* Canlı Güncelleme Durumu */}
-          {lastUpdate && (
-            <div className={`mb-3 px-4 py-2 rounded-lg flex items-center justify-between transition-all fullscreen-hide ${
-              isConnected 
-                ? 'bg-green-50 border border-green-200' 
-                : 'bg-orange-50 border border-orange-200'
-            }`}>
-              <div className="flex items-center space-x-2">
-                <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-orange-500'}`}></div>
-                <span className={`text-xs font-semibold ${isConnected ? 'text-green-700' : 'text-orange-700'}`}>
-                  {isConnected ? 'Canlı Güncelleniyor' : 'Bağlantı Kesildi - Son Fiyatlar Gösteriliyor'}
-                </span>
-              </div>
-              <span className={`text-xs font-medium ${isConnected ? 'text-green-600' : 'text-orange-600'}`}>
-                {timeSinceUpdate}
-              </span>
-            </div>
-          )}
-
           {/* Filters & Search */}
           <div className="bg-white rounded-lg border border-gray-200 p-3 mb-4 fullscreen-hide">
             <div className="flex flex-col md:flex-row gap-3">
               {/* Filter Buttons */}
               <div className="flex flex-wrap gap-2">
                   <button
-                    onClick={() => { setFilter('all'); setShowOnlyFavorites(false); }}
-                    className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
-                      filter === 'all' && !showOnlyFavorites
-                        ? 'text-white' 
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                    style={filter === 'all' && !showOnlyFavorites ? {backgroundColor: '#f7de00', color: '#1f2937', border: '1px solid #1f2937'} : {}}
-                  >
-                    Tümü
-                  </button>
-                  <button
-                    onClick={() => { setFilter('altin'); setShowOnlyFavorites(false); }}
-                    className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
-                      filter === 'altin' && !showOnlyFavorites
-                        ? 'text-white' 
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                    style={filter === 'altin' && !showOnlyFavorites ? {backgroundColor: '#f7de00', color: '#1f2937', border: '1px solid #1f2937'} : {}}
-                  >
-                    Altın
-                  </button>
-                  <button
-                    onClick={() => { setFilter('doviz'); setShowOnlyFavorites(false); }}
-                    className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
-                      filter === 'doviz' && !showOnlyFavorites
-                        ? 'text-white' 
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                    style={filter === 'doviz' && !showOnlyFavorites ? {backgroundColor: '#f7de00', color: '#1f2937', border: '1px solid #1f2937'} : {}}
-                  >
-                    Döviz
-                  </button>
-                  <button
-                    onClick={() => { setFilter('gumus'); setShowOnlyFavorites(false); }}
-                    className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
-                      filter === 'gumus' && !showOnlyFavorites
-                        ? 'text-white' 
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                    style={filter === 'gumus' && !showOnlyFavorites ? {backgroundColor: '#f7de00', color: '#1f2937', border: '1px solid #1f2937'} : {}}
-                  >
-                    Gümüş
-                  </button>
-                  <button
                     onClick={() => { setShowOnlyFavorites(true); setFilter('all'); }}
                     className={`px-3 py-1.5 rounded text-xs font-medium transition-colors flex items-center space-x-1.5 ${
                       showOnlyFavorites
-                        ? 'text-white' 
+                        ? 'text-white'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                     style={showOnlyFavorites ? {backgroundColor: '#f7de00', color: '#1f2937', border: '1px solid #1f2937'} : {}}
