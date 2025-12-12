@@ -553,13 +553,12 @@ export default function AdminDashboard() {
     // State'i güncelle
     setCustomPrices(updatedPrices);
 
-    // Backend'e toplu sıralama gönder
+    // Backend'e sıralama gönder - her bir fiyatı ayrı güncelle (fallback)
     try {
-      const orders = updatedPrices.map(price => ({
-        id: price.id,
-        order: price.order
-      }));
-      await axios.post(`${apiUrl}/api/custom-prices/reorder`, { orders });
+      // Paralel olarak tüm fiyatları güncelle
+      await Promise.all(updatedPrices.map(price =>
+        axios.put(`${apiUrl}/api/custom-prices/${price.id}`, { order: price.order })
+      ));
       console.log('✅ Sıralama kaydedildi');
     } catch (error) {
       console.error('❌ Sıralama kaydetme hatası:', error);
@@ -604,13 +603,11 @@ export default function AdminDashboard() {
     // State'i güncelle
     setCustomPrices(updatedPrices);
 
-    // Backend'e toplu sıralama gönder
+    // Backend'e sıralama gönder - her bir fiyatı ayrı güncelle
     try {
-      const orders = updatedPrices.map(price => ({
-        id: price.id,
-        order: price.order
-      }));
-      await axios.post(`${apiUrl}/api/custom-prices/reorder`, { orders });
+      await Promise.all(updatedPrices.map(price =>
+        axios.put(`${apiUrl}/api/custom-prices/${price.id}`, { order: price.order })
+      ));
       console.log('✅ Sıra numaraları güncellendi');
     } catch (error) {
       console.error('❌ Sıra güncelleme hatası:', error);
