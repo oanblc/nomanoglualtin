@@ -723,8 +723,8 @@ app.post('/api/custom-prices', async (req, res) => {
   res.json({ success: true, data: newPrice });
 });
 
-// Toplu sıralama güncelleme endpoint'i (MUST be before /:id route!)
-app.put('/api/custom-prices/reorder', async (req, res) => {
+// Toplu sıralama güncelleme endpoint'i - POST kullanıyoruz (PUT /:id ile çakışmasın)
+app.post('/api/custom-prices/reorder', async (req, res) => {
   const { orders } = req.body; // [{ id: '123', order: 0 }, { id: '456', order: 1 }, ...]
 
   if (!orders || !Array.isArray(orders)) {
