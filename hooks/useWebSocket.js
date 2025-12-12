@@ -38,7 +38,7 @@ export const useWebSocket = () => {
   }, []);
 
   useEffect(() => {
-    const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:5000';
+    const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:5001';
     const newSocket = io(wsUrl, {
       transports: ['websocket', 'polling'],
       reconnection: true,

@@ -945,7 +945,6 @@ export default function AdminDashboard() {
                 <table className="w-full">
                   <thead>
                     <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
-                      <th className="text-center px-2 py-4 text-sm font-bold text-gray-700 w-16">Sıra</th>
                       <th className="text-center px-2 py-4 text-sm font-bold text-gray-700 w-10"></th>
                       <th className="text-left px-6 py-4 text-sm font-bold text-gray-700">Fiyat Bilgisi</th>
                       <th className="text-center px-4 py-4 text-sm font-bold text-gray-700">Alış Kaynağı</th>
@@ -981,11 +980,6 @@ export default function AdminDashboard() {
                           }`}
                           style={{ cursor: 'grab' }}
                         >
-                          <td className="px-2 py-4 text-center">
-                            <span className="inline-block w-10 py-1 text-center bg-gray-100 rounded text-sm font-bold text-black">
-                              {price.order + 1}
-                            </span>
-                          </td>
                           <td className="px-2 py-4 text-center">
                             <GripVertical
                               size={18}

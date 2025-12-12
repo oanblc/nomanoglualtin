@@ -247,7 +247,7 @@ const processPrices = async (rawData) => {
         kapanis: alisSourceData.kapanis,
         tarih: alisSourceData.tarih,
         isVisible: customPrice.isVisible !== false,
-        order: customPrice.order || 999,
+        order: customPrice.order ?? 999,
         hasAlisCoef: true,
         hasSatisCoef: true,
         isCustom: true
