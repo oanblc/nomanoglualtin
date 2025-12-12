@@ -1,51 +1,7 @@
 [
   {
-    "id": "1764431045061",
-    "name": "Gram Altın",
-    "code": "GRAM ALTIN",
-    "category": "altin",
-    "alisConfig": {
-      "sourceCode": "ALTIN",
-      "sourceType": "alis",
-      "multiplier": 1,
-      "addition": 0
-    },
-    "satisConfig": {
-      "sourceCode": "ALTIN",
-      "sourceType": "satis",
-      "multiplier": 1,
-      "addition": 0
-    },
-    "createdAt": "2025-11-29T15:44:05.061Z",
-    "updatedAt": "2025-11-29T18:02:18.032Z",
-    "order": 0,
-    "isVisible": true
-  },
-  {
-    "id": "1764438460780",
-    "name": "Çeyrek Altın (Yeni)",
-    "code": "CEYREK ALTIN",
-    "category": "altin",
-    "alisConfig": {
-      "sourceCode": "CEYREK_YENI",
-      "sourceType": "alis",
-      "multiplier": 1,
-      "addition": 0
-    },
-    "satisConfig": {
-      "sourceCode": "CEYREK_YENI",
-      "sourceType": "satis",
-      "multiplier": 1,
-      "addition": 0
-    },
-    "createdAt": "2025-11-29T17:47:40.780Z",
-    "order": 1,
-    "updatedAt": "2025-11-29T18:02:18.033Z",
-    "isVisible": true
-  },
-  {
     "id": "1764438511943",
-    "name": "Yarım Altın (Yeni)",
+    "name": "Yarım Altın",
     "code": "YARIM ALTIN",
     "category": "altin",
     "alisConfig": {
@@ -60,9 +16,67 @@
       "multiplier": 1,
       "addition": 0
     },
-    "createdAt": "2025-11-29T17:48:31.943Z",
+    "order": 0,
+    "isVisible": true
+  },
+  {
+    "id": "1764438975652",
+    "name": "Ata Beşli",
+    "code": "ATA BESLI",
+    "category": "altin",
+    "alisConfig": {
+      "sourceCode": "ATA5_YENI",
+      "sourceType": "alis",
+      "multiplier": 1,
+      "addition": 10.07
+    },
+    "satisConfig": {
+      "sourceCode": "ATA5_YENI",
+      "sourceType": "satis",
+      "multiplier": 1,
+      "addition": 0
+    },
+    "order": 1,
+    "isVisible": true
+  },
+  {
+    "id": "1764438460780",
+    "name": "Çeyrek Altın",
+    "code": "CEYREK ALTIN",
+    "category": "altin",
+    "alisConfig": {
+      "sourceCode": "CEYREK_YENI",
+      "sourceType": "alis",
+      "multiplier": 1,
+      "addition": 0
+    },
+    "satisConfig": {
+      "sourceCode": "CEYREK_YENI",
+      "sourceType": "satis",
+      "multiplier": 1,
+      "addition": 0
+    },
     "order": 2,
-    "updatedAt": "2025-11-29T18:02:18.035Z",
+    "isVisible": true
+  },
+  {
+    "id": "1764438712592",
+    "name": "Gram 22 Ayar",
+    "code": "GRAM 22 AYAR",
+    "category": "altin",
+    "alisConfig": {
+      "sourceCode": "AYAR22",
+      "sourceType": "alis",
+      "multiplier": 1,
+      "addition": 0
+    },
+    "satisConfig": {
+      "sourceCode": "AYAR22",
+      "sourceType": "satis",
+      "multiplier": 1,
+      "addition": 0
+    },
+    "order": 3,
     "isVisible": true
   },
   {
@@ -82,14 +96,32 @@
       "multiplier": 1,
       "addition": 0
     },
-    "createdAt": "2025-11-29T17:56:15.651Z",
-    "order": 3,
-    "updatedAt": "2025-11-29T18:02:18.040Z",
+    "order": 4,
+    "isVisible": true
+  },
+  {
+    "id": "1764431045061",
+    "name": "Has Altın",
+    "code": "HAS ALTIN",
+    "category": "altin",
+    "alisConfig": {
+      "sourceCode": "ALTIN",
+      "sourceType": "alis",
+      "multiplier": 1,
+      "addition": 0
+    },
+    "satisConfig": {
+      "sourceCode": "ALTIN",
+      "sourceType": "satis",
+      "multiplier": 1,
+      "addition": 0
+    },
+    "order": 5,
     "isVisible": true
   },
   {
     "id": "1764438643132",
-    "name": "Tam Altın (Yeni)",
+    "name": "Tam Altın",
     "code": "TAM ALTIN",
     "category": "altin",
     "alisConfig": {
@@ -104,75 +136,7 @@
       "multiplier": 1,
       "addition": 0
     },
-    "createdAt": "2025-11-29T17:50:43.132Z",
-    "order": 4,
-    "updatedAt": "2025-11-29T18:02:18.042Z",
-    "isVisible": true
-  },
-  {
-    "id": "1764438712592",
-    "name": "22 Ayar",
-    "code": "22 AYAR",
-    "category": "altin",
-    "alisConfig": {
-      "sourceCode": "AYAR22",
-      "sourceType": "alis",
-      "multiplier": 1,
-      "addition": 0
-    },
-    "satisConfig": {
-      "sourceCode": "AYAR22",
-      "sourceType": "satis",
-      "multiplier": 1,
-      "addition": 0
-    },
-    "createdAt": "2025-11-29T17:51:52.592Z",
-    "order": 5,
-    "updatedAt": "2025-11-29T18:02:18.043Z",
-    "isVisible": true
-  },
-  {
-    "id": "1764438760495",
-    "name": "14 Ayar",
-    "code": "14 AYAR",
-    "category": "altin",
-    "alisConfig": {
-      "sourceCode": "AYAR14",
-      "sourceType": "alis",
-      "multiplier": 1,
-      "addition": 0
-    },
-    "satisConfig": {
-      "sourceCode": "AYAR14",
-      "sourceType": "satis",
-      "multiplier": 1,
-      "addition": 0
-    },
-    "createdAt": "2025-11-29T17:52:40.495Z",
     "order": 6,
-    "updatedAt": "2025-11-29T18:02:18.045Z",
-    "isVisible": true
-  },
-  {
-    "id": "1764439031716",
-    "name": "Gümüş",
-    "code": "GUMUS",
-    "category": "gumus",
-    "alisConfig": {
-      "sourceCode": "GUMUSTRY",
-      "sourceType": "alis",
-      "multiplier": 1,
-      "addition": 0
-    },
-    "satisConfig": {
-      "sourceCode": "GUMUSTRY",
-      "sourceType": "satis",
-      "multiplier": 1,
-      "addition": 0
-    },
-    "createdAt": "2025-11-29T17:57:11.716Z",
-    "order": 7,
-    "updatedAt": "2025-11-29T18:02:18.046Z",
     "isVisible": true
   }
 ]
