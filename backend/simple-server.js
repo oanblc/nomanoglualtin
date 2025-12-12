@@ -6,6 +6,30 @@ const axios = require('axios');
 const { io: socketClient } = require('socket.io-client');
 const fs = require('fs');
 const path = require('path');
+const mongoose = require('mongoose');
+
+// MongoDB Models
+const CustomPrice = require('./models/CustomPrice');
+const Settings = require('./models/Settings');
+const FamilyCard = require('./models/FamilyCard');
+const Article = require('./models/Article');
+const Branch = require('./models/Branch');
+
+// MongoDB Connection
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/fiyat';
+let isMongoConnected = false;
+
+mongoose.connect(MONGODB_URI)
+  .then(() => {
+    console.log('✅ MongoDB bağlantısı başarılı');
+    isMongoConnected = true;
+    loadDataFromMongo();
+  })
+  .catch(err => {
+    console.error('❌ MongoDB bağlantı hatası:', err.message);
+    console.log('⚠️ Dosya sistemi kullanılacak');
+    loadData();
+  });
 
 const app = express();
 const server = http.createServer(app);
@@ -141,54 +165,261 @@ const loadData = () => {
   }
 };
 
-// Verileri dosyaya kaydet
-const saveCustomPrices = () => {
+// Verileri kaydet (MongoDB + dosya)
+const saveCustomPrices = async () => {
   try {
+    // Dosyaya da kaydet (backup)
     fs.writeFileSync(CUSTOM_PRICES_FILE, JSON.stringify(customPrices, null, 2));
-    console.log(`💾 ${customPrices.length} custom fiyat kaydedildi`);
+    console.log(`💾 ${customPrices.length} custom fiyat dosyaya kaydedildi`);
   } catch (error) {
-    console.error('❌ Custom fiyatlar kaydedilemedi:', error.message);
+    console.error('❌ Custom fiyatlar dosyaya kaydedilemedi:', error.message);
   }
 };
 
-const saveSettings = () => {
+const saveCustomPriceToMongo = async (price) => {
+  if (!isMongoConnected) return;
   try {
-    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
-    console.log(`💾 Ayarlar kaydedildi`);
+    await CustomPrice.findOneAndUpdate(
+      { $or: [{ _id: price.id }, { code: price.code }] },
+      {
+        name: price.name,
+        code: price.code,
+        category: price.category,
+        alisConfig: price.alisConfig,
+        satisConfig: price.satisConfig,
+        order: price.order,
+        isVisible: price.isVisible
+      },
+      { upsert: true, new: true }
+    );
+    console.log(`💾 MongoDB: ${price.name} kaydedildi`);
   } catch (error) {
-    console.error('❌ Ayarlar kaydedilemedi:', error.message);
+    console.error('❌ MongoDB custom price kayıt hatası:', error.message);
   }
 };
 
-const saveFamilyCards = () => {
+const deleteCustomPriceFromMongo = async (id) => {
+  if (!isMongoConnected) return;
+  try {
+    await CustomPrice.findByIdAndDelete(id);
+    console.log(`🗑️ MongoDB: Fiyat silindi`);
+  } catch (error) {
+    console.error('❌ MongoDB custom price silme hatası:', error.message);
+  }
+};
+
+const saveSettings = async () => {
+  try {
+    // Dosyaya da kaydet (backup)
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
+    console.log(`💾 Ayarlar dosyaya kaydedildi`);
+  } catch (error) {
+    console.error('❌ Ayarlar dosyaya kaydedilemedi:', error.message);
+  }
+};
+
+const saveSettingsToMongo = async () => {
+  if (!isMongoConnected) return;
+  try {
+    await Settings.findOneAndUpdate({}, settings, { upsert: true });
+    console.log(`💾 MongoDB: Ayarlar kaydedildi`);
+  } catch (error) {
+    console.error('❌ MongoDB ayar kayıt hatası:', error.message);
+  }
+};
+
+const saveFamilyCards = async () => {
   try {
     fs.writeFileSync(FAMILY_CARDS_FILE, JSON.stringify(familyCards, null, 2));
-    console.log(`💾 ${familyCards.length} family kart kaydedildi`);
+    console.log(`💾 ${familyCards.length} family kart dosyaya kaydedildi`);
   } catch (error) {
-    console.error('❌ Family kartları kaydedilemedi:', error.message);
+    console.error('❌ Family kartları dosyaya kaydedilemedi:', error.message);
   }
 };
 
-const saveArticles = () => {
+const saveFamilyCardToMongo = async (card) => {
+  if (!isMongoConnected) return;
+  try {
+    await FamilyCard.findOneAndUpdate(
+      { _id: card.id },
+      card,
+      { upsert: true, new: true }
+    );
+    console.log(`💾 MongoDB: Family kart kaydedildi`);
+  } catch (error) {
+    console.error('❌ MongoDB family card kayıt hatası:', error.message);
+  }
+};
+
+const saveArticles = async () => {
   try {
     fs.writeFileSync(ARTICLES_FILE, JSON.stringify(articles, null, 2));
-    console.log(`💾 ${articles.length} makale kaydedildi`);
+    console.log(`💾 ${articles.length} makale dosyaya kaydedildi`);
   } catch (error) {
-    console.error('❌ Makaleler kaydedilemedi:', error.message);
+    console.error('❌ Makaleler dosyaya kaydedilemedi:', error.message);
   }
 };
 
-const saveBranches = () => {
+const saveArticleToMongo = async (article) => {
+  if (!isMongoConnected) return;
+  try {
+    await Article.findOneAndUpdate(
+      { _id: article.id },
+      article,
+      { upsert: true, new: true }
+    );
+    console.log(`💾 MongoDB: Makale kaydedildi`);
+  } catch (error) {
+    console.error('❌ MongoDB article kayıt hatası:', error.message);
+  }
+};
+
+const saveBranches = async () => {
   try {
     fs.writeFileSync(BRANCHES_FILE, JSON.stringify(branches, null, 2));
-    console.log(`💾 ${branches.length} şube kaydedildi`);
+    console.log(`💾 ${branches.length} şube dosyaya kaydedildi`);
   } catch (error) {
-    console.error('❌ Şubeler kaydedilemedi:', error.message);
+    console.error('❌ Şubeler dosyaya kaydedilemedi:', error.message);
   }
 };
 
-// Başlangıçta verileri yükle
-loadData();
+const saveBranchToMongo = async (branch) => {
+  if (!isMongoConnected) return;
+  try {
+    await Branch.findOneAndUpdate(
+      { _id: branch.id },
+      branch,
+      { upsert: true, new: true }
+    );
+    console.log(`💾 MongoDB: Şube kaydedildi`);
+  } catch (error) {
+    console.error('❌ MongoDB branch kayıt hatası:', error.message);
+  }
+};
+
+// MongoDB'den verileri yükle
+const loadDataFromMongo = async () => {
+  try {
+    // Custom Prices
+    const mongoCustomPrices = await CustomPrice.find({}).sort({ order: 1 });
+    if (mongoCustomPrices.length > 0) {
+      customPrices = mongoCustomPrices.map(p => ({
+        id: p._id.toString(),
+        name: p.name,
+        code: p.code,
+        category: p.category,
+        alisConfig: p.alisConfig,
+        satisConfig: p.satisConfig,
+        order: p.order || 0,
+        isVisible: p.isVisible !== false
+      }));
+      console.log(`✅ MongoDB'den ${customPrices.length} custom fiyat yüklendi`);
+    } else {
+      console.log('⚠️ MongoDB\'de custom fiyat yok, dosyadan yükleniyor...');
+      loadData();
+      // Dosyadan yüklenen verileri MongoDB'ye kaydet
+      if (customPrices.length > 0) {
+        for (const price of customPrices) {
+          await CustomPrice.findOneAndUpdate(
+            { code: price.code },
+            price,
+            { upsert: true, new: true }
+          );
+        }
+        console.log(`✅ ${customPrices.length} custom fiyat MongoDB'ye aktarıldı`);
+      }
+    }
+
+    // Settings
+    const mongoSettings = await Settings.findOne({});
+    if (mongoSettings) {
+      settings = {
+        maxDisplayItems: mongoSettings.maxDisplayItems || 20,
+        logoBase64: mongoSettings.logoBase64 || '',
+        logoHeight: mongoSettings.logoHeight || 48,
+        logoWidth: mongoSettings.logoWidth || 'auto',
+        contactPhone: mongoSettings.contactPhone || '',
+        contactEmail: mongoSettings.contactEmail || '',
+        contactAddress: mongoSettings.contactAddress || '',
+        workingHours: mongoSettings.workingHours || '',
+        workingHoursNote: mongoSettings.workingHoursNote || '',
+        socialFacebook: mongoSettings.socialFacebook || '',
+        socialTwitter: mongoSettings.socialTwitter || '',
+        socialInstagram: mongoSettings.socialInstagram || '',
+        socialYoutube: mongoSettings.socialYoutube || '',
+        socialTiktok: mongoSettings.socialTiktok || '',
+        socialWhatsapp: mongoSettings.socialWhatsapp || ''
+      };
+      console.log(`✅ MongoDB'den ayarlar yüklendi`);
+    } else {
+      // Dosyadan ayarları yükle ve MongoDB'ye kaydet
+      if (fs.existsSync(SETTINGS_FILE)) {
+        const data = fs.readFileSync(SETTINGS_FILE, 'utf8');
+        settings = JSON.parse(data);
+        await Settings.create(settings);
+        console.log(`✅ Ayarlar MongoDB'ye aktarıldı`);
+      }
+    }
+
+    // Family Cards
+    const mongoFamilyCards = await FamilyCard.find({}).sort({ order: 1 });
+    if (mongoFamilyCards.length > 0) {
+      familyCards = mongoFamilyCards.map(c => ({
+        id: c._id.toString(),
+        label: c.label,
+        title: c.title,
+        description: c.description,
+        icon: c.icon,
+        order: c.order || 0
+      }));
+      console.log(`✅ MongoDB'den ${familyCards.length} family kart yüklendi`);
+    }
+
+    // Articles
+    const mongoArticles = await Article.find({}).sort({ order: 1 });
+    if (mongoArticles.length > 0) {
+      articles = mongoArticles.map(a => ({
+        id: a._id.toString(),
+        category: a.category,
+        title: a.title,
+        description: a.description,
+        content: a.content,
+        icon: a.icon,
+        order: a.order || 0
+      }));
+      console.log(`✅ MongoDB'den ${articles.length} makale yüklendi`);
+    }
+
+    // Branches
+    const mongoBranches = await Branch.find({});
+    if (mongoBranches.length > 0) {
+      branches = mongoBranches.map(b => ({
+        id: b._id.toString(),
+        name: b.name,
+        city: b.city,
+        district: b.district,
+        address: b.address,
+        phone: b.phone,
+        email: b.email,
+        mapUrl: b.mapUrl,
+        workingHours: b.workingHours,
+        isActive: b.isActive !== false
+      }));
+      console.log(`✅ MongoDB'den ${branches.length} şube yüklendi`);
+    }
+
+    console.log('✅ Tüm veriler MongoDB\'den yüklendi');
+  } catch (error) {
+    console.error('❌ MongoDB veri yükleme hatası:', error.message);
+    console.log('⚠️ Dosya sisteminden yükleniyor...');
+    loadData();
+  }
+};
+
+// Başlangıçta verileri yükle (MongoDB bağlantısı yoksa)
+if (!isMongoConnected) {
+  loadData();
+}
 
 // Harem Altın WebSocket bağlantısı
 const haremSocket = socketClient('wss://socketweb.haremaltin.com', {
@@ -478,7 +709,7 @@ app.get('/api/custom-prices', (req, res) => {
 });
 
 // Yeni custom fiyat oluştur
-app.post('/api/custom-prices', (req, res) => {
+app.post('/api/custom-prices', async (req, res) => {
   const newPrice = {
     id: Date.now().toString(),
     ...req.body,
@@ -487,18 +718,20 @@ app.post('/api/custom-prices', (req, res) => {
   };
   customPrices.push(newPrice);
   saveCustomPrices(); // DOSYAYA KAYDET
+  await saveCustomPriceToMongo(newPrice); // MONGODB'YE KAYDET
   console.log(`✅ Yeni fiyat oluşturuldu: ${newPrice.name}`);
   res.json({ success: true, data: newPrice });
 });
 
 // Custom fiyat güncelle
-app.put('/api/custom-prices/:id', (req, res) => {
+app.put('/api/custom-prices/:id', async (req, res) => {
   const { id } = req.params;
   const index = customPrices.findIndex(p => p.id === id);
 
   if (index !== -1) {
     customPrices[index] = { ...customPrices[index], ...req.body, updatedAt: new Date().toISOString() };
     saveCustomPrices(); // DOSYAYA KAYDET
+    await saveCustomPriceToMongo(customPrices[index]); // MONGODB'YE KAYDET
     console.log(`✅ Fiyat güncellendi: ${customPrices[index].name}`);
 
     // Siralama degistiyse WebSocket'e yayinla
@@ -513,11 +746,12 @@ app.put('/api/custom-prices/:id', (req, res) => {
 });
 
 // Custom fiyat sil
-app.delete('/api/custom-prices/:id', (req, res) => {
+app.delete('/api/custom-prices/:id', async (req, res) => {
   const { id } = req.params;
   const price = customPrices.find(p => p.id === id);
   customPrices = customPrices.filter(p => p.id !== id);
   saveCustomPrices(); // DOSYAYA KAYDET
+  await deleteCustomPriceFromMongo(id); // MONGODB'DEN SIL
   console.log(`✅ Fiyat silindi: ${price?.name || id}`);
   res.json({ success: true, message: 'Fiyat silindi' });
 });
@@ -528,9 +762,10 @@ app.get('/api/settings', (req, res) => {
 });
 
 // Ayarları güncelle
-app.post('/api/settings', (req, res) => {
+app.post('/api/settings', async (req, res) => {
   settings = { ...settings, ...req.body };
   saveSettings(); // DOSYAYA KAYDET
+  await saveSettingsToMongo(); // MONGODB'YE KAYDET
   console.log(`✅ Ayarlar güncellendi:`, settings);
   res.json({ success: true, data: settings });
 });
@@ -574,12 +809,13 @@ app.delete('/api/coefficients/:id', (req, res) => {
 });
 
 app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
-    message: 'Server çalışıyor', 
+  res.json({
+    status: 'OK',
+    message: 'Server çalışıyor',
     prices: currentPrices.length,
     customPrices: customPrices.length,
-    lastUpdate: lastUpdateTime
+    lastUpdate: lastUpdateTime,
+    mongoConnected: isMongoConnected
   });
 });
 
@@ -591,7 +827,7 @@ app.get('/api/family-cards', (req, res) => {
 });
 
 // Yeni family kartı oluştur
-app.post('/api/family-cards', (req, res) => {
+app.post('/api/family-cards', async (req, res) => {
   const newCard = {
     id: Date.now().toString(),
     ...req.body,
@@ -599,18 +835,20 @@ app.post('/api/family-cards', (req, res) => {
   };
   familyCards.push(newCard);
   saveFamilyCards();
+  await saveFamilyCardToMongo(newCard);
   console.log(`✅ Yeni family kartı oluşturuldu: ${newCard.title}`);
   res.json({ success: true, data: newCard });
 });
 
 // Family kartı güncelle
-app.put('/api/family-cards/:id', (req, res) => {
+app.put('/api/family-cards/:id', async (req, res) => {
   const { id } = req.params;
   const index = familyCards.findIndex(c => c.id === id);
-  
+
   if (index !== -1) {
     familyCards[index] = { ...familyCards[index], ...req.body, updatedAt: new Date().toISOString() };
     saveFamilyCards();
+    await saveFamilyCardToMongo(familyCards[index]);
     console.log(`✅ Family kartı güncellendi: ${familyCards[index].title}`);
     res.json({ success: true, data: familyCards[index] });
   } else {
@@ -619,11 +857,14 @@ app.put('/api/family-cards/:id', (req, res) => {
 });
 
 // Family kartı sil
-app.delete('/api/family-cards/:id', (req, res) => {
+app.delete('/api/family-cards/:id', async (req, res) => {
   const { id } = req.params;
   const card = familyCards.find(c => c.id === id);
   familyCards = familyCards.filter(c => c.id !== id);
   saveFamilyCards();
+  if (isMongoConnected) {
+    try { await FamilyCard.findByIdAndDelete(id); } catch(e) {}
+  }
   console.log(`✅ Family kartı silindi: ${card?.title || id}`);
   res.json({ success: true, message: 'Kart silindi' });
 });
@@ -648,7 +889,7 @@ app.get('/api/articles/:id', (req, res) => {
 });
 
 // Yeni makale oluştur
-app.post('/api/articles', (req, res) => {
+app.post('/api/articles', async (req, res) => {
   const newArticle = {
     id: Date.now().toString(),
     ...req.body,
@@ -656,18 +897,20 @@ app.post('/api/articles', (req, res) => {
   };
   articles.push(newArticle);
   saveArticles();
+  await saveArticleToMongo(newArticle);
   console.log(`✅ Yeni makale oluşturuldu: ${newArticle.title}`);
   res.json({ success: true, data: newArticle });
 });
 
 // Makale güncelle
-app.put('/api/articles/:id', (req, res) => {
+app.put('/api/articles/:id', async (req, res) => {
   const { id } = req.params;
   const index = articles.findIndex(a => a.id === id);
-  
+
   if (index !== -1) {
     articles[index] = { ...articles[index], ...req.body, updatedAt: new Date().toISOString() };
     saveArticles();
+    await saveArticleToMongo(articles[index]);
     console.log(`✅ Makale güncellendi: ${articles[index].title}`);
     res.json({ success: true, data: articles[index] });
   } else {
@@ -676,11 +919,14 @@ app.put('/api/articles/:id', (req, res) => {
 });
 
 // Makale sil
-app.delete('/api/articles/:id', (req, res) => {
+app.delete('/api/articles/:id', async (req, res) => {
   const { id } = req.params;
   const article = articles.find(a => a.id === id);
   articles = articles.filter(a => a.id !== id);
   saveArticles();
+  if (isMongoConnected) {
+    try { await Article.findByIdAndDelete(id); } catch(e) {}
+  }
   console.log(`✅ Makale silindi: ${article?.title || id}`);
   res.json({ success: true, message: 'Makale silindi' });
 });
@@ -705,7 +951,7 @@ app.get('/api/branches/:id', (req, res) => {
 });
 
 // Yeni şube oluştur
-app.post('/api/branches', (req, res) => {
+app.post('/api/branches', async (req, res) => {
   const newBranch = {
     id: Date.now().toString(),
     ...req.body,
@@ -713,18 +959,20 @@ app.post('/api/branches', (req, res) => {
   };
   branches.push(newBranch);
   saveBranches();
+  await saveBranchToMongo(newBranch);
   console.log(`✅ Yeni şube oluşturuldu: ${newBranch.name}`);
   res.json({ success: true, data: newBranch });
 });
 
 // Şube güncelle
-app.put('/api/branches/:id', (req, res) => {
+app.put('/api/branches/:id', async (req, res) => {
   const { id } = req.params;
   const index = branches.findIndex(b => b.id === id);
-  
+
   if (index !== -1) {
     branches[index] = { ...branches[index], ...req.body, updatedAt: new Date().toISOString() };
     saveBranches();
+    await saveBranchToMongo(branches[index]);
     console.log(`✅ Şube güncellendi: ${branches[index].name}`);
     res.json({ success: true, data: branches[index] });
   } else {
@@ -733,11 +981,14 @@ app.put('/api/branches/:id', (req, res) => {
 });
 
 // Şube sil
-app.delete('/api/branches/:id', (req, res) => {
+app.delete('/api/branches/:id', async (req, res) => {
   const { id } = req.params;
   const branch = branches.find(b => b.id === id);
   branches = branches.filter(b => b.id !== id);
   saveBranches();
+  if (isMongoConnected) {
+    try { await Branch.findByIdAndDelete(id); } catch(e) {}
+  }
   console.log(`✅ Şube silindi: ${branch?.name || id}`);
   res.json({ success: true, message: 'Şube silindi' });
 });
