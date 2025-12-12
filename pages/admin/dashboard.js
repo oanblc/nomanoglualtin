@@ -930,6 +930,7 @@ export default function AdminDashboard() {
                   <thead>
                     <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
                       <th className="text-center px-2 py-4 text-sm font-bold text-gray-700 w-16">Sıra</th>
+                      <th className="text-center px-2 py-4 text-sm font-bold text-gray-700 w-10"></th>
                       <th className="text-left px-6 py-4 text-sm font-bold text-gray-700">Fiyat Bilgisi</th>
                       <th className="text-center px-4 py-4 text-sm font-bold text-gray-700">Alış Kaynağı</th>
                       <th className="text-center px-4 py-4 text-sm font-bold text-gray-700">Satış Kaynağı</th>
@@ -948,11 +949,21 @@ export default function AdminDashboard() {
                       return (
                         <tr
                           key={price.id}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, price)}
+                          onDragEnter={(e) => handleDragEnter(e, price)}
+                          onDragEnd={handleDragEnd}
+                          onDragOver={(e) => e.preventDefault()}
                           className={`border-b border-gray-100 transition-all ${
-                            index % 2 === 0
-                              ? 'bg-white hover:bg-amber-50'
-                              : 'bg-gray-50/50 hover:bg-amber-50'
+                            isDragging
+                              ? 'opacity-50 bg-blue-50'
+                              : isDraggedOver
+                                ? 'bg-amber-100 border-l-4 border-l-amber-500'
+                                : index % 2 === 0
+                                  ? 'bg-white hover:bg-amber-50'
+                                  : 'bg-gray-50/50 hover:bg-amber-50'
                           }`}
+                          style={{ cursor: 'grab' }}
                         >
                           <td className="px-2 py-4 text-center">
                             <input
@@ -961,6 +972,12 @@ export default function AdminDashboard() {
                               value={price.order || 0}
                               onChange={(e) => handleOrderChange(price.id, e.target.value)}
                               className="w-14 px-1 py-1 text-center border border-gray-300 rounded text-sm font-bold text-black focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                            />
+                          </td>
+                          <td className="px-2 py-4 text-center">
+                            <GripVertical
+                              size={18}
+                              className="mx-auto text-gray-400 hover:text-gray-600 transition-colors"
                             />
                           </td>
                           <td className="px-6 py-4">
