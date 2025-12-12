@@ -723,40 +723,7 @@ app.post('/api/custom-prices', async (req, res) => {
   res.json({ success: true, data: newPrice });
 });
 
-// Custom fiyat güncelle
-app.put('/api/custom-prices/:id', async (req, res) => {
-  const { id } = req.params;
-  const index = customPrices.findIndex(p => p.id === id);
-
-  if (index !== -1) {
-    customPrices[index] = { ...customPrices[index], ...req.body, updatedAt: new Date().toISOString() };
-    saveCustomPrices(); // DOSYAYA KAYDET
-    await saveCustomPriceToMongo(customPrices[index]); // MONGODB'YE KAYDET
-    console.log(`✅ Fiyat güncellendi: ${customPrices[index].name}`);
-
-    // Siralama degistiyse WebSocket'e yayinla
-    if (req.body.order !== undefined) {
-      updatePrices();
-    }
-
-    res.json({ success: true, data: customPrices[index] });
-  } else {
-    res.status(404).json({ success: false, message: 'Fiyat bulunamadı' });
-  }
-});
-
-// Custom fiyat sil
-app.delete('/api/custom-prices/:id', async (req, res) => {
-  const { id } = req.params;
-  const price = customPrices.find(p => p.id === id);
-  customPrices = customPrices.filter(p => p.id !== id);
-  saveCustomPrices(); // DOSYAYA KAYDET
-  await deleteCustomPriceFromMongo(id); // MONGODB'DEN SIL
-  console.log(`✅ Fiyat silindi: ${price?.name || id}`);
-  res.json({ success: true, message: 'Fiyat silindi' });
-});
-
-// Toplu sıralama güncelleme endpoint'i
+// Toplu sıralama güncelleme endpoint'i (MUST be before /:id route!)
 app.put('/api/custom-prices/reorder', async (req, res) => {
   const { orders } = req.body; // [{ id: '123', order: 0 }, { id: '456', order: 1 }, ...]
 
@@ -798,6 +765,39 @@ app.put('/api/custom-prices/reorder', async (req, res) => {
 
   console.log(`✅ Sıralama güncellendi`);
   res.json({ success: true, message: 'Sıralama güncellendi' });
+});
+
+// Custom fiyat güncelle
+app.put('/api/custom-prices/:id', async (req, res) => {
+  const { id } = req.params;
+  const index = customPrices.findIndex(p => p.id === id);
+
+  if (index !== -1) {
+    customPrices[index] = { ...customPrices[index], ...req.body, updatedAt: new Date().toISOString() };
+    saveCustomPrices(); // DOSYAYA KAYDET
+    await saveCustomPriceToMongo(customPrices[index]); // MONGODB'YE KAYDET
+    console.log(`✅ Fiyat güncellendi: ${customPrices[index].name}`);
+
+    // Siralama degistiyse WebSocket'e yayinla
+    if (req.body.order !== undefined) {
+      updatePrices();
+    }
+
+    res.json({ success: true, data: customPrices[index] });
+  } else {
+    res.status(404).json({ success: false, message: 'Fiyat bulunamadı' });
+  }
+});
+
+// Custom fiyat sil
+app.delete('/api/custom-prices/:id', async (req, res) => {
+  const { id } = req.params;
+  const price = customPrices.find(p => p.id === id);
+  customPrices = customPrices.filter(p => p.id !== id);
+  saveCustomPrices(); // DOSYAYA KAYDET
+  await deleteCustomPriceFromMongo(id); // MONGODB'DEN SIL
+  console.log(`✅ Fiyat silindi: ${price?.name || id}`);
+  res.json({ success: true, message: 'Fiyat silindi' });
 });
 
 // Ayarları getir
