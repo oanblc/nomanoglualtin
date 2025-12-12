@@ -24,9 +24,11 @@ export const useWebSocket = () => {
         if (timeDiff < CACHE_DURATION) {
           const cachedPrices = JSON.parse(cached);
           if (cachedPrices && cachedPrices.length > 0) {
-            setPrices(cachedPrices);
-            previousPricesRef.current = cachedPrices;
-            console.log('📦 Cache\'den fiyatlar yüklendi:', cachedPrices.length);
+            // Order'a gore sirala
+            const sortedPrices = [...cachedPrices].sort((a, b) => (a.order || 0) - (b.order || 0));
+            setPrices(sortedPrices);
+            previousPricesRef.current = sortedPrices;
+            console.log('📦 Cache\'den fiyatlar yüklendi:', sortedPrices.length);
           }
         }
       }
@@ -70,13 +72,16 @@ export const useWebSocket = () => {
 
       // Sadece geçerli veri varsa güncelle
       if (visiblePrices.length > 0) {
-        setPrices(visiblePrices);
-        previousPricesRef.current = visiblePrices;
+        // Order'a gore sirala
+        const sortedPrices = [...visiblePrices].sort((a, b) => (a.order || 0) - (b.order || 0));
+
+        setPrices(sortedPrices);
+        previousPricesRef.current = sortedPrices;
         setLastUpdate(data.meta?.time || Date.now());
 
-        // Cache'e kaydet
+        // Cache'e kaydet (siralanmis hali)
         try {
-          localStorage.setItem(CACHE_KEY, JSON.stringify(visiblePrices));
+          localStorage.setItem(CACHE_KEY, JSON.stringify(sortedPrices));
           localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
         } catch (err) {
           console.error('Cache yazma hatası:', err);
