@@ -559,7 +559,7 @@ export default function AdminDashboard() {
         id: price.id,
         order: price.order
       }));
-      await axios.put(`${apiUrl}/api/custom-prices/reorder`, { orders });
+      await axios.post(`${apiUrl}/api/custom-prices/reorder`, { orders });
       console.log('✅ Sıralama kaydedildi');
     } catch (error) {
       console.error('❌ Sıralama kaydetme hatası:', error);
@@ -610,7 +610,7 @@ export default function AdminDashboard() {
         id: price.id,
         order: price.order
       }));
-      await axios.put(`${apiUrl}/api/custom-prices/reorder`, { orders });
+      await axios.post(`${apiUrl}/api/custom-prices/reorder`, { orders });
       console.log('✅ Sıra numaraları güncellendi');
     } catch (error) {
       console.error('❌ Sıra güncelleme hatası:', error);
