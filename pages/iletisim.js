@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useSettings } from '../contexts/SettingsContext';
 import { Menu, MapPin, Phone, Mail, Clock, Building2, Navigation, ExternalLink, Facebook, Twitter, Instagram, Youtube, Coins } from 'lucide-react';
 
-export default function Iletisim() {
+export default function İletişim() {
   const {
     logoBase64, logoHeight, logoWidth,
     contactPhone, contactEmail, contactAddress, workingHours,
@@ -23,7 +23,7 @@ export default function Iletisim() {
           setBranches(data.data);
         }
       })
-      .catch(err => console.error('Sube yukleme hatasi:', err));
+      .catch(err => console.error('Şube yükleme hatası:', err));
 
     const loadAlarmCount = () => {
       const savedAlarms = localStorage.getItem('priceAlarms');
@@ -44,7 +44,7 @@ export default function Iletisim() {
   return (
     <>
       <Head>
-        <title>Iletisim & Subelerimiz - NOMANOGLU Kuyumculuk</title>
+        <title>İletişim & Şubelerimiz - NOMANOĞLU Kuyumculuk</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
@@ -93,7 +93,7 @@ export default function Iletisim() {
                   )}
                 </Link>
                 <Link href="/iletisim" className="px-4 py-2 text-sm font-semibold text-gray-900 bg-white/30 rounded-lg">
-                  Iletisim
+                  İletişim
                 </Link>
               </nav>
 
@@ -141,7 +141,7 @@ export default function Iletisim() {
                     )}
                   </Link>
                   <Link href="/iletisim" className="px-4 py-3 text-sm font-semibold text-gray-900 bg-white/30 rounded-lg">
-                    Iletisim
+                    İletişim
                   </Link>
                 </nav>
               </div>
@@ -153,8 +153,8 @@ export default function Iletisim() {
         <main className="max-w-7xl mx-auto px-4 py-6">
           {/* Page Header */}
           <div className="mb-6">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">Iletisim & Subelerimiz</h1>
-            <p className="text-gray-500 text-sm">Turkiye Genelinde {branches.length} Subemizle Hizmetinizdeyiz</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">İletişim & Şubelerimiz</h1>
+            <p className="text-gray-500 text-sm">Türkiye Genelinde {branches.length} Şubemizle Hizmetinizdeyiz</p>
           </div>
 
           {/* Filter Section */}
@@ -169,7 +169,7 @@ export default function Iletisim() {
                       : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
                   }`}
                 >
-                  Tumu ({branches.length})
+                  Tümü ({branches.length})
                 </button>
                 {cities.map(city => {
                   const count = branches.filter(b => b.city === city).length;
@@ -195,8 +195,8 @@ export default function Iletisim() {
           {filteredBranches.length === 0 ? (
             <div className="bg-white rounded-xl p-12 text-center border border-gray-200 mb-8">
               <Building2 size={48} className="mx-auto text-gray-300 mb-4" />
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Henuz Sube Eklenmedi</h3>
-              <p className="text-gray-500 text-sm">Admin panelinden sube ekleyebilirsiniz.</p>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Henüz Şube Eklenmedi</h3>
+              <p className="text-gray-500 text-sm">Admin panelinden şube ekleyebilirsiniz.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
@@ -271,7 +271,7 @@ export default function Iletisim() {
                           <Clock size={16} className="text-purple-600" />
                         </div>
                         <div className="flex-1">
-                          <p className="text-xs font-medium text-gray-500 mb-1">Calisma Saatleri</p>
+                          <p className="text-xs font-medium text-gray-500 mb-1">Çalışma Saatleri</p>
                           <p className="text-gray-900 text-sm font-medium">{branch.workingHours}</p>
                         </div>
                       </div>
@@ -286,7 +286,7 @@ export default function Iletisim() {
                         className="flex items-center justify-center space-x-2 w-full py-2.5 bg-[#f7de00] hover:bg-[#e5cc00] text-gray-900 font-semibold rounded-lg transition-all mt-4"
                       >
                         <Navigation size={16} />
-                        <span className="text-sm">Haritada Goster</span>
+                        <span className="text-sm">Haritada Göster</span>
                         <ExternalLink size={14} />
                       </a>
                     )}
@@ -298,7 +298,7 @@ export default function Iletisim() {
 
           {/* General Contact Info */}
           <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Genel Iletisim</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-6">Genel İletişim</h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
               {contactPhone && (
                 <div className="text-center">
@@ -329,7 +329,7 @@ export default function Iletisim() {
                   <div className="w-14 h-14 bg-[#f7de00] rounded-xl flex items-center justify-center mx-auto mb-3">
                     <Clock size={24} className="text-gray-900" />
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-1">Calisma Saatleri</h3>
+                  <h3 className="text-lg font-bold text-gray-900 mb-1">Çalışma Saatleri</h3>
                   <p className="text-gray-600">{workingHours}</p>
                 </div>
               )}
@@ -365,24 +365,24 @@ export default function Iletisim() {
                   )}
                 </div>
                 <p className="text-gray-500 text-sm mb-4">
-                  1967'den bu yana guvenilir kuyumculuk hizmeti.
+                  1967'den bu yana güvenilir kuyumculuk hizmeti.
                 </p>
               </div>
 
               {/* Links */}
               <div>
-                <h4 className="text-gray-900 font-semibold text-sm mb-4">Hizli Linkler</h4>
+                <h4 className="text-gray-900 font-semibold text-sm mb-4">Hızlı Linkler</h4>
                 <ul className="space-y-2">
                   <li><Link href="/" className="text-gray-500 hover:text-gray-900 text-sm transition-colors">Fiyatlar</Link></li>
                   <li><Link href="/piyasalar" className="text-gray-500 hover:text-gray-900 text-sm transition-colors">Piyasalar</Link></li>
                   <li><Link href="/alarms" className="text-gray-500 hover:text-gray-900 text-sm transition-colors">Alarmlar</Link></li>
-                  <li><Link href="/iletisim" className="text-gray-500 hover:text-gray-900 text-sm transition-colors">Iletisim</Link></li>
+                  <li><Link href="/iletisim" className="text-gray-500 hover:text-gray-900 text-sm transition-colors">İletişim</Link></li>
                 </ul>
               </div>
 
               {/* Contact */}
               <div>
-                <h4 className="text-gray-900 font-semibold text-sm mb-4">Iletisim</h4>
+                <h4 className="text-gray-900 font-semibold text-sm mb-4">İletişim</h4>
                 <ul className="space-y-2">
                   {contactPhone && (
                     <li>
@@ -424,7 +424,7 @@ export default function Iletisim() {
             {/* Bottom Bar */}
             <div className="pt-6 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
               <p className="text-gray-400 text-xs">
-                © 2024 Nomanoglu Kuyumculuk. Tum haklari saklidir.
+                © 2024 Nomanoğlu Kuyumculuk. Tüm hakları saklıdır.
               </p>
               <div className="flex items-center space-x-4">
                 {socialFacebook && (

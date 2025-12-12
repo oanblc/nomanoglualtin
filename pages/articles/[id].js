@@ -29,7 +29,7 @@ export default function ArticleDetail() {
         }
       })
       .catch(err => {
-        console.error('Makale yukleme hatasi:', err);
+        console.error('Makale yükleme hatası:', err);
         router.push('/');
       })
       .finally(() => setLoading(false));
@@ -90,7 +90,7 @@ export default function ArticleDetail() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-gray-200 border-t-[#f7de00] rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-500 text-sm">Yukleniyor...</p>
+          <p className="text-gray-500 text-sm">Yükleniyor...</p>
         </div>
       </div>
     );
@@ -140,7 +140,7 @@ export default function ArticleDetail() {
                 className="flex items-center space-x-2 px-4 py-2 text-gray-900 hover:bg-white/20 rounded-lg transition-colors"
               >
                 <ArrowLeft size={18} />
-                <span className="font-medium text-sm">Anasayfaya Don</span>
+                <span className="font-medium text-sm">Anasayfaya Dön</span>
               </Link>
             </div>
           </div>
@@ -183,7 +183,7 @@ export default function ArticleDetail() {
             </div>
             <button className="flex items-center space-x-2 text-[#b8860b] hover:text-[#a07608] text-sm font-semibold transition-colors">
               <Share2 size={16} />
-              <span>Paylas</span>
+              <span>Paylaş</span>
             </button>
           </div>
 
@@ -205,8 +205,8 @@ export default function ArticleDetail() {
                 <div>
                   <h3 className="text-lg font-bold text-gray-900 mb-2">NOMANOGLU</h3>
                   <p className="text-gray-700 text-sm leading-relaxed">
-                    1967'den beri altin ve kiymetli madenler sektorunde guvenilir hizmet sunuyoruz.
-                    Yarim asri askin tecrubemizle sizlere en kaliteli urunleri sunmaktan gurur duyuyoruz.
+                    1967'den beri altın ve kıymetli madenler sektöründe güvenilir hizmet sunuyoruz.
+                    Yarım asrı aşkın tecrübemizle sizlere en kaliteli ürünleri sunmaktan gurur duyuyoruz.
                   </p>
                 </div>
               </div>
@@ -220,7 +220,7 @@ export default function ArticleDetail() {
               className="inline-flex items-center space-x-2 px-8 py-3 bg-[#f7de00] hover:bg-[#e5cc00] text-gray-900 font-semibold rounded-lg transition-colors"
             >
               <ArrowLeft size={18} />
-              <span>Tum Makalelere Don</span>
+              <span>Tüm Makalelere Dön</span>
             </Link>
           </div>
         </main>
@@ -253,24 +253,24 @@ export default function ArticleDetail() {
                   )}
                 </div>
                 <p className="text-gray-500 text-sm mb-4">
-                  1967'den bu yana guvenilir kuyumculuk hizmeti.
+                  1967'den bu yana güvenilir kuyumculuk hizmeti.
                 </p>
               </div>
 
               {/* Links */}
               <div>
-                <h4 className="text-gray-900 font-semibold text-sm mb-4">Hizli Linkler</h4>
+                <h4 className="text-gray-900 font-semibold text-sm mb-4">Hızlı Linkler</h4>
                 <ul className="space-y-2">
                   <li><Link href="/" className="text-gray-500 hover:text-gray-900 text-sm transition-colors">Fiyatlar</Link></li>
                   <li><Link href="/piyasalar" className="text-gray-500 hover:text-gray-900 text-sm transition-colors">Piyasalar</Link></li>
                   <li><Link href="/alarms" className="text-gray-500 hover:text-gray-900 text-sm transition-colors">Alarmlar</Link></li>
-                  <li><Link href="/iletisim" className="text-gray-500 hover:text-gray-900 text-sm transition-colors">Iletisim</Link></li>
+                  <li><Link href="/iletisim" className="text-gray-500 hover:text-gray-900 text-sm transition-colors">İletişim</Link></li>
                 </ul>
               </div>
 
               {/* Contact */}
               <div>
-                <h4 className="text-gray-900 font-semibold text-sm mb-4">Iletisim</h4>
+                <h4 className="text-gray-900 font-semibold text-sm mb-4">İletişim</h4>
                 <ul className="space-y-2">
                   {contactPhone && (
                     <li>
@@ -312,7 +312,7 @@ export default function ArticleDetail() {
             {/* Bottom Bar */}
             <div className="pt-6 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
               <p className="text-gray-400 text-xs">
-                © 2024 Nomanoglu Kuyumculuk. Tum haklari saklidir.
+                © 2024 Nomanoğlu Kuyumculuk. Tüm hakları saklıdır.
               </p>
               <div className="flex items-center space-x-4">
                 {socialFacebook && (

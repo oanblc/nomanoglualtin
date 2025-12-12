@@ -72,7 +72,7 @@ export default function Piyasalar() {
   return (
     <>
       <Head>
-        <title>Piyasalar - Canli Doviz ve Altin Fiyatlari</title>
+        <title>Piyasalar - Canlı Döviz ve Altın Fiyatları</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <style>{`
           #price-table-container:fullscreen { background: #fafafa; padding: 1.5rem; }
@@ -125,7 +125,7 @@ export default function Piyasalar() {
                   )}
                 </Link>
                 <Link href="/iletisim" className="px-4 py-2 text-sm font-medium text-gray-800 hover:text-gray-900 hover:bg-white/20 rounded-lg transition-colors">
-                  Iletisim
+                  İletişim
                 </Link>
               </nav>
 
@@ -173,7 +173,7 @@ export default function Piyasalar() {
                     )}
                   </Link>
                   <Link href="/iletisim" className="px-4 py-3 text-sm font-medium text-gray-800 hover:bg-white/20 rounded-lg">
-                    Iletisim
+                    İletişim
                   </Link>
                 </nav>
               </div>
@@ -185,8 +185,8 @@ export default function Piyasalar() {
         <main className="max-w-7xl mx-auto px-4 py-6">
           {/* Page Title */}
           <div className="mb-6 fullscreen-hide">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">Canli Piyasa Fiyatlari</h1>
-            <p className="text-gray-500 text-sm">Gercek zamanli doviz ve altin fiyatlari</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">Canlı Piyasa Fiyatları</h1>
+            <p className="text-gray-500 text-sm">Gerçek zamanlı döviz ve altın fiyatları</p>
           </div>
 
           {/* Filter Pills */}
@@ -199,7 +199,7 @@ export default function Piyasalar() {
                   : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
               }`}
             >
-              Tumu
+              Tümü
             </button>
             <button
               onClick={() => { setFilter('altin'); setShowOnlyFavorites(false); }}
@@ -209,7 +209,7 @@ export default function Piyasalar() {
                   : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
               }`}
             >
-              Altin
+              Altın
             </button>
             <button
               onClick={() => { setFilter('doviz'); setShowOnlyFavorites(false); }}
@@ -219,7 +219,7 @@ export default function Piyasalar() {
                   : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
               }`}
             >
-              Doviz
+              Döviz
             </button>
             <button
               onClick={() => { setFilter('gumus'); setShowOnlyFavorites(false); }}
@@ -229,7 +229,7 @@ export default function Piyasalar() {
                   : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
               }`}
             >
-              Gumus
+              Gümüş
             </button>
             <button
               onClick={() => { setShowOnlyFavorites(true); setFilter('all'); }}
@@ -253,7 +253,7 @@ export default function Piyasalar() {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
               <input
                 type="text"
-                placeholder="Altin, doviz veya kod ile ara..."
+                placeholder="Altın, döviz veya kod ile ara..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:border-[#f7de00] focus:ring-2 focus:ring-[#f7de00]/20 transition-all"
@@ -266,19 +266,19 @@ export default function Piyasalar() {
             {prices.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20">
                 <div className="w-12 h-12 border-4 border-gray-200 border-t-[#f7de00] rounded-full animate-spin mb-4" />
-                <p className="text-gray-500 text-sm">Fiyatlar yukleniyor...</p>
+                <p className="text-gray-500 text-sm">Fiyatlar yükleniyor...</p>
               </div>
             ) : filteredPrices.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20">
                 <Star size={48} className="text-gray-300 mb-4" />
                 <p className="text-gray-500 text-sm mb-4">
-                  {showOnlyFavorites ? 'Henuz favori eklemediniz' : 'Sonuc bulunamadi'}
+                  {showOnlyFavorites ? 'Henüz favori eklemediniz' : 'Sonuç bulunamadı'}
                 </p>
                 <button
                   onClick={() => { setShowOnlyFavorites(false); setSearch(''); }}
                   className="px-6 py-2 bg-[#f7de00] text-gray-900 text-sm font-medium rounded-lg transition-all"
                 >
-                  Tum Fiyatlara Don
+                  Tüm Fiyatlara Dön
                 </button>
               </div>
             ) : (
@@ -287,9 +287,9 @@ export default function Piyasalar() {
                   <table className="w-full">
                     <thead>
                       <tr className="bg-[#f7de00]">
-                        <th className="text-left py-4 px-4 sm:px-6 text-gray-900 font-bold text-sm">Urun</th>
-                        <th className="text-right py-4 px-4 sm:px-6 text-gray-900 font-bold text-sm">Alis</th>
-                        <th className="text-right py-4 px-4 sm:px-6 text-gray-900 font-bold text-sm">Satis</th>
+                        <th className="text-left py-4 px-4 sm:px-6 text-gray-900 font-bold text-sm">Ürün</th>
+                        <th className="text-right py-4 px-4 sm:px-6 text-gray-900 font-bold text-sm">Alış</th>
+                        <th className="text-right py-4 px-4 sm:px-6 text-gray-900 font-bold text-sm">Satış</th>
                         <th className="text-center py-4 px-2 sm:px-4 text-gray-900 font-bold text-sm w-16">
                           <Star size={16} className="inline" />
                         </th>
@@ -391,8 +391,8 @@ export default function Piyasalar() {
             <div className="flex items-start space-x-3">
               <AlertCircle size={20} className="text-amber-600 flex-shrink-0 mt-0.5" />
               <p className="text-amber-800 text-xs leading-relaxed">
-                Burada yer alan fiyatlar bilgi amaçlidir ve yatirim danismanligi kapsaminda degildir.
-                Fiyatlar gercek zamanli olarak guncellenmekte olup, islem yapmadan once subelerimizle iletisime gecmenizi oneririz.
+                Burada yer alan fiyatlar bilgi amaçlıdır ve yatırım danışmanlığı kapsamında değildir.
+                Fiyatlar gerçek zamanlı olarak güncellenmekte olup, işlem yapmadan önce şubelerimizle iletişime geçmenizi öneririz.
               </p>
             </div>
           </div>
@@ -426,24 +426,24 @@ export default function Piyasalar() {
                   )}
                 </div>
                 <p className="text-gray-500 text-sm mb-4">
-                  1967'den bu yana guvenilir kuyumculuk hizmeti.
+                  1967'den bu yana güvenilir kuyumculuk hizmeti.
                 </p>
               </div>
 
               {/* Links */}
               <div>
-                <h4 className="text-gray-900 font-semibold text-sm mb-4">Hizli Linkler</h4>
+                <h4 className="text-gray-900 font-semibold text-sm mb-4">Hızlı Linkler</h4>
                 <ul className="space-y-2">
                   <li><Link href="/" className="text-gray-500 hover:text-gray-900 text-sm transition-colors">Fiyatlar</Link></li>
                   <li><Link href="/piyasalar" className="text-gray-500 hover:text-gray-900 text-sm transition-colors">Piyasalar</Link></li>
                   <li><Link href="/alarms" className="text-gray-500 hover:text-gray-900 text-sm transition-colors">Alarmlar</Link></li>
-                  <li><Link href="/iletisim" className="text-gray-500 hover:text-gray-900 text-sm transition-colors">Iletisim</Link></li>
+                  <li><Link href="/iletisim" className="text-gray-500 hover:text-gray-900 text-sm transition-colors">İletişim</Link></li>
                 </ul>
               </div>
 
               {/* Contact */}
               <div>
-                <h4 className="text-gray-900 font-semibold text-sm mb-4">Iletisim</h4>
+                <h4 className="text-gray-900 font-semibold text-sm mb-4">İletişim</h4>
                 <ul className="space-y-2">
                   {contactPhone && (
                     <li>
@@ -485,7 +485,7 @@ export default function Piyasalar() {
             {/* Bottom Bar */}
             <div className="pt-6 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
               <p className="text-gray-400 text-xs">
-                © 2024 Nomanoglu Kuyumculuk. Tum haklari saklidir.
+                © 2024 Nomanoğlu Kuyumculuk. Tüm hakları saklıdır.
               </p>
               <div className="flex items-center space-x-4">
                 {socialFacebook && (

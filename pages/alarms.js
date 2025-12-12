@@ -78,8 +78,8 @@ export default function Alarms() {
     setTriggeredAlarms(prev => [triggeredAlarm, ...prev]);
 
     if ('Notification' in window && Notification.permission === 'granted') {
-      new Notification('Fiyat Alarmi!', {
-        body: `${product.name} (${product.code}) - ${alarm.priceType === 'alis' ? 'Alis' : 'Satis'}: TL${currentPrice.toFixed(2)}`,
+      new Notification('Fiyat Alarmı!', {
+        body: `${product.name} (${product.code}) - ${alarm.priceType === 'alis' ? 'Alış' : 'Satış'}: TL${currentPrice.toFixed(2)}`,
         icon: '/icon.png',
         tag: alarm.id
       });
@@ -88,7 +88,7 @@ export default function Alarms() {
 
   const handleAddAlarm = () => {
     if (!formData.productCode || !formData.targetPrice) {
-      alert('Lutfen urun ve hedef fiyat secin!');
+      alert('Lütfen ürün ve hedef fiyat seçin!');
       return;
     }
 
@@ -135,7 +135,7 @@ export default function Alarms() {
   return (
     <>
       <Head>
-        <title>Fiyat Alarmlari - NOMANOGLU</title>
+        <title>Fiyat Alarmları - NOMANOĞLU</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
@@ -184,7 +184,7 @@ export default function Alarms() {
                   )}
                 </Link>
                 <Link href="/iletisim" className="px-4 py-2 text-sm font-medium text-gray-800 hover:text-gray-900 hover:bg-white/20 rounded-lg transition-colors">
-                  Iletisim
+                  İletişim
                 </Link>
               </nav>
 
@@ -232,7 +232,7 @@ export default function Alarms() {
                     )}
                   </Link>
                   <Link href="/iletisim" className="px-4 py-3 text-sm font-medium text-gray-800 hover:bg-white/20 rounded-lg">
-                    Iletisim
+                    İletişim
                   </Link>
                 </nav>
               </div>
@@ -248,9 +248,9 @@ export default function Alarms() {
               <div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center space-x-3">
                   <Bell size={28} className="text-[#b8860b]" />
-                  <span>Fiyat Alarmlari</span>
+                  <span>Fiyat Alarmları</span>
                 </h1>
-                <p className="text-gray-500 text-sm mt-1">Istediginiz fiyat seviyesine ulasıldıgında bildirim alın</p>
+                <p className="text-gray-500 text-sm mt-1">İstediğiniz fiyat seviyesine ulaşıldığında bildirim alın</p>
               </div>
               <button
                 onClick={() => setShowModal(true)}
@@ -311,7 +311,7 @@ export default function Alarms() {
                           <div>
                             <p className="font-semibold text-gray-900">{alarm.product.name}</p>
                             <p className="text-sm text-gray-600">
-                              Hedef: TL{alarm.targetPrice.toFixed(2)} - Guncel: TL{alarm.currentPrice.toFixed(2)}
+                              Hedef: TL{alarm.targetPrice.toFixed(2)} - Güncel: TL{alarm.currentPrice.toFixed(2)}
                             </p>
                           </div>
                           <CheckCircle className="text-green-600" size={20} />
@@ -336,13 +336,13 @@ export default function Alarms() {
             {activeAlarms.length === 0 ? (
               <div className="bg-white rounded-xl p-12 text-center border border-gray-200">
                 <Bell size={48} className="mx-auto text-gray-300 mb-4" />
-                <p className="text-gray-500 mb-4">Henuz aktif alarm yok</p>
+                <p className="text-gray-500 mb-4">Henüz aktif alarm yok</p>
                 <button
                   onClick={() => setShowModal(true)}
                   className="inline-flex items-center space-x-2 px-6 py-3 bg-[#f7de00] text-gray-900 font-semibold rounded-lg transition-colors"
                 >
                   <Plus size={20} />
-                  <span>Ilk Alarmi Olustur</span>
+                  <span>İlk Alarmı Oluştur</span>
                 </button>
               </div>
             ) : (
@@ -374,27 +374,27 @@ export default function Alarms() {
                           <span className="font-bold text-[#b8860b]">TL{alarm.targetPrice.toFixed(2)}</span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-600">Guncel Fiyat:</span>
+                          <span className="text-sm text-gray-600">Güncel Fiyat:</span>
                           <span className="font-bold text-gray-900">TL{currentPrice.toFixed(2)}</span>
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-sm text-gray-600">Fiyat Tipi:</span>
                           <span className="font-semibold text-gray-700">
-                            {alarm.priceType === 'alis' ? 'Alis' : 'Satis'}
+                            {alarm.priceType === 'alis' ? 'Alış' : 'Satış'}
                           </span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-600">Kosul:</span>
+                          <span className="text-sm text-gray-600">Koşul:</span>
                           <span className="flex items-center space-x-1">
                             {alarm.condition === 'above' ? (
                               <>
                                 <TrendingUp size={16} className="text-green-600" />
-                                <span className="text-sm font-semibold text-green-600">Ustune Cikinca</span>
+                                <span className="text-sm font-semibold text-green-600">Üstüne Çıkınca</span>
                               </>
                             ) : (
                               <>
                                 <TrendingDown size={16} className="text-red-600" />
-                                <span className="text-sm font-semibold text-red-600">Altina Dusunce</span>
+                                <span className="text-sm font-semibold text-red-600">Altına Düşünce</span>
                               </>
                             )}
                           </span>
@@ -408,7 +408,7 @@ export default function Alarms() {
                       )}
 
                       <div className="text-xs text-gray-400 mt-3">
-                        Olusturulma: {new Date(alarm.createdAt).toLocaleString('tr-TR')}
+                        Oluşturulma: {new Date(alarm.createdAt).toLocaleString('tr-TR')}
                       </div>
                     </div>
                   );
@@ -420,7 +420,7 @@ export default function Alarms() {
           {/* Past Alarms */}
           {pastAlarms.length > 0 && (
             <div>
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Tetiklenmis Alarmlar</h2>
+              <h2 className="text-xl font-bold text-gray-900 mb-4">Tetiklenmiş Alarmlar</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {pastAlarms.map(alarm => (
                   <div key={alarm.id} className="bg-gray-50 rounded-xl p-5 border border-gray-200 opacity-75">
@@ -461,7 +461,7 @@ export default function Alarms() {
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl max-w-md w-full overflow-hidden">
               <div className="bg-[#f7de00] px-6 py-4 flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900">Yeni Alarm Olustur</h2>
+                <h2 className="text-xl font-bold text-gray-900">Yeni Alarm Oluştur</h2>
                 <button
                   onClick={() => setShowModal(false)}
                   className="p-2 hover:bg-white/20 rounded-lg transition-colors"
@@ -472,13 +472,13 @@ export default function Alarms() {
 
               <div className="p-6 space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Urun Sec *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Ürün Seç *</label>
                   <select
                     value={formData.productCode}
                     onChange={(e) => setFormData({...formData, productCode: e.target.value})}
                     className="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-900 focus:border-[#f7de00] focus:ring-2 focus:ring-[#f7de00]/20 focus:outline-none transition-all"
                   >
-                    <option value="">Urun secin...</option>
+                    <option value="">Ürün seçin...</option>
                     {prices.map(p => (
                       <option key={p.code} value={p.code}>
                         {p.name} ({p.code})
@@ -498,7 +498,7 @@ export default function Alarms() {
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                     >
-                      Alis Fiyati
+                      Alış Fiyatı
                     </button>
                     <button
                       onClick={() => setFormData({...formData, priceType: 'satis'})}
@@ -508,13 +508,13 @@ export default function Alarms() {
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                     >
-                      Satis Fiyati
+                      Satış Fiyatı
                     </button>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Kosul</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Koşul</label>
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       onClick={() => setFormData({...formData, condition: 'above'})}
@@ -525,7 +525,7 @@ export default function Alarms() {
                       }`}
                     >
                       <TrendingUp size={18} />
-                      <span>Ustune Cikinca</span>
+                      <span>Üstüne Çıkınca</span>
                     </button>
                     <button
                       onClick={() => setFormData({...formData, condition: 'below'})}
@@ -536,7 +536,7 @@ export default function Alarms() {
                       }`}
                     >
                       <TrendingDown size={18} />
-                      <span>Altina Dusunce</span>
+                      <span>Altına Düşünce</span>
                     </button>
                   </div>
                 </div>
@@ -548,7 +548,7 @@ export default function Alarms() {
                     step="0.01"
                     value={formData.targetPrice}
                     onChange={(e) => setFormData({...formData, targetPrice: e.target.value})}
-                    placeholder="Orn: 35.50"
+                    placeholder="Örn: 35.50"
                     className="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:border-[#f7de00] focus:ring-2 focus:ring-[#f7de00]/20 focus:outline-none transition-all"
                   />
                 </div>
@@ -570,14 +570,14 @@ export default function Alarms() {
                   onClick={() => setShowModal(false)}
                   className="px-6 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition-colors font-medium"
                 >
-                  Iptal
+                  İptal
                 </button>
                 <button
                   onClick={handleAddAlarm}
                   className="flex items-center space-x-2 px-6 py-2.5 bg-[#f7de00] hover:bg-[#e5cc00] text-gray-900 rounded-lg transition-colors font-semibold"
                 >
                   <Bell size={18} />
-                  <span>Alarm Olustur</span>
+                  <span>Alarm Oluştur</span>
                 </button>
               </div>
             </div>
@@ -612,24 +612,24 @@ export default function Alarms() {
                   )}
                 </div>
                 <p className="text-gray-500 text-sm mb-4">
-                  1967'den bu yana guvenilir kuyumculuk hizmeti.
+                  1967'den bu yana güvenilir kuyumculuk hizmeti.
                 </p>
               </div>
 
               {/* Links */}
               <div>
-                <h4 className="text-gray-900 font-semibold text-sm mb-4">Hizli Linkler</h4>
+                <h4 className="text-gray-900 font-semibold text-sm mb-4">Hızlı Linkler</h4>
                 <ul className="space-y-2">
                   <li><Link href="/" className="text-gray-500 hover:text-gray-900 text-sm transition-colors">Fiyatlar</Link></li>
                   <li><Link href="/piyasalar" className="text-gray-500 hover:text-gray-900 text-sm transition-colors">Piyasalar</Link></li>
                   <li><Link href="/alarms" className="text-gray-500 hover:text-gray-900 text-sm transition-colors">Alarmlar</Link></li>
-                  <li><Link href="/iletisim" className="text-gray-500 hover:text-gray-900 text-sm transition-colors">Iletisim</Link></li>
+                  <li><Link href="/iletisim" className="text-gray-500 hover:text-gray-900 text-sm transition-colors">İletişim</Link></li>
                 </ul>
               </div>
 
               {/* Contact */}
               <div>
-                <h4 className="text-gray-900 font-semibold text-sm mb-4">Iletisim</h4>
+                <h4 className="text-gray-900 font-semibold text-sm mb-4">İletişim</h4>
                 <ul className="space-y-2">
                   {contactPhone && (
                     <li>
@@ -671,7 +671,7 @@ export default function Alarms() {
             {/* Bottom Bar */}
             <div className="pt-6 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
               <p className="text-gray-400 text-xs">
-                © 2024 Nomanoglu Kuyumculuk. Tum haklari saklidir.
+                © 2024 Nomanoğlu Kuyumculuk. Tüm hakları saklıdır.
               </p>
               <div className="flex items-center space-x-4">
                 {socialFacebook && (
