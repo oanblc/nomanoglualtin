@@ -6,7 +6,7 @@ import { useSettings } from '../contexts/SettingsContext';
 import { Menu, Search, TrendingUp, TrendingDown, Star, Maximize2, AlertCircle, Phone, Mail, MapPin, Clock, Facebook, Twitter, Instagram, Youtube, Coins } from 'lucide-react';
 
 export default function Piyasalar() {
-  const { prices, isConnected } = useWebSocket();
+  const { prices: websocketPrices, isConnected } = useWebSocket();
   const {
     logoBase64, logoHeight, logoWidth, isLoaded: logoLoaded,
     contactPhone, contactEmail, contactAddress, workingHours,
@@ -19,6 +19,9 @@ export default function Piyasalar() {
   const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
   const [activeAlarmsCount, setActiveAlarmsCount] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Custom fiyatları filtrele (panelden oluşturulan fiyatlar)
+  const prices = websocketPrices.filter(p => p.isCustom === true);
 
   useEffect(() => {
     setMounted(true);

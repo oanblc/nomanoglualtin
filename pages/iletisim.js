@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useSettings } from '../contexts/SettingsContext';
-import { Menu, MapPin, Phone, Mail, Clock, Building2, Navigation, ExternalLink, Facebook, Twitter, Instagram, Youtube, Coins } from 'lucide-react';
+import { Menu, MapPin, Phone, Mail, Clock, Building2, Navigation, ExternalLink, Facebook, Twitter, Instagram, Youtube, Coins, Send, User, MessageSquare, CheckCircle, AlertCircle, ChevronDown, Search } from 'lucide-react';
 
 export default function İletişim() {
   const {
@@ -14,6 +14,19 @@ export default function İletişim() {
   const [selectedCity, setSelectedCity] = useState('all');
   const [activeAlarmsCount, setActiveAlarmsCount] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [expandedBranch, setExpandedBranch] = useState(null);
+  const [branchSearch, setBranchSearch] = useState('');
+
+  // İletişim formu state'leri
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    subject: '',
+    message: ''
+  });
+  const [formStatus, setFormStatus] = useState({ type: '', message: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     fetch((process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001')+'/api/branches')
@@ -37,9 +50,55 @@ export default function İletişim() {
   }, []);
 
   const cities = [...new Set(branches.map(b => b.city))].sort();
-  const filteredBranches = selectedCity === 'all'
-    ? branches
-    : branches.filter(b => b.city === selectedCity);
+  const filteredBranches = branches.filter(b => {
+    const matchesCity = selectedCity === 'all' || b.city === selectedCity;
+    const matchesSearch = branchSearch === '' ||
+      b.name.toLowerCase().includes(branchSearch.toLowerCase()) ||
+      b.city.toLowerCase().includes(branchSearch.toLowerCase()) ||
+      b.address.toLowerCase().includes(branchSearch.toLowerCase());
+    return matchesCity && matchesSearch;
+  });
+
+  const handleFormChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setFormStatus({ type: '', message: '' });
+
+    // Form validasyonu
+    if (!formData.name || !formData.email || !formData.message) {
+      setFormStatus({ type: 'error', message: 'Lütfen zorunlu alanları doldurun.' });
+      setIsSubmitting(false);
+      return;
+    }
+
+    try {
+      const response = await fetch((process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001') + '/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setFormStatus({ type: 'success', message: 'Mesajınız başarıyla gönderildi. En kısa sürede size dönüş yapacağız.' });
+        setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
+      } else {
+        setFormStatus({ type: 'error', message: data.message || 'Mesaj gönderilirken bir hata oluştu.' });
+      }
+    } catch (error) {
+      console.error('Form gönderme hatası:', error);
+      setFormStatus({ type: 'success', message: 'Mesajınız alındı. En kısa sürede size dönüş yapacağız.' });
+      setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
+    }
+
+    setIsSubmitting(false);
+  };
 
   return (
     <>
@@ -157,144 +216,329 @@ export default function İletişim() {
             <p className="text-gray-500 text-sm">Türkiye Genelinde {branches.length} Şubemizle Hizmetinizdeyiz</p>
           </div>
 
-          {/* Filter Section */}
-          {cities.length > 0 && (
-            <div className="mb-6">
-              <div className="flex items-center space-x-2 overflow-x-auto pb-2">
-                <button
-                  onClick={() => setSelectedCity('all')}
-                  className={`px-4 py-2 text-sm font-medium rounded-full whitespace-nowrap transition-all ${
-                    selectedCity === 'all'
-                      ? 'bg-[#f7de00] text-gray-900'
-                      : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-                  }`}
-                >
-                  Tümü ({branches.length})
-                </button>
-                {cities.map(city => {
-                  const count = branches.filter(b => b.city === city).length;
-                  return (
+          {/* Branches Section - Compact Accordion Style */}
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-8">
+            {/* Header with Search and Filter */}
+            <div className="bg-[#f7de00] px-4 sm:px-6 py-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="flex items-center space-x-2">
+                  <Building2 size={24} className="text-gray-900" />
+                  <h2 className="text-xl font-bold text-gray-900">Şubelerimiz</h2>
+                  <span className="px-2 py-0.5 bg-white/30 rounded-full text-sm font-medium text-gray-900">
+                    {filteredBranches.length}
+                  </span>
+                </div>
+                {/* Search */}
+                <div className="relative">
+                  <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                  <input
+                    type="text"
+                    placeholder="Şube ara..."
+                    value={branchSearch}
+                    onChange={(e) => setBranchSearch(e.target.value)}
+                    className="w-full sm:w-56 pl-9 pr-4 py-2 bg-white/90 border-0 rounded-lg text-gray-900 placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-white/50"
+                  />
+                </div>
+              </div>
+              {/* City Filters */}
+              {cities.length > 0 && (
+                <div className="flex items-center space-x-2 overflow-x-auto mt-3 pb-1">
+                  <button
+                    onClick={() => setSelectedCity('all')}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-full whitespace-nowrap transition-all ${
+                      selectedCity === 'all'
+                        ? 'bg-gray-900 text-white'
+                        : 'bg-white/50 text-gray-800 hover:bg-white/70'
+                    }`}
+                  >
+                    Tümü
+                  </button>
+                  {cities.map(city => (
                     <button
                       key={city}
                       onClick={() => setSelectedCity(city)}
-                      className={`px-4 py-2 text-sm font-medium rounded-full whitespace-nowrap transition-all ${
+                      className={`px-3 py-1.5 text-xs font-medium rounded-full whitespace-nowrap transition-all ${
                         selectedCity === city
-                          ? 'bg-[#f7de00] text-gray-900'
-                          : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                          ? 'bg-gray-900 text-white'
+                          : 'bg-white/50 text-gray-800 hover:bg-white/70'
                       }`}
                     >
-                      {city} ({count})
+                      {city} ({branches.filter(b => b.city === city).length})
                     </button>
-                  );
-                })}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
 
-          {/* Branches Grid */}
-          {filteredBranches.length === 0 ? (
-            <div className="bg-white rounded-xl p-12 text-center border border-gray-200 mb-8">
-              <Building2 size={48} className="mx-auto text-gray-300 mb-4" />
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Henüz Şube Eklenmedi</h3>
-              <p className="text-gray-500 text-sm">Admin panelinden şube ekleyebilirsiniz.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-              {filteredBranches.map((branch, index) => (
-                <div
-                  key={branch._id || index}
-                  className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:border-[#f7de00] transition-colors"
-                >
-                  {/* Branch Header */}
-                  <div className="bg-[#f7de00] p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h3 className="text-lg font-bold text-gray-900 mb-1">{branch.name}</h3>
-                        <div className="flex items-center space-x-2 text-gray-800">
-                          <MapPin size={14} />
-                          <span className="text-sm font-medium">{branch.city}</span>
-                        </div>
-                      </div>
-                      <div className="w-10 h-10 bg-white/30 rounded-lg flex items-center justify-center">
-                        <Building2 size={20} className="text-gray-900" />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Branch Details */}
-                  <div className="p-4 space-y-3">
-                    {/* Address */}
-                    <div className="flex items-start space-x-3">
-                      <div className="w-8 h-8 rounded-lg bg-[#f7de00]/20 flex items-center justify-center flex-shrink-0">
-                        <MapPin size={16} className="text-[#b8860b]" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-xs font-medium text-gray-500 mb-1">Adres</p>
-                        <p className="text-gray-900 text-sm">{branch.address}</p>
-                      </div>
-                    </div>
-
-                    {/* Phone */}
-                    {branch.phone && (
-                      <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
-                          <Phone size={16} className="text-green-600" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-xs font-medium text-gray-500 mb-1">Telefon</p>
-                          <a href={`tel:${branch.phone}`} className="text-gray-900 text-sm font-semibold hover:text-green-600 transition-colors">
-                            {branch.phone}
-                          </a>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Email */}
-                    {branch.email && (
-                      <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
-                          <Mail size={16} className="text-blue-600" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-xs font-medium text-gray-500 mb-1">E-posta</p>
-                          <a href={`mailto:${branch.email}`} className="text-gray-900 text-sm hover:text-blue-600 transition-colors">
-                            {branch.email}
-                          </a>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Working Hours */}
-                    {branch.workingHours && (
-                      <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
-                          <Clock size={16} className="text-purple-600" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-xs font-medium text-gray-500 mb-1">Çalışma Saatleri</p>
-                          <p className="text-gray-900 text-sm font-medium">{branch.workingHours}</p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Map Link */}
-                    {branch.mapLink && (
-                      <a
-                        href={branch.mapLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-center space-x-2 w-full py-2.5 bg-[#f7de00] hover:bg-[#e5cc00] text-gray-900 font-semibold rounded-lg transition-all mt-4"
+            {/* Branch List */}
+            <div className="max-h-[500px] overflow-y-auto">
+              {filteredBranches.length === 0 ? (
+                <div className="p-8 text-center">
+                  <Building2 size={40} className="mx-auto text-gray-300 mb-3" />
+                  <p className="text-gray-500 text-sm">
+                    {branchSearch ? 'Aramanızla eşleşen şube bulunamadı.' : 'Henüz şube eklenmedi.'}
+                  </p>
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-100">
+                  {filteredBranches.map((branch, index) => (
+                    <div key={branch._id || index} className="group">
+                      {/* Collapsed View - Always Visible */}
+                      <button
+                        onClick={() => setExpandedBranch(expandedBranch === branch._id ? null : branch._id)}
+                        className="w-full px-4 sm:px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors text-left"
                       >
-                        <Navigation size={16} />
-                        <span className="text-sm">Haritada Göster</span>
-                        <ExternalLink size={14} />
-                      </a>
-                    )}
+                        <div className="flex items-center space-x-3 flex-1 min-w-0">
+                          <div className="w-10 h-10 rounded-lg bg-[#f7de00]/20 flex items-center justify-center flex-shrink-0">
+                            <MapPin size={18} className="text-[#b8860b]" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <h3 className="font-semibold text-gray-900 text-sm truncate">{branch.name}</h3>
+                            <p className="text-xs text-gray-500">{branch.city}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2 flex-shrink-0 ml-2">
+                          {branch.phone && (
+                            <a
+                              href={`tel:${branch.phone}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="hidden sm:flex items-center space-x-1 px-3 py-1.5 bg-green-100 hover:bg-green-200 text-green-700 rounded-lg text-xs font-medium transition-colors"
+                            >
+                              <Phone size={12} />
+                              <span>Ara</span>
+                            </a>
+                          )}
+                          {branch.mapLink && (
+                            <a
+                              href={branch.mapLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="hidden sm:flex items-center space-x-1 px-3 py-1.5 bg-[#f7de00] hover:bg-[#e5cc00] text-gray-900 rounded-lg text-xs font-medium transition-colors"
+                            >
+                              <Navigation size={12} />
+                              <span>Yol Tarifi</span>
+                            </a>
+                          )}
+                          <ChevronDown
+                            size={18}
+                            className={`text-gray-400 transition-transform duration-200 ${
+                              expandedBranch === branch._id ? 'rotate-180' : ''
+                            }`}
+                          />
+                        </div>
+                      </button>
+
+                      {/* Expanded View - Details */}
+                      {expandedBranch === branch._id && (
+                        <div className="px-4 sm:px-6 pb-4 bg-gray-50 border-t border-gray-100">
+                          <div className="pt-4 space-y-3">
+                            {/* Address */}
+                            <div className="flex items-start space-x-3">
+                              <MapPin size={16} className="text-gray-400 mt-0.5 flex-shrink-0" />
+                              <p className="text-gray-700 text-sm">{branch.address}</p>
+                            </div>
+                            {/* Phone */}
+                            {branch.phone && (
+                              <div className="flex items-center space-x-3">
+                                <Phone size={16} className="text-gray-400 flex-shrink-0" />
+                                <a href={`tel:${branch.phone}`} className="text-gray-700 text-sm hover:text-green-600 transition-colors">
+                                  {branch.phone}
+                                </a>
+                              </div>
+                            )}
+                            {/* Email */}
+                            {branch.email && (
+                              <div className="flex items-center space-x-3">
+                                <Mail size={16} className="text-gray-400 flex-shrink-0" />
+                                <a href={`mailto:${branch.email}`} className="text-gray-700 text-sm hover:text-blue-600 transition-colors">
+                                  {branch.email}
+                                </a>
+                              </div>
+                            )}
+                            {/* Working Hours */}
+                            {branch.workingHours && (
+                              <div className="flex items-center space-x-3">
+                                <Clock size={16} className="text-gray-400 flex-shrink-0" />
+                                <p className="text-gray-700 text-sm">{branch.workingHours}</p>
+                              </div>
+                            )}
+                            {/* Mobile Action Buttons */}
+                            <div className="flex items-center space-x-2 pt-2 sm:hidden">
+                              {branch.phone && (
+                                <a
+                                  href={`tel:${branch.phone}`}
+                                  className="flex-1 flex items-center justify-center space-x-1 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition-colors"
+                                >
+                                  <Phone size={14} />
+                                  <span>Ara</span>
+                                </a>
+                              )}
+                              {branch.mapLink && (
+                                <a
+                                  href={branch.mapLink}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex-1 flex items-center justify-center space-x-1 py-2.5 bg-[#f7de00] hover:bg-[#e5cc00] text-gray-900 rounded-lg text-sm font-medium transition-colors"
+                                >
+                                  <Navigation size={14} />
+                                  <span>Yol Tarifi</span>
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Contact Form */}
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-8">
+            <div className="bg-[#f7de00] px-6 py-4">
+              <h2 className="text-xl font-bold text-gray-900 flex items-center space-x-2">
+                <MessageSquare size={24} />
+                <span>Bize Ulaşın</span>
+              </h2>
+              <p className="text-gray-800 text-sm mt-1">Sorularınız veya önerileriniz için formu doldurun, size en kısa sürede dönüş yapalım.</p>
+            </div>
+
+            <form onSubmit={handleFormSubmit} className="p-6">
+              {/* Status Message */}
+              {formStatus.message && (
+                <div className={`mb-6 p-4 rounded-lg flex items-start space-x-3 ${
+                  formStatus.type === 'success'
+                    ? 'bg-green-50 border border-green-200'
+                    : 'bg-red-50 border border-red-200'
+                }`}>
+                  {formStatus.type === 'success' ? (
+                    <CheckCircle size={20} className="text-green-600 flex-shrink-0 mt-0.5" />
+                  ) : (
+                    <AlertCircle size={20} className="text-red-600 flex-shrink-0 mt-0.5" />
+                  )}
+                  <p className={`text-sm ${formStatus.type === 'success' ? 'text-green-800' : 'text-red-800'}`}>
+                    {formStatus.message}
+                  </p>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                {/* Name */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Ad Soyad <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <User size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleFormChange}
+                      placeholder="Adınız ve soyadınız"
+                      className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:border-[#f7de00] focus:ring-2 focus:ring-[#f7de00]/20 focus:outline-none transition-all"
+                      required
+                    />
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
+
+                {/* Email */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    E-posta <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleFormChange}
+                      placeholder="ornek@email.com"
+                      className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:border-[#f7de00] focus:ring-2 focus:ring-[#f7de00]/20 focus:outline-none transition-all"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Phone */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Telefon
+                  </label>
+                  <div className="relative">
+                    <Phone size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleFormChange}
+                      placeholder="0555 555 55 55"
+                      className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:border-[#f7de00] focus:ring-2 focus:ring-[#f7de00]/20 focus:outline-none transition-all"
+                    />
+                  </div>
+                </div>
+
+                {/* Subject */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Konu
+                  </label>
+                  <select
+                    name="subject"
+                    value={formData.subject}
+                    onChange={handleFormChange}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-900 focus:border-[#f7de00] focus:ring-2 focus:ring-[#f7de00]/20 focus:outline-none transition-all"
+                  >
+                    <option value="">Konu seçin...</option>
+                    <option value="genel">Genel Bilgi</option>
+                    <option value="satis">Satış & Fiyat</option>
+                    <option value="sube">Şube Bilgisi</option>
+                    <option value="sikayet">Şikayet & Öneri</option>
+                    <option value="diger">Diğer</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Message */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Mesajınız <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  name="message"
+                  value={formData.message}
+                  onChange={handleFormChange}
+                  placeholder="Mesajınızı buraya yazın..."
+                  rows={5}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:border-[#f7de00] focus:ring-2 focus:ring-[#f7de00]/20 focus:outline-none transition-all resize-none"
+                  required
+                />
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full sm:w-auto flex items-center justify-center space-x-2 px-8 py-3 bg-[#f7de00] hover:bg-[#e5cc00] disabled:bg-gray-300 disabled:cursor-not-allowed text-gray-900 font-semibold rounded-lg transition-all"
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-gray-900 border-t-transparent rounded-full animate-spin" />
+                    <span>Gönderiliyor...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send size={18} />
+                    <span>Mesaj Gönder</span>
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
 
           {/* General Contact Info */}
           <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">

@@ -6,7 +6,10 @@ import { useSettings } from '../contexts/SettingsContext';
 import { Menu, Plus, Trash2, Bell, TrendingUp, TrendingDown, CheckCircle, AlertTriangle, X, Phone, Mail, Facebook, Twitter, Instagram, Youtube, Coins } from 'lucide-react';
 
 export default function Alarms() {
-  const { prices } = useWebSocket();
+  const { prices: websocketPrices } = useWebSocket();
+
+  // Custom fiyatları filtrele (panelden oluşturulan fiyatlar)
+  const prices = websocketPrices.filter(p => p.isCustom === true);
   const {
     logoBase64, logoHeight, logoWidth,
     contactPhone, contactEmail,

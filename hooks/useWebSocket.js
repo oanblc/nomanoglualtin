@@ -65,6 +65,7 @@ export const useWebSocket = () => {
       // Veri kontrolü - boş veya geçersiz veri gelirse önceki fiyatları koru
       if (!data || !data.prices || !Array.isArray(data.prices)) {
         console.log('⚠️ Geçersiz veri formatı, önceki fiyatlar korunuyor');
+        // Önceki fiyatları koru, state'i boşaltma
         return;
       }
 
@@ -86,11 +87,9 @@ export const useWebSocket = () => {
         } catch (err) {
           console.error('Cache yazma hatası:', err);
         }
-      } else if (previousPricesRef.current.length > 0) {
-        // Boş veri gelirse önceki fiyatları geri yükle
-        console.log('⚠️ Boş fiyat verisi geldi, önceki fiyatlar geri yükleniyor');
-        setPrices(previousPricesRef.current);
       }
+      // Boş veri gelirse hiçbir şey yapma - mevcut fiyatları koru
+      // setPrices çağırma, böylece tablo boşalmaz
     });
 
     newSocket.on('connect_error', (error) => {
