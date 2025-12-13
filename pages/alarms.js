@@ -155,9 +155,9 @@ export default function Alarms() {
                     alt="Logo"
                     className="object-contain"
                     style={{
-                      height: `${Math.min(logoHeight, 40)}px`,
+                      height: `${logoHeight}px`,
                       width: logoWidth === 'auto' ? 'auto' : `${logoWidth}px`,
-                      maxWidth: '180px'
+                      maxHeight: '80px'
                     }}
                   />
                 ) : (
