@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import axios from 'axios';
 import { useWebSocket } from '../../hooks/useWebSocket';
-import { TrendingUp, LogOut, Plus, Edit2, Trash2, X, Save, AlertCircle, RefreshCw, Settings, FileText, Users, GripVertical, Building2, MapPin, Phone, Mail, Clock } from 'lucide-react';
+import { TrendingUp, LogOut, Plus, Edit2, Trash2, X, Save, AlertCircle, RefreshCw, Settings, FileText, Users, GripVertical, Building2, MapPin, Phone, Mail, Clock, ExternalLink } from 'lucide-react';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -722,6 +722,16 @@ export default function AdminDashboard() {
                   <span className="text-xs font-semibold">{isConnected ? 'Canlı' : 'Bağlantı Yok'}</span>
                 </div>
                 
+                <a
+                  href="/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center space-x-2 px-4 py-2 bg-amber-100 hover:bg-amber-200 text-amber-700 rounded-lg transition-colors font-medium"
+                  title="Siteye Git"
+                >
+                  <ExternalLink size={18} />
+                  <span>Siteye Git</span>
+                </a>
                 <button
                   onClick={() => setActiveTab('settings')}
                   className="flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors font-medium"
