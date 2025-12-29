@@ -33,7 +33,6 @@ mongoose.connect(process.env.MONGODB_URI, {
 const authRoutes = require('./routes/auth');
 const priceRoutes = require('./routes/prices');
 const coefficientRoutes = require('./routes/coefficients');
-const alarmRoutes = require('./routes/alarms');
 const familyCardsRoutes = require('./routes/familyCards');
 const articlesRoutes = require('./routes/articles');
 const branchesRoutes = require('./routes/branches');
@@ -42,7 +41,6 @@ const settingsRoutes = require('./routes/settings');
 app.use('/api/auth', authRoutes);
 app.use('/api/prices', priceRoutes);
 app.use('/api/coefficients', coefficientRoutes);
-app.use('/api/alarms', alarmRoutes);
 // customPricesRoutes io'ya ihtiyaç duyduğu için factory fonksiyon olarak çağrılıyor
 app.use('/api/custom-prices', require('./routes/customPrices')(io));
 app.use('/api/family-cards', familyCardsRoutes);
@@ -72,14 +70,6 @@ setTimeout(() => {
   console.log('🔄 Price service başlatılıyor...');
   priceService.startPolling(io);
 }, 2000);
-
-// Alarm kontrolünü başlat (opsiyonel)
-try {
-  const alarmService = require('./services/alarmService');
-  alarmService.startAlarmChecker(io);
-} catch (err) {
-  console.log('⚠️ Alarm servisi başlatılamadı (MongoDB gerekli)');
-}
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {

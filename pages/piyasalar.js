@@ -17,7 +17,7 @@ export default function Piyasalar() {
   const [mounted, setMounted] = useState(false);
   const [favorites, setFavorites] = useState([]);
   const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
-  const [activeAlarmsCount, setActiveAlarmsCount] = useState(0);
+  
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Custom fiyatları filtrele (panelden oluşturulan fiyatlar)
@@ -29,20 +29,8 @@ export default function Piyasalar() {
     if (savedFavorites) {
       setFavorites(JSON.parse(savedFavorites));
     }
-
-    const loadAlarmCount = () => {
-      const savedAlarms = localStorage.getItem('priceAlarms');
-      if (savedAlarms) {
-        const alarms = JSON.parse(savedAlarms);
-        const activeCount = alarms.filter(a => !a.triggered).length;
-        setActiveAlarmsCount(activeCount);
-      }
-    };
-    loadAlarmCount();
-    const interval = setInterval(loadAlarmCount, 5000);
-
-    return () => clearInterval(interval);
   }, []);
+
 
   const toggleFavorite = (code) => {
     let newFavorites;
@@ -120,14 +108,6 @@ export default function Piyasalar() {
                 <Link href="/piyasalar" className="px-4 py-2 text-sm font-semibold text-gray-900 bg-white/30 rounded-lg">
                   Piyasalar
                 </Link>
-                <Link href="/alarms" className="relative px-4 py-2 text-sm font-medium text-gray-800 hover:text-gray-900 hover:bg-white/20 rounded-lg transition-colors">
-                  Alarmlar
-                  {activeAlarmsCount > 0 && (
-                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
-                      {activeAlarmsCount}
-                    </span>
-                  )}
-                </Link>
                 <Link href="/iletisim" className="px-4 py-2 text-sm font-medium text-gray-800 hover:text-gray-900 hover:bg-white/20 rounded-lg transition-colors">
                   İletişim
                 </Link>
@@ -167,14 +147,6 @@ export default function Piyasalar() {
                   </Link>
                   <Link href="/piyasalar" className="px-4 py-3 text-sm font-semibold text-gray-900 bg-white/30 rounded-lg">
                     Piyasalar
-                  </Link>
-                  <Link href="/alarms" className="px-4 py-3 text-sm font-medium text-gray-800 hover:bg-white/20 rounded-lg flex items-center justify-between">
-                    <span>Alarmlar</span>
-                    {activeAlarmsCount > 0 && (
-                      <span className="px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full">
-                        {activeAlarmsCount}
-                      </span>
-                    )}
                   </Link>
                   <Link href="/iletisim" className="px-4 py-3 text-sm font-medium text-gray-800 hover:bg-white/20 rounded-lg">
                     İletişim
@@ -440,7 +412,6 @@ export default function Piyasalar() {
                 <ul className="space-y-2">
                   <li><Link href="/" className="text-gray-500 hover:text-gray-900 text-sm transition-colors">Fiyatlar</Link></li>
                   <li><Link href="/piyasalar" className="text-gray-500 hover:text-gray-900 text-sm transition-colors">Piyasalar</Link></li>
-                  <li><Link href="/alarms" className="text-gray-500 hover:text-gray-900 text-sm transition-colors">Alarmlar</Link></li>
                   <li><Link href="/iletisim" className="text-gray-500 hover:text-gray-900 text-sm transition-colors">İletişim</Link></li>
                 </ul>
               </div>

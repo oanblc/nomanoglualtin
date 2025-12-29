@@ -3,7 +3,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useSettings } from '../contexts/SettingsContext';
-import { Menu, Bell, Search, TrendingUp, TrendingDown, DollarSign, Euro, Coins, Gem, Star, Maximize2, Phone, Mail, MapPin, Clock, Facebook, Twitter, Instagram, Youtube, CheckCircle, AlertCircle, X, ChevronRight, Zap, Shield, Award } from 'lucide-react';
+import { Menu, Search, TrendingUp, TrendingDown, DollarSign, Euro, Coins, Gem, Star, Maximize2, Phone, Mail, MapPin, Clock, Facebook, Twitter, Instagram, Youtube, CheckCircle, AlertCircle, X, ChevronRight, Zap, Shield, Award } from 'lucide-react';
 
 export default function Home() {
   const { prices: websocketPrices, isConnected, lastUpdate: wsLastUpdate } = useWebSocket();
@@ -21,7 +21,6 @@ export default function Home() {
   const [mounted, setMounted] = useState(false);
   const [favorites, setFavorites] = useState([]);
   const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
-  const [activeAlarmsCount, setActiveAlarmsCount] = useState(0);
   const [branches, setBranches] = useState([]);
   const [currentBranchIndex, setCurrentBranchIndex] = useState(0);
   const [highlightedPrices, setHighlightedPrices] = useState({});
@@ -112,18 +111,6 @@ export default function Home() {
       setFavorites(JSON.parse(savedFavorites));
     }
 
-    const loadAlarmCount = () => {
-      const savedAlarms = localStorage.getItem('priceAlarms');
-      if (savedAlarms) {
-        const alarms = JSON.parse(savedAlarms);
-        const activeCount = alarms.filter(a => !a.triggered).length;
-        setActiveAlarmsCount(activeCount);
-      }
-    };
-    loadAlarmCount();
-
-    const interval = setInterval(loadAlarmCount, 5000);
-
     fetch((process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001')+'/api/family-cards')
       .then(res => res.json())
       .then(data => {
@@ -150,8 +137,6 @@ export default function Home() {
         }
       })
       .catch(err => console.error('Şube yükleme hatası:', err));
-
-    return () => clearInterval(interval);
   }, []);
 
   const toggleFavorite = (code) => {
@@ -272,14 +257,6 @@ export default function Home() {
                 <Link href="/piyasalar" className="px-4 py-2 text-sm font-medium text-gray-800 hover:text-gray-900 hover:bg-white/20 rounded-lg transition-colors">
                   Piyasalar
                 </Link>
-                <Link href="/alarms" className="relative px-4 py-2 text-sm font-medium text-gray-800 hover:text-gray-900 hover:bg-white/20 rounded-lg transition-colors">
-                  Alarmlar
-                  {activeAlarmsCount > 0 && (
-                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
-                      {activeAlarmsCount}
-                    </span>
-                  )}
-                </Link>
                 <Link href="/iletisim" className="px-4 py-2 text-sm font-medium text-gray-800 hover:text-gray-900 hover:bg-white/20 rounded-lg transition-colors">
                   İletişim
                 </Link>
@@ -321,14 +298,6 @@ export default function Home() {
                   </Link>
                   <Link href="/piyasalar" className="px-4 py-3 text-sm font-medium text-gray-800 hover:bg-white/20 rounded-lg">
                     Piyasalar
-                  </Link>
-                  <Link href="/alarms" className="px-4 py-3 text-sm font-medium text-gray-800 hover:bg-white/20 rounded-lg flex items-center justify-between">
-                    <span>Alarmlar</span>
-                    {activeAlarmsCount > 0 && (
-                      <span className="px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full">
-                        {activeAlarmsCount}
-                      </span>
-                    )}
                   </Link>
                   <Link href="/iletisim" className="px-4 py-3 text-sm font-medium text-gray-800 hover:bg-white/20 rounded-lg">
                     İletişim
@@ -786,7 +755,6 @@ export default function Home() {
                 <ul className="space-y-2">
                   <li><Link href="/" className="text-gray-500 hover:text-gray-900 text-sm transition-colors">Fiyatlar</Link></li>
                   <li><Link href="/piyasalar" className="text-gray-500 hover:text-gray-900 text-sm transition-colors">Piyasalar</Link></li>
-                  <li><Link href="/alarms" className="text-gray-500 hover:text-gray-900 text-sm transition-colors">Alarmlar</Link></li>
                   <li><Link href="/iletisim" className="text-gray-500 hover:text-gray-900 text-sm transition-colors">İletişim</Link></li>
                 </ul>
               </div>
