@@ -99,6 +99,7 @@ export default function ArticlesPage() {
                 <Link href="/piyasalar" className="px-4 py-2 text-sm font-medium text-gray-800 hover:text-gray-900 hover:bg-white/20 rounded-lg transition-colors">
                   Piyasalar
                 </Link>
+                <Link href="/iletisim" className="px-4 py-2 text-sm font-medium text-gray-800 hover:text-gray-900 hover:bg-white/20 rounded-lg transition-colors">
                   İletişim
                 </Link>
               </nav>
@@ -138,6 +139,7 @@ export default function ArticlesPage() {
                   <Link href="/piyasalar" className="px-4 py-3 text-sm font-medium text-gray-800 hover:bg-white/20 rounded-lg">
                     Piyasalar
                   </Link>
+                  <Link href="/iletisim" className="px-4 py-3 text-sm font-medium text-gray-800 hover:bg-white/20 rounded-lg">
                     İletişim
                   </Link>
                 </nav>
