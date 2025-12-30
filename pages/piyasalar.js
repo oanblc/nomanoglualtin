@@ -47,7 +47,7 @@ export default function Piyasalar() {
     if (!price) return '-';
     return new Intl.NumberFormat('tr-TR', {
       minimumFractionDigits: 2,
-      maximumFractionDigits: 4
+      maximumFractionDigits: 2
     }).format(price);
   };
 
@@ -188,16 +188,6 @@ export default function Piyasalar() {
               Altın
             </button>
             <button
-              onClick={() => { setFilter('doviz'); setShowOnlyFavorites(false); }}
-              className={`px-4 py-2 text-sm font-medium rounded-full whitespace-nowrap transition-all ${
-                filter === 'doviz' && !showOnlyFavorites
-                  ? 'bg-[#f7de00] text-gray-900'
-                  : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-              }`}
-            >
-              Döviz
-            </button>
-            <button
               onClick={() => { setFilter('gumus'); setShowOnlyFavorites(false); }}
               className={`px-4 py-2 text-sm font-medium rounded-full whitespace-nowrap transition-all ${
                 filter === 'gumus' && !showOnlyFavorites
@@ -259,85 +249,89 @@ export default function Piyasalar() {
               </div>
             ) : (
               <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="bg-[#f7de00]">
-                        <th className="text-left py-4 px-4 sm:px-6 text-gray-900 font-bold text-sm">Ürün</th>
-                        <th className="text-right py-4 px-4 sm:px-6 text-gray-900 font-bold text-sm">Alış</th>
-                        <th className="text-right py-4 px-4 sm:px-6 text-gray-900 font-bold text-sm">Satış</th>
-                        <th className="text-center py-4 px-2 sm:px-4 text-gray-900 font-bold text-sm w-16">
-                          <Star size={16} className="inline" />
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {filteredPrices.map((price, index) => {
-                        const isFavorite = favorites.includes(price.code);
-                        const isRising = price.direction && (price.direction.alis_dir === 'up' || price.direction.satis_dir === 'up');
-                        const isFalling = price.direction && (price.direction.alis_dir === 'down' || price.direction.satis_dir === 'down');
+                {/* Table */}
+                <table className="w-full table-fixed">
+                  <thead>
+                    <tr className="bg-[#f7de00]">
+                      <th className="text-left py-3 px-2 sm:px-4 text-gray-900 font-bold text-xs sm:text-sm w-[35%] sm:w-auto">Ürün</th>
+                      <th className="text-right py-3 px-2 sm:px-4 text-gray-900 font-bold text-xs sm:text-sm w-[25%] sm:w-auto">Alış</th>
+                      <th className="text-right py-3 px-2 sm:px-4 text-gray-900 font-bold text-xs sm:text-sm w-[25%] sm:w-auto">Satış</th>
+                      <th className="text-center py-3 px-1 sm:px-4 text-gray-900 font-bold text-xs sm:text-sm w-[15%] sm:w-16">
+                        <Star size={14} className="inline" />
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {filteredPrices.map((price, index) => {
+                      const isFavorite = favorites.includes(price.code);
+                      const isRising = price.direction && (price.direction.alis_dir === 'up' || price.direction.satis_dir === 'up');
+                      const isFalling = price.direction && (price.direction.alis_dir === 'down' || price.direction.satis_dir === 'down');
 
-                        return (
-                          <tr
-                            key={price.code}
-                            className={`transition-all duration-300 hover:bg-gray-50 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}
-                          >
-                            <td className="py-4 px-4 sm:px-6">
-                              <div className="flex items-center space-x-3">
-                                <div className="min-w-0">
-                                  <p className="text-gray-900 font-semibold text-sm truncate">{price.name}</p>
-                                  <p className="text-gray-400 text-xs">{price.code}</p>
-                                </div>
-                                {isRising && (
-                                  <div className="hidden sm:flex items-center px-2 py-1 bg-green-100 rounded-full">
-                                    <TrendingUp size={14} className="text-green-600" />
-                                  </div>
-                                )}
-                                {isFalling && (
-                                  <div className="hidden sm:flex items-center px-2 py-1 bg-red-100 rounded-full">
-                                    <TrendingDown size={14} className="text-red-600" />
-                                  </div>
-                                )}
+                      return (
+                        <tr
+                          key={price.code}
+                          className={`transition-all duration-300 hover:bg-gray-50 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}
+                        >
+                          {/* Product Name */}
+                          <td className="py-3 px-2 sm:px-4">
+                            <div className="flex items-center space-x-2">
+                              <div className="min-w-0 flex-1">
+                                <p className="text-gray-900 font-semibold text-xs sm:text-sm truncate">{price.name}</p>
+                                <p className="text-gray-400 text-[10px] sm:text-xs">{price.code}</p>
                               </div>
-                            </td>
+                              {/* Trend Indicator */}
+                              {isRising && (
+                                <div className="hidden sm:flex items-center px-2 py-1 bg-green-100 rounded-full">
+                                  <TrendingUp size={14} className="text-green-600" />
+                                </div>
+                              )}
+                              {isFalling && (
+                                <div className="hidden sm:flex items-center px-2 py-1 bg-red-100 rounded-full">
+                                  <TrendingDown size={14} className="text-red-600" />
+                                </div>
+                              )}
+                            </div>
+                          </td>
 
-                            <td className="py-4 px-4 sm:px-6 text-right">
-                              <span className={`font-bold text-sm sm:text-base tabular-nums ${
-                                isRising ? 'text-green-600' : isFalling ? 'text-red-600' : 'text-gray-900'
-                              }`}>
-                                TL{formatPrice(price.calculatedAlis)}
-                              </span>
-                            </td>
+                          {/* Buy Price */}
+                          <td className="py-3 px-2 sm:px-4 text-right">
+                            <span className={`font-bold text-xs sm:text-base tabular-nums ${
+                              isRising ? 'text-green-600' : isFalling ? 'text-red-600' : 'text-gray-900'
+                            }`}>
+                              {formatPrice(price.calculatedAlis)}
+                            </span>
+                          </td>
 
-                            <td className="py-4 px-4 sm:px-6 text-right">
-                              <span className={`font-bold text-sm sm:text-base tabular-nums ${
-                                isRising ? 'text-green-600' : isFalling ? 'text-red-600' : 'text-gray-900'
-                              }`}>
-                                TL{formatPrice(price.calculatedSatis)}
-                              </span>
-                            </td>
+                          {/* Sell Price */}
+                          <td className="py-3 px-2 sm:px-4 text-right">
+                            <span className={`font-bold text-xs sm:text-base tabular-nums ${
+                              isRising ? 'text-green-600' : isFalling ? 'text-red-600' : 'text-gray-900'
+                            }`}>
+                              {formatPrice(price.calculatedSatis)}
+                            </span>
+                          </td>
 
-                            <td className="py-4 px-2 sm:px-4 text-center">
-                              <button
-                                onClick={() => toggleFavorite(price.code)}
-                                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                              >
-                                <Star
-                                  size={18}
-                                  className={`transition-all ${
-                                    isFavorite
-                                      ? 'fill-[#f7de00] text-[#f7de00]'
-                                      : 'text-gray-300 hover:text-gray-400'
-                                  }`}
-                                />
-                              </button>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                          {/* Favorite */}
+                          <td className="py-3 px-1 sm:px-4 text-center">
+                            <button
+                              onClick={() => toggleFavorite(price.code)}
+                              className="p-1.5 sm:p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                            >
+                              <Star
+                                size={16}
+                                className={`transition-all ${
+                                  isFavorite
+                                    ? 'fill-[#f7de00] text-[#f7de00]'
+                                    : 'text-gray-300 hover:text-gray-400'
+                                }`}
+                              />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             )}
 
@@ -460,7 +454,7 @@ export default function Piyasalar() {
             {/* Bottom Bar */}
             <div className="pt-6 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
               <p className="text-gray-400 text-xs">
-                © 2024 Nomanoğlu Kuyumculuk. Tüm hakları saklıdır.
+                © {new Date().getFullYear()} Nomanoğlu Kuyumculuk. Tüm hakları saklıdır.
               </p>
               <div className="flex items-center space-x-4">
                 {socialFacebook && (

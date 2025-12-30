@@ -93,33 +93,64 @@ export const useWebSocket = () => {
 
     newSocket.on('priceUpdate', (data) => {
       // Veri kontrolü - boş veya geçersiz veri gelirse önceki fiyatları koru
-      if (!data || !data.prices || !Array.isArray(data.prices)) {
-        console.log('⚠️ Geçersiz veri formatı, önceki fiyatlar korunuyor');
-        // Önceki fiyatları koru, state'i boşaltma
+      if (!data || !data.prices || !Array.isArray(data.prices) || data.prices.length === 0) {
+        console.log('⚠️ Geçersiz veya boş veri, önceki fiyatlar korunuyor');
         return;
       }
 
-      const visiblePrices = data.prices.filter(p => p.isVisible);
+      // Görünür ve geçerli fiyatları filtrele
+      const validPrices = data.prices.filter(p =>
+        p.isVisible !== false &&
+        p.calculatedAlis !== undefined &&
+        p.calculatedSatis !== undefined &&
+        p.calculatedAlis !== null &&
+        p.calculatedSatis !== null &&
+        !isNaN(p.calculatedAlis) &&
+        !isNaN(p.calculatedSatis) &&
+        p.calculatedAlis > 0 &&
+        p.calculatedSatis > 0
+      );
 
-      // Sadece geçerli veri varsa güncelle
-      if (visiblePrices.length > 0) {
-        // Order'a gore sirala
-        const sortedPrices = [...visiblePrices].sort((a, b) => (a.order || 0) - (b.order || 0));
+      // Hiç geçerli fiyat yoksa önceki fiyatları koru
+      if (validPrices.length === 0) {
+        console.log('⚠️ Geçerli fiyat yok, önceki fiyatlar korunuyor');
+        return;
+      }
 
-        setPrices(sortedPrices);
+      // Mevcut fiyatları koru, sadece gelen fiyatları üzerine yaz
+      setPrices(prevPrices => {
+        // Mevcut fiyatları map'e çevir (code veya id ile)
+        const priceMap = {};
+        prevPrices.forEach(p => {
+          const key = p.code || p.id;
+          priceMap[key] = p;
+        });
+
+        // Gelen yeni fiyatları üzerine yaz veya ekle
+        validPrices.forEach(p => {
+          const key = p.code || p.id;
+          priceMap[key] = p;
+        });
+
+        // Map'i array'e çevir ve sırala
+        const mergedPrices = Object.values(priceMap);
+        const sortedPrices = mergedPrices.sort((a, b) => (a.order || 0) - (b.order || 0));
+
+        // Ref'i güncelle
         previousPricesRef.current = sortedPrices;
-        setLastUpdate(data.meta?.time || Date.now());
 
-        // Cache'e kaydet (siralanmis hali)
+        // Cache'e kaydet
         try {
           localStorage.setItem(CACHE_KEY, JSON.stringify(sortedPrices));
           localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
         } catch (err) {
           console.error('Cache yazma hatası:', err);
         }
-      }
-      // Boş veri gelirse hiçbir şey yapma - mevcut fiyatları koru
-      // setPrices çağırma, böylece tablo boşalmaz
+
+        return sortedPrices;
+      });
+
+      setLastUpdate(data.meta?.time || Date.now());
     });
 
     newSocket.on('connect_error', (error) => {

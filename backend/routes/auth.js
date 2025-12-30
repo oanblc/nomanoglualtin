@@ -2,21 +2,23 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { loginValidation } = require('../middleware/validation');
 
-// Admin login
-router.post('/login', async (req, res) => {
+// Admin login (validation ile korumalı)
+router.post('/login', loginValidation, async (req, res) => {
   try {
-    const { password } = req.body;
+    const { username, password } = req.body;
 
-    if (!password) {
-      return res.status(400).json({ message: 'Şifre gerekli' });
+    if (!username || !password) {
+      return res.status(400).json({ message: 'Kullanıcı adı ve şifre gerekli' });
     }
 
-    // Şifreyi environment variable ile karşılaştır
+    // Kullanıcı adı ve şifreyi environment variable ile karşılaştır
+    const adminUsername = process.env.ADMIN_USERNAME || 'admin';
     const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
-    
-    if (password !== adminPassword) {
-      return res.status(401).json({ message: 'Geçersiz şifre' });
+
+    if (username !== adminUsername || password !== adminPassword) {
+      return res.status(401).json({ message: 'Geçersiz kullanıcı adı veya şifre' });
     }
 
     // JWT token oluştur

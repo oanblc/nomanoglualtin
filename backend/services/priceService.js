@@ -2,6 +2,7 @@ const { io: SocketIOClient } = require('socket.io-client');
 const Coefficient = require('../models/Coefficient');
 const PriceHistory = require('../models/PriceHistory');
 const CachedPrices = require('../models/CachedPrices');
+const SourcePrices = require('../models/SourcePrices');
 
 let currentPrices = {};
 let haremSocket = null;
@@ -349,42 +350,105 @@ const handlePriceData = async (rawData) => {
 
       // Tüm bağlı clientlara gönder
       if (serverIO) {
-        serverIO.emit('priceUpdate', processedData);
-        console.log('📡 Fiyatlar kendi WebSocket\'imize yayınlandı');
+        // Sadece geçerli fiyatlar varsa yayınla
+        const validPrices = processedData.prices.filter(p =>
+          p.calculatedAlis > 0 &&
+          p.calculatedSatis > 0 &&
+          !isNaN(p.calculatedAlis) &&
+          !isNaN(p.calculatedSatis)
+        );
 
-        // Fiyatları MongoDB'ye cache olarak kaydet
-        const mongoose = require('mongoose');
-        if (mongoose.connection.readyState === 1 && processedData.prices.length > 0) {
-          // Sadece custom fiyatları cache'e kaydet
-          const customPrices = processedData.prices.filter(p => p.isCustom);
-          if (customPrices.length > 0) {
-            CachedPrices.findOneAndUpdate(
-              { key: 'current_prices' },
-              {
-                key: 'current_prices',
-                prices: customPrices.map(p => ({
-                  code: p.code,
-                  name: p.name,
-                  category: p.category,
-                  calculatedAlis: p.calculatedAlis,
-                  calculatedSatis: p.calculatedSatis,
-                  isCustom: p.isCustom,
-                  isVisible: p.isVisible,
-                  order: p.order
-                })),
-                meta: {
-                  time: new Date().toISOString(),
-                  maxDisplayItems: customPrices.length
+        if (validPrices.length > 0) {
+          const dataToEmit = {
+            ...processedData,
+            prices: validPrices
+          };
+          serverIO.emit('priceUpdate', dataToEmit);
+          console.log(`📡 ${validPrices.length} geçerli fiyat WebSocket'e yayınlandı`);
+
+          // Fiyatları MongoDB'ye cache olarak kaydet
+          const mongoose = require('mongoose');
+          if (mongoose.connection.readyState === 1) {
+            // Sadece custom ve görünür fiyatları cache'e kaydet
+            const customPrices = validPrices.filter(p => p.isCustom && p.isVisible !== false);
+            if (customPrices.length > 0) {
+              CachedPrices.findOneAndUpdate(
+                { key: 'current_prices' },
+                {
+                  key: 'current_prices',
+                  prices: customPrices.map(p => ({
+                    code: p.code,
+                    name: p.name,
+                    category: p.category,
+                    calculatedAlis: p.calculatedAlis,
+                    calculatedSatis: p.calculatedSatis,
+                    isCustom: p.isCustom,
+                    isVisible: p.isVisible,
+                    order: p.order
+                  })),
+                  meta: {
+                    time: new Date().toISOString(),
+                    maxDisplayItems: customPrices.length
+                  },
+                  updatedAt: new Date()
                 },
-                updatedAt: new Date()
-              },
-              { upsert: true, new: true }
-            ).then(() => {
-              console.log(`💾 ${customPrices.length} custom fiyat cache'e kaydedildi`);
-            }).catch(err => {
-              console.error('❌ Cache kaydetme hatası:', err.message);
-            });
+                { upsert: true, new: true }
+              ).then(() => {
+                console.log(`💾 ${customPrices.length} custom fiyat cache'e kaydedildi`);
+              }).catch(err => {
+                console.error('❌ Cache kaydetme hatası:', err.message);
+              });
+            }
+
+            // Kaynak fiyatları (ham API fiyatları) - mevcut fiyatları koru, sadece güncelle/ekle
+            const newSourcePrices = validPrices.filter(p => p.isCustom === false);
+            if (newSourcePrices.length > 0) {
+              // Önce mevcut fiyatları oku
+              SourcePrices.findOne({ key: 'source_prices' }).then(existing => {
+                // Mevcut fiyatları map'e çevir
+                const priceMap = {};
+                if (existing && existing.prices) {
+                  existing.prices.forEach(p => {
+                    priceMap[p.code] = {
+                      code: p.code,
+                      name: p.name,
+                      rawAlis: p.rawAlis,
+                      rawSatis: p.rawSatis
+                    };
+                  });
+                }
+
+                // Yeni gelen fiyatları üzerine yaz veya ekle
+                newSourcePrices.forEach(p => {
+                  priceMap[p.code] = {
+                    code: p.code,
+                    name: p.name,
+                    rawAlis: p.rawAlis,
+                    rawSatis: p.rawSatis
+                  };
+                });
+
+                // Map'i array'e çevir ve kaydet
+                const mergedPrices = Object.values(priceMap);
+
+                return SourcePrices.findOneAndUpdate(
+                  { key: 'source_prices' },
+                  {
+                    key: 'source_prices',
+                    prices: mergedPrices,
+                    updatedAt: new Date()
+                  },
+                  { upsert: true, new: true }
+                );
+              }).then(() => {
+                console.log(`💾 Kaynak fiyatlar güncellendi (${newSourcePrices.length} yeni/güncellenen)`);
+              }).catch(err => {
+                console.error('❌ Kaynak fiyat kaydetme hatası:', err.message);
+              });
+            }
           }
+        } else {
+          console.log('⚠️ Geçerli fiyat yok, broadcast edilmedi');
         }
       }
     }

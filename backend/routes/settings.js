@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Settings = require('../models/Settings');
+const { authMiddleware } = require('../middleware/auth');
 
 // Settings getir (singleton)
 router.get('/', async (req, res) => {
@@ -28,8 +29,8 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Settings güncelle (singleton)
-router.post('/', async (req, res) => {
+// Settings güncelle (singleton) - Admin korumalı
+router.post('/', authMiddleware, async (req, res) => {
   try {
     let settings = await Settings.findOne({ key: 'app_settings' });
     

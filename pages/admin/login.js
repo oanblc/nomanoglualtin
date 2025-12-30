@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import axios from 'axios';
-import { Lock, TrendingUp } from 'lucide-react';
+import { Lock, TrendingUp, User } from 'lucide-react';
 
 export default function AdminLogin() {
   const router = useRouter();
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -18,7 +19,7 @@ export default function AdminLogin() {
     setLoading(true);
 
     try {
-      const response = await axios.post(`${apiUrl}/api/auth/login`, { password });
+      const response = await axios.post(`${apiUrl}/api/auth/login`, { username, password });
       
       if (response.data.success) {
         localStorage.setItem('adminToken', response.data.token);
@@ -50,7 +51,25 @@ export default function AdminLogin() {
           <div className="bg-white rounded-lg border border-gray-200 p-8 shadow-lg">
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Kullanıcı Adı
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Kullanıcı adınızı girin"
+                    className="w-full pl-10 pr-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:border-yellow-500 focus:outline-none"
+                    required
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Şifre
                 </label>
                 <div className="relative">
@@ -59,10 +78,9 @@ export default function AdminLogin() {
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Admin şifresini girin"
+                    placeholder="Şifrenizi girin"
                     className="w-full pl-10 pr-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:border-yellow-500 focus:outline-none"
                     required
-                    autoFocus
                   />
                 </div>
               </div>
@@ -81,10 +99,6 @@ export default function AdminLogin() {
                 {loading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
               </button>
             </form>
-
-            <div className="mt-6 text-center text-xs text-gray-500">
-              Varsayılan şifre: admin123
-            </div>
           </div>
 
           <div className="mt-6 text-center">

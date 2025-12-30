@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const Branch = require('../models/Branch');
+const { authMiddleware } = require('../middleware/auth');
+const { branchValidation, idParamValidation } = require('../middleware/validation');
 
 // Tüm şubeleri getir
 router.get('/', async (req, res) => {
@@ -49,8 +51,8 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Yeni şube oluştur
-router.post('/', async (req, res) => {
+// Yeni şube oluştur (Admin korumalı + validation)
+router.post('/', authMiddleware, branchValidation, async (req, res) => {
   try {
     const branch = new Branch(req.body);
     await branch.save();
@@ -70,8 +72,8 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Şube güncelle
-router.put('/:id', async (req, res) => {
+// Şube güncelle (Admin korumalı + validation)
+router.put('/:id', authMiddleware, idParamValidation, branchValidation, async (req, res) => {
   try {
     const branch = await Branch.findByIdAndUpdate(
       req.params.id,
@@ -102,8 +104,8 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// Şube sil
-router.delete('/:id', async (req, res) => {
+// Şube sil (Admin korumalı + validation)
+router.delete('/:id', authMiddleware, idParamValidation, async (req, res) => {
   try {
     const branch = await Branch.findByIdAndDelete(req.params.id);
     

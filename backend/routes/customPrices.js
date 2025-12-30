@@ -1,6 +1,8 @@
 const express = require('express');
 const CustomPrice = require('../models/CustomPrice');
 const priceService = require('../services/priceService');
+const { authMiddleware } = require('../middleware/auth');
+const { customPriceValidation, idParamValidation } = require('../middleware/validation');
 
 module.exports = (io) => {
   const router = express.Router();
@@ -52,8 +54,8 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Yeni custom fiyat oluştur
-router.post('/', async (req, res) => {
+// Yeni custom fiyat oluştur (Admin korumalı + validation)
+router.post('/', authMiddleware, customPriceValidation, async (req, res) => {
   try {
     const price = new CustomPrice(req.body);
     await price.save();
@@ -77,8 +79,8 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Custom fiyat güncelle
-router.put('/:id', async (req, res) => {
+// Custom fiyat güncelle (Admin korumalı + validation)
+router.put('/:id', authMiddleware, idParamValidation, customPriceValidation, async (req, res) => {
   try {
     const price = await CustomPrice.findByIdAndUpdate(
       req.params.id,
@@ -113,8 +115,8 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// Custom fiyat sil
-router.delete('/:id', async (req, res) => {
+// Custom fiyat sil (Admin korumalı + validation)
+router.delete('/:id', authMiddleware, idParamValidation, async (req, res) => {
   try {
     const price = await CustomPrice.findByIdAndDelete(req.params.id);
     

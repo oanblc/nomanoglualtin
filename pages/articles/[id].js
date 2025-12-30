@@ -47,36 +47,57 @@ export default function ArticleDetail() {
     }
   };
 
+  // HTML karakterlerini escape et (XSS koruması)
+  const escapeHtml = (text) => {
+    if (typeof text !== 'string') return '';
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;');
+  };
+
   const formatContent = (content) => {
     if (!content) return '';
 
     return content
       .split('\n\n')
       .map((paragraph, index) => {
+        // Önce tüm içeriği escape et
+        const escapedParagraph = escapeHtml(paragraph);
+
         if (paragraph.startsWith('###')) {
-          return `<h3 key=${index} class="text-xl font-bold text-gray-900 mb-3 mt-6">${paragraph.replace('###', '').trim()}</h3>`;
+          const text = escapeHtml(paragraph.replace('###', '').trim());
+          return `<h3 key=${index} class="text-xl font-bold text-gray-900 mb-3 mt-6">${text}</h3>`;
         }
         if (paragraph.startsWith('**') && paragraph.endsWith('**')) {
-          return `<h4 key=${index} class="text-lg font-bold text-gray-900 mb-2 mt-4">${paragraph.replace(/\*\*/g, '')}</h4>`;
+          const text = escapeHtml(paragraph.replace(/\*\*/g, ''));
+          return `<h4 key=${index} class="text-lg font-bold text-gray-900 mb-2 mt-4">${text}</h4>`;
         }
 
         if (paragraph.includes('\n- ') || paragraph.startsWith('- ')) {
           const items = paragraph.split('\n').filter(line => line.trim().startsWith('- '));
-          const listItems = items.map(item =>
-            `<li class="mb-2">${item.replace('- ', '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</li>`
-          ).join('');
+          const listItems = items.map(item => {
+            const text = escapeHtml(item.replace('- ', ''));
+            // Bold için sadece güvenli pattern kullan
+            const formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            return `<li class="mb-2">${formatted}</li>`;
+          }).join('');
           return `<ul key=${index} class="list-disc list-inside text-gray-700 leading-relaxed mb-4 ml-4">${listItems}</ul>`;
         }
 
         if (paragraph.match(/^\d+\./)) {
           const items = paragraph.split('\n').filter(line => line.trim().match(/^\d+\./));
-          const listItems = items.map(item =>
-            `<li class="mb-2">${item.replace(/^\d+\.\s*/, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</li>`
-          ).join('');
+          const listItems = items.map(item => {
+            const text = escapeHtml(item.replace(/^\d+\.\s*/, ''));
+            const formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            return `<li class="mb-2">${formatted}</li>`;
+          }).join('');
           return `<ol key=${index} class="list-decimal list-inside text-gray-700 leading-relaxed mb-4 ml-4">${listItems}</ol>`;
         }
 
-        let formatted = paragraph
+        let formatted = escapedParagraph
           .replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-gray-900">$1</strong>')
           .replace(/\*(.*?)\*/g, '<em class="italic">$1</em>');
 
@@ -311,7 +332,7 @@ export default function ArticleDetail() {
             {/* Bottom Bar */}
             <div className="pt-6 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
               <p className="text-gray-400 text-xs">
-                © 2024 Nomanoğlu Kuyumculuk. Tüm hakları saklıdır.
+                © {new Date().getFullYear()} Nomanoğlu Kuyumculuk. Tüm hakları saklıdır.
               </p>
               <div className="flex items-center space-x-4">
                 {socialFacebook && (

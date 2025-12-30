@@ -3,6 +3,7 @@ const router = express.Router();
 const { getCurrentPrices } = require('../services/priceService');
 const PriceHistory = require('../models/PriceHistory');
 const CachedPrices = require('../models/CachedPrices');
+const SourcePrices = require('../models/SourcePrices');
 
 // Mevcut fiyatları getir (ham kaynak fiyatları)
 router.get('/current', (req, res) => {
@@ -18,31 +19,42 @@ router.get('/current', (req, res) => {
   }
 });
 
-// Kaynak fiyatları getir (admin panel için - sadece ham API fiyatları)
-router.get('/sources', (req, res) => {
+// Kaynak fiyatları getir (admin panel için - MongoDB'den)
+router.get('/sources', async (req, res) => {
   try {
-    const prices = getCurrentPrices();
-    // Sadece ham API fiyatlarını döndür (custom fiyatları filtrele)
-    const sourcePrices = prices.filter(p => !p.isCustom).map(p => ({
-      code: p.code,
-      name: p.name,
-      rawAlis: p.rawAlis,
-      rawSatis: p.rawSatis,
-      category: p.category
-    }));
-    
-    res.json({
-      success: true,
-      data: sourcePrices,
-      lastUpdate: new Date().toISOString(),
-      count: sourcePrices.length
-    });
+    // Önce MongoDB'den kaynak fiyatları al
+    const cached = await SourcePrices.findOne({ key: 'source_prices' });
+
+    if (cached && cached.prices && cached.prices.length > 0) {
+      res.json({
+        success: true,
+        data: cached.prices,
+        lastUpdate: cached.updatedAt,
+        count: cached.prices.length
+      });
+    } else {
+      // Cache yoksa memory'den al
+      const prices = getCurrentPrices();
+      const sourcePrices = prices.filter(p => !p.isCustom).map(p => ({
+        code: p.code,
+        name: p.name,
+        rawAlis: p.rawAlis,
+        rawSatis: p.rawSatis
+      }));
+
+      res.json({
+        success: true,
+        data: sourcePrices,
+        lastUpdate: new Date().toISOString(),
+        count: sourcePrices.length
+      });
+    }
   } catch (error) {
-    console.error('Fiyat getirme hatası:', error);
-    res.status(500).json({ 
+    console.error('Kaynak fiyat getirme hatası:', error);
+    res.status(500).json({
       success: false,
       message: 'Sunucu hatası',
-      error: error.message 
+      error: error.message
     });
   }
 });

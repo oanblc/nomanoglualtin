@@ -112,18 +112,55 @@ export default function AdminDashboard() {
     loadData();
   }, []);
 
-  // WebSocket'ten gelen fiyatları kaynak fiyat olarak kullan
+  // İlk açılışta MongoDB'den kaynak fiyatları yükle
+  const loadSourcePricesFromDB = async () => {
+    try {
+      const response = await axios.get(`${apiUrl}/api/prices/sources`);
+      if (response.data.success && response.data.data.length > 0) {
+        setSourcePrices(response.data.data);
+        setLastUpdate(response.data.lastUpdate);
+        console.log(`✅ ${response.data.data.length} kaynak fiyat DB'den yüklendi`);
+      }
+    } catch (error) {
+      console.error('Kaynak fiyat yükleme hatası:', error);
+    }
+  };
+
+  // İlk yüklemede MongoDB'den al
+  useEffect(() => {
+    loadSourcePricesFromDB();
+  }, []);
+
+  // WebSocket'ten gelen fiyatlarla mevcut state'i güncelle (üzerine yaz)
   useEffect(() => {
     if (websocketPrices && websocketPrices.length > 0) {
-      // WebSocket'ten gelen fiyatları kaynak fiyat formatına dönüştür
-      const formattedPrices = websocketPrices.map(price => ({
-        code: price.code,
-        name: price.name,
-        rawAlis: price.calculatedAlis || 0,
-        rawSatis: price.calculatedSatis || 0
-      }));
-      setSourcePrices(formattedPrices);
-      setLastUpdate(new Date().toISOString());
+      // Sadece ham API fiyatlarını al (isCustom: false)
+      const rawPrices = websocketPrices.filter(p => p.isCustom === false);
+
+      if (rawPrices.length > 0) {
+        // Mevcut fiyatları koru, sadece gelen fiyatları üzerine yaz
+        setSourcePrices(prevPrices => {
+          // Mevcut fiyatları map'e çevir
+          const priceMap = {};
+          prevPrices.forEach(p => {
+            priceMap[p.code] = p;
+          });
+
+          // Gelen yeni fiyatları üzerine yaz
+          rawPrices.forEach(price => {
+            priceMap[price.code] = {
+              code: price.code,
+              name: price.name,
+              rawAlis: price.rawAlis || 0,
+              rawSatis: price.rawSatis || 0
+            };
+          });
+
+          // Map'i array'e çevir
+          return Object.values(priceMap);
+        });
+        setLastUpdate(new Date().toISOString());
+      }
     }
   }, [websocketPrices]);
 
