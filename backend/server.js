@@ -15,6 +15,8 @@ const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:3001',
   'https://nomanoglualtin.up.railway.app',
+  'https://nomanoglualtin-production.up.railway.app',
+  'https://powerful-liberation-production.up.railway.app',
   'https://www.nomanoglualtin.com.tr',
   'https://nomanoglualtin.com.tr'
 ];
