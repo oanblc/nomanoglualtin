@@ -1,6 +1,7 @@
 import Head from 'next/head';
 import Script from 'next/script';
 import { useSettings } from '../contexts/SettingsContext';
+import { useCookieConsent } from './CookieConsent';
 
 export default function SeoHead({
   title,
@@ -10,6 +11,7 @@ export default function SeoHead({
   canonical
 }) {
   const { seo, faviconBase64 } = useSettings();
+  const { consent } = useCookieConsent() || {};
 
   // Sayfa bazlı veya genel SEO değerleri
   const pageTitle = title || seo.siteTitle || 'Nomanoğlu Kuyumculuk';
@@ -17,6 +19,9 @@ export default function SeoHead({
   const pageKeywords = keywords || seo.siteKeywords || '';
   const pageOgImage = ogImage || seo.ogImage || '';
   const pageCanonical = canonical || seo.canonicalUrl || '';
+
+  // Analytics sadece çerez onayı verildiyse yüklensin
+  const canLoadAnalytics = consent === true;
 
   return (
     <>
@@ -54,14 +59,14 @@ export default function SeoHead({
           <meta name="msvalidate.01" content={seo.bingSiteVerification} />
         )}
 
-        {/* Custom Head Scripts */}
+        {/* Custom Head Scripts - bunlar her zaman yüklenebilir (SEO amaçlı) */}
         {seo.headScripts && (
           <script dangerouslySetInnerHTML={{ __html: seo.headScripts }} />
         )}
       </Head>
 
-      {/* Google Analytics */}
-      {seo.googleAnalyticsId && (
+      {/* Google Analytics - sadece çerez onayı varsa */}
+      {canLoadAnalytics && seo.googleAnalyticsId && (
         <>
           <Script
             src={`https://www.googletagmanager.com/gtag/js?id=${seo.googleAnalyticsId}`}
@@ -78,8 +83,8 @@ export default function SeoHead({
         </>
       )}
 
-      {/* Google Tag Manager */}
-      {seo.googleTagManagerId && (
+      {/* Google Tag Manager - sadece çerez onayı varsa */}
+      {canLoadAnalytics && seo.googleTagManagerId && (
         <Script id="google-tag-manager" strategy="afterInteractive">
           {`
             (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
@@ -91,8 +96,8 @@ export default function SeoHead({
         </Script>
       )}
 
-      {/* Meta Pixel */}
-      {seo.metaPixelId && (
+      {/* Meta Pixel - sadece çerez onayı varsa */}
+      {canLoadAnalytics && seo.metaPixelId && (
         <Script id="meta-pixel" strategy="afterInteractive">
           {`
             !function(f,b,e,v,n,t,s)
@@ -115,11 +120,14 @@ export default function SeoHead({
 // Body Script Component - sayfa içinde kullanılacak
 export function BodyScripts() {
   const { seo } = useSettings();
+  const { consent } = useCookieConsent() || {};
+
+  const canLoadAnalytics = consent === true;
 
   return (
     <>
-      {/* GTM Noscript */}
-      {seo.googleTagManagerId && (
+      {/* GTM Noscript - sadece çerez onayı varsa */}
+      {canLoadAnalytics && seo.googleTagManagerId && (
         <noscript>
           <iframe
             src={`https://www.googletagmanager.com/ns.html?id=${seo.googleTagManagerId}`}
@@ -135,8 +143,8 @@ export function BodyScripts() {
         <div dangerouslySetInnerHTML={{ __html: seo.bodyStartScripts }} />
       )}
 
-      {/* Meta Pixel Noscript */}
-      {seo.metaPixelId && (
+      {/* Meta Pixel Noscript - sadece çerez onayı varsa */}
+      {canLoadAnalytics && seo.metaPixelId && (
         <noscript>
           <img
             height="1"
