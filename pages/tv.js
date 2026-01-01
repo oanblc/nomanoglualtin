@@ -58,6 +58,13 @@ export default function TVDisplay() {
     if (mode === 'portrait' || mode === 'landscape') {
       setOrientation(mode);
     }
+
+    // Her 6 saatte bir sayfayı yenile (21600000 ms = 6 saat)
+    const refreshInterval = setInterval(() => {
+      window.location.reload();
+    }, 6 * 60 * 60 * 1000);
+
+    return () => clearInterval(refreshInterval);
   }, []);
 
   // Mouse/touch hareketi ile "Siteye Dön" linkini göster/gizle

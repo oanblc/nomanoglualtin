@@ -67,6 +67,13 @@ export default function Piyasalar() {
     if (savedFavorites) {
       setFavorites(JSON.parse(savedFavorites));
     }
+
+    // Her 6 saatte bir sayfayı yenile (21600000 ms = 6 saat)
+    const refreshInterval = setInterval(() => {
+      window.location.reload();
+    }, 6 * 60 * 60 * 1000);
+
+    return () => clearInterval(refreshInterval);
   }, []);
 
 
