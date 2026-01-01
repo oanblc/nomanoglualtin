@@ -335,23 +335,13 @@ export default function Piyasalar() {
               </div>
             )}
 
-            {/* Fullscreen Button */}
+            {/* TV Gösterimi Button */}
             {filteredPrices.length > 0 && (
               <div className="mt-6 text-center fullscreen-hide">
-                <button
-                  onClick={() => {
-                    const container = document.getElementById('price-table-container');
-                    if (document.fullscreenElement) {
-                      document.exitFullscreen();
-                    } else {
-                      container.requestFullscreen();
-                    }
-                  }}
-                  className="inline-flex items-center space-x-2 px-6 py-3 bg-white border border-gray-200 text-gray-600 hover:text-gray-900 hover:border-gray-300 rounded-xl transition-all"
-                >
+                <Link href="/tv" className="inline-flex items-center space-x-2 px-6 py-3 bg-gray-900 text-white hover:bg-gray-800 rounded-xl transition-all">
                   <Maximize2 size={18} />
-                  <span className="text-sm font-medium">Tam Ekran</span>
-                </button>
+                  <span className="text-sm font-medium">TV Gösterimi</span>
+                </Link>
               </div>
             )}
           </div>
