@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useWebSocket } from '../hooks/useWebSocket';
@@ -12,16 +12,54 @@ export default function Piyasalar() {
     contactPhone, contactEmail, contactAddress, workingHours,
     socialFacebook, socialTwitter, socialInstagram, socialYoutube, socialWhatsapp
   } = useSettings();
+  const [prices, setPrices] = useState([]);
+  const previousPricesRef = useRef([]);
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [mounted, setMounted] = useState(false);
   const [favorites, setFavorites] = useState([]);
   const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
-  
+  const [highlightedPrices, setHighlightedPrices] = useState({});
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Custom fiyatları filtrele (panelden oluşturulan fiyatlar)
-  const prices = websocketPrices.filter(p => p.isCustom === true);
+  // WebSocket'ten gelen fiyatları güncelle
+  useEffect(() => {
+    if (!websocketPrices || !Array.isArray(websocketPrices) || websocketPrices.length === 0) {
+      if (previousPricesRef.current.length > 0 && prices.length === 0) {
+        setPrices(previousPricesRef.current);
+      }
+      return;
+    }
+
+    const customPrices = websocketPrices.filter(p => p.isCustom === true);
+
+    if (customPrices.length === 0) {
+      if (previousPricesRef.current.length > 0) {
+        setPrices(previousPricesRef.current);
+      }
+      return;
+    }
+
+    // Fiyat değişikliklerini kontrol et ve highlight yap
+    const newHighlighted = {};
+    customPrices.forEach(newPrice => {
+      const oldPrice = previousPricesRef.current.find(p => p.code === newPrice.code);
+      if (oldPrice && (oldPrice.calculatedAlis !== newPrice.calculatedAlis || oldPrice.calculatedSatis !== newPrice.calculatedSatis)) {
+        newHighlighted[newPrice.code] = true;
+        setTimeout(() => {
+          setHighlightedPrices(prev => ({ ...prev, [newPrice.code]: false }));
+        }, 1000);
+      }
+    });
+
+    if (Object.keys(newHighlighted).length > 0) {
+      setHighlightedPrices(prev => ({ ...prev, ...newHighlighted }));
+    }
+
+    setPrices(customPrices);
+    previousPricesRef.current = customPrices;
+  }, [websocketPrices]);
 
   useEffect(() => {
     setMounted(true);
@@ -67,6 +105,11 @@ export default function Piyasalar() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         {faviconBase64 && <link rel="icon" href={faviconBase64} />}
         <style>{`
+          @keyframes pulse-gold {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+          }
+          .price-flash { animation: pulse-gold 0.5s ease-out; }
           #price-table-container:fullscreen { background: #fafafa; padding: 1.5rem; }
           #price-table-container:fullscreen .fullscreen-hide { display: none !important; }
         `}</style>
@@ -266,11 +309,14 @@ export default function Piyasalar() {
                       const isFavorite = favorites.includes(price.code);
                       const isRising = price.direction && (price.direction.alis_dir === 'up' || price.direction.satis_dir === 'up');
                       const isFalling = price.direction && (price.direction.alis_dir === 'down' || price.direction.satis_dir === 'down');
+                      const isHighlighted = highlightedPrices[price.code];
 
                       return (
                         <tr
                           key={price.code}
-                          className={`transition-all duration-300 hover:bg-gray-50 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}
+                          className={`transition-all duration-300 hover:bg-gray-50 ${
+                            isHighlighted ? 'price-flash bg-[#f7de00]/10' : ''
+                          } ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}
                         >
                           {/* Product Name */}
                           <td className="py-3 px-2 sm:px-4">
