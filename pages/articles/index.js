@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import Head from 'next/head';
 import Link from 'next/link';
 import { useSettings } from '../../contexts/SettingsContext';
+import SeoHead from '../../components/SeoHead';
 import { Menu, Search, Phone, Mail, Facebook, Twitter, Instagram, Youtube, Coins, Gem, TrendingUp, CheckCircle, Star, DollarSign, ChevronLeft, BookOpen } from 'lucide-react';
 
 export default function ArticlesPage() {
@@ -57,11 +57,11 @@ export default function ArticlesPage() {
 
   return (
     <>
-      <Head>
-        <title>Bilgi & Rehber - Nomanoğlu Kuyumculuk</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="description" content="Altın, gümüş ve döviz hakkında bilgilendirici makaleler ve rehberler." />
-      </Head>
+      <SeoHead
+        title="Bilgi & Rehber"
+        description="Altın, gümüş ve döviz hakkında bilgilendirici makaleler ve rehberler."
+        keywords="altın rehber, altın bilgi, altın yatırım, kuyumculuk makaleleri"
+      />
 
       <div className="min-h-screen bg-gray-50">
         {/* Header */}

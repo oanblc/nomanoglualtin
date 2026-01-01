@@ -3,7 +3,8 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import axios from 'axios';
 import { useWebSocket } from '../../hooks/useWebSocket';
-import { TrendingUp, LogOut, Plus, Edit2, Trash2, X, Save, AlertCircle, RefreshCw, Settings, FileText, Users, GripVertical, Building2, MapPin, Phone, Mail, Clock, ExternalLink } from 'lucide-react';
+import { TrendingUp, LogOut, Plus, Edit2, Trash2, X, Save, AlertCircle, RefreshCw, Settings, FileText, Users, GripVertical, Building2, MapPin, Phone, Mail, Clock, ExternalLink, Search } from 'lucide-react';
+import Link from 'next/link';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -769,6 +770,14 @@ export default function AdminDashboard() {
                   <ExternalLink size={18} />
                   <span>Siteye Git</span>
                 </a>
+                <Link
+                  href="/admin/seo"
+                  className="flex items-center space-x-2 px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-colors font-medium"
+                  title="SEO & Analytics"
+                >
+                  <Search size={18} />
+                  <span>SEO</span>
+                </Link>
                 <button
                   onClick={() => setActiveTab('settings')}
                   className="flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors font-medium"

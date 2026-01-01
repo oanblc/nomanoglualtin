@@ -3,6 +3,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useSettings } from '../contexts/SettingsContext';
+import SeoHead from '../components/SeoHead';
 import { Menu, Search, TrendingUp, TrendingDown, Star, Maximize2, AlertCircle, Phone, Mail, MapPin, Clock, Facebook, Twitter, Instagram, Youtube, Coins } from 'lucide-react';
 
 export default function Piyasalar() {
@@ -107,10 +108,8 @@ export default function Piyasalar() {
 
   return (
     <>
+      <SeoHead title="Piyasalar - Canlı Döviz ve Altın Fiyatları" />
       <Head>
-        <title>Piyasalar - Canlı Döviz ve Altın Fiyatları</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        {faviconBase64 && <link rel="icon" href={faviconBase64} />}
         <style>{`
           @keyframes pulse-gold {
             0%, 100% { opacity: 1; }

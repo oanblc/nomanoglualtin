@@ -3,6 +3,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useSettings } from '../contexts/SettingsContext';
+import SeoHead from '../components/SeoHead';
 import { Menu, Search, TrendingUp, TrendingDown, DollarSign, Euro, Coins, Gem, Star, Maximize2, Phone, Mail, MapPin, Clock, Facebook, Twitter, Instagram, Youtube, CheckCircle, AlertCircle, X, ChevronRight, Zap, Shield, Award } from 'lucide-react';
 
 export default function Home() {
@@ -191,11 +192,8 @@ export default function Home() {
 
   return (
     <>
+      <SeoHead />
       <Head>
-        <title>NOMANOĞLU - Canlı Döviz ve Altın Fiyatları</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-        <meta name="description" content="Anlık altın ve döviz fiyatlarını takip edin. Güvenilir, hızlı ve güncel piyasa verileri." />
-        {faviconBase64 && <link rel="icon" href={faviconBase64} />}
         <style>{`
           @keyframes pulse-gold {
             0%, 100% { opacity: 1; }

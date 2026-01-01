@@ -3,6 +3,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useSettings } from '../contexts/SettingsContext';
+import SeoHead from '../components/SeoHead';
 import { TrendingUp, TrendingDown, RefreshCw, ArrowLeft } from 'lucide-react';
 
 export default function TVDisplay() {

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useSettings } from '../contexts/SettingsContext';
+import SeoHead from '../components/SeoHead';
 import { Menu, MapPin, Phone, Mail, Clock, Building2, Navigation, ExternalLink, Facebook, Twitter, Instagram, Youtube, Coins, Send, User, MessageSquare, CheckCircle, AlertCircle, ChevronDown, Search } from 'lucide-react';
 
 export default function İletişim() {
@@ -92,11 +93,8 @@ export default function İletişim() {
 
   return (
     <>
-      <Head>
-        <title>İletişim & Şubelerimiz - NOMANOĞLU Kuyumculuk</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        {faviconBase64 && <link rel="icon" href={faviconBase64} />}
-      </Head>
+      <SeoHead title="İletişim & Şubelerimiz - NOMANOĞLU Kuyumculuk" />
+      <Head></Head>
 
       <div className="min-h-screen bg-gray-50">
         {/* Header */}

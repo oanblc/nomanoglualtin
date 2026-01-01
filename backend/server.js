@@ -105,6 +105,7 @@ const familyCardsRoutes = require('./routes/familyCards');
 const articlesRoutes = require('./routes/articles');
 const branchesRoutes = require('./routes/branches');
 const settingsRoutes = require('./routes/settings');
+const seoRoutes = require('./routes/seo');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/prices', priceRoutes);
@@ -115,6 +116,7 @@ app.use('/api/family-cards', familyCardsRoutes);
 app.use('/api/articles', articlesRoutes);
 app.use('/api/branches', branchesRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/seo', seoRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

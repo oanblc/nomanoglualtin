@@ -24,24 +24,48 @@ export function SettingsProvider({ children }) {
   const [socialTiktok, setSocialTiktok] = useState('');
   const [socialWhatsapp, setSocialWhatsapp] = useState('');
 
+  // SEO & Analytics
+  const [seo, setSeo] = useState({
+    siteTitle: '',
+    siteDescription: '',
+    siteKeywords: '',
+    ogImage: '',
+    ogType: 'website',
+    twitterCard: 'summary_large_image',
+    canonicalUrl: '',
+    robotsContent: 'index, follow',
+    googleAnalyticsId: '',
+    googleTagManagerId: '',
+    metaPixelId: '',
+    headScripts: '',
+    bodyStartScripts: '',
+    bodyEndScripts: '',
+    googleSiteVerification: '',
+    bingSiteVerification: ''
+  });
+
   useEffect(() => {
-    // Ayarları sadece bir kez yükle
-    fetch((process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001') + '/api/settings')
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          const s = data.data;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+
+    // Settings ve SEO'yu paralel yükle
+    Promise.all([
+      fetch(`${apiUrl}/api/settings`).then(res => res.json()),
+      fetch(`${apiUrl}/api/seo`).then(res => res.json())
+    ])
+      .then(([settingsData, seoData]) => {
+        if (settingsData.success) {
+          const s = settingsData.data;
           setLogoBase64(s.logoBase64 || '');
           setLogoHeight(s.logoHeight || 48);
           setLogoWidth(s.logoWidth || 'auto');
           setFaviconBase64(s.faviconBase64 || '');
-          // İletişim bilgileri - sadece API'den gelen değerler
+          // İletişim bilgileri
           setContactPhone(s.contactPhone || '');
           setContactEmail(s.contactEmail || '');
           setContactAddress(s.contactAddress || '');
           setWorkingHours(s.workingHours || '');
           setWorkingHoursNote(s.workingHoursNote || '');
-          // Sosyal medya - sadece API'den gelen değerler
+          // Sosyal medya
           setSocialFacebook(s.socialFacebook || '');
           setSocialTwitter(s.socialTwitter || '');
           setSocialInstagram(s.socialInstagram || '');
@@ -49,6 +73,11 @@ export function SettingsProvider({ children }) {
           setSocialTiktok(s.socialTiktok || '');
           setSocialWhatsapp(s.socialWhatsapp || '');
         }
+
+        if (seoData.success && seoData.data) {
+          setSeo(prev => ({ ...prev, ...seoData.data }));
+        }
+
         setIsLoaded(true);
       })
       .catch(err => {
@@ -61,7 +90,8 @@ export function SettingsProvider({ children }) {
     <SettingsContext.Provider value={{
       logoBase64, logoHeight, logoWidth, faviconBase64, isLoaded,
       contactPhone, contactEmail, contactAddress, workingHours, workingHoursNote,
-      socialFacebook, socialTwitter, socialInstagram, socialYoutube, socialTiktok, socialWhatsapp
+      socialFacebook, socialTwitter, socialInstagram, socialYoutube, socialTiktok, socialWhatsapp,
+      seo
     }}>
       {children}
     </SettingsContext.Provider>

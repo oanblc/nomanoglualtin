@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import Head from 'next/head';
 import Link from 'next/link';
 import { useSettings } from '../../contexts/SettingsContext';
+import SeoHead from '../../components/SeoHead';
 import { ArrowLeft, Calendar, Tag, Share2, TrendingUp, Coins, Gem, CheckCircle, Star, DollarSign, Facebook, Twitter, Instagram, Youtube } from 'lucide-react';
 
 export default function ArticleDetail() {
@@ -123,11 +123,11 @@ export default function ArticleDetail() {
 
   return (
     <>
-      <Head>
-        <title>{article.title} - NOMANOGLU</title>
-        <meta name="description" content={article.description} />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-      </Head>
+      <SeoHead
+        title={article.title}
+        description={article.description}
+        keywords={`${article.category}, altın, kuyumculuk, ${article.title}`}
+      />
 
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
