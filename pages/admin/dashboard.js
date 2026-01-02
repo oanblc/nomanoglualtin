@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import axios from 'axios';
@@ -6,7 +6,21 @@ import { useWebSocket } from '../../hooks/useWebSocket';
 import { TrendingUp, LogOut, Plus, Edit2, Trash2, X, Save, AlertCircle, RefreshCw, Settings, FileText, Users, GripVertical, Building2, MapPin, Phone, Mail, Clock, ExternalLink, Search } from 'lucide-react';
 import Link from 'next/link';
 
+// Auth header ile axios instance oluştur
+const createAuthAxios = () => {
+  const instance = axios.create();
+  instance.interceptors.request.use((config) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  });
+  return instance;
+};
+
 export default function AdminDashboard() {
+  const authAxios = useMemo(() => createAuthAxios(), []);
   const router = useRouter();
   const { prices: websocketPrices, isConnected, lastUpdate: wsLastUpdate } = useWebSocket();
   const [sourcePrices, setSourcePrices] = useState([]);
@@ -298,14 +312,14 @@ export default function AdminDashboard() {
   const handleSave = async () => {
     try {
       if (editingPrice) {
-        await axios.put(`${apiUrl}/api/custom-prices/${editingPrice.id}`, formData);
+        await authAxios.put(`${apiUrl}/api/custom-prices/${editingPrice.id}`, formData);
       } else {
         // Yeni fiyat oluşturulurken order değerini en sona ekle
         const newPriceData = {
           ...formData,
           order: customPrices.length
         };
-        await axios.post(`${apiUrl}/api/custom-prices`, newPriceData);
+        await authAxios.post(`${apiUrl}/api/custom-prices`, newPriceData);
       }
       setShowModal(false);
       loadData();
@@ -317,9 +331,9 @@ export default function AdminDashboard() {
 
   const handleDelete = async (id) => {
     if (!confirm('Bu fiyatı silmek istediğinizden emin misiniz?')) return;
-    
+
     try {
-      await axios.delete(`${apiUrl}/api/custom-prices/${id}`);
+      await authAxios.delete(`${apiUrl}/api/custom-prices/${id}`);
       loadData();
     } catch (error) {
       console.error('Silme hatası:', error);
@@ -415,7 +429,7 @@ export default function AdminDashboard() {
 
   const saveSettings = async () => {
     try {
-      await axios.post(`${apiUrl}/api/settings`, {
+      await authAxios.post(`${apiUrl}/api/settings`, {
         maxDisplayItems,
         logoBase64,
         logoHeight,
@@ -464,9 +478,9 @@ export default function AdminDashboard() {
   const handleSaveFamily = async () => {
     try {
       if (editingFamily) {
-        await axios.put(`${apiUrl}/api/family-cards/${editingFamily.id}`, familyFormData);
+        await authAxios.put(`${apiUrl}/api/family-cards/${editingFamily.id}`, familyFormData);
       } else {
-        await axios.post(`${apiUrl}/api/family-cards`, familyFormData);
+        await authAxios.post(`${apiUrl}/api/family-cards`, familyFormData);
       }
       setShowFamilyModal(false);
       loadData();
@@ -480,7 +494,7 @@ export default function AdminDashboard() {
     if (!confirm('Bu kartı silmek istediğinizden emin misiniz?')) return;
     
     try {
-      await axios.delete(`${apiUrl}/api/family-cards/${id}`);
+      await authAxios.delete(`${apiUrl}/api/family-cards/${id}`);
       loadData();
     } catch (error) {
       console.error('Family silme hatası:', error);
@@ -512,9 +526,9 @@ export default function AdminDashboard() {
   const handleSaveArticle = async () => {
     try {
       if (editingArticle) {
-        await axios.put(`${apiUrl}/api/articles/${editingArticle.id}`, articleFormData);
+        await authAxios.put(`${apiUrl}/api/articles/${editingArticle.id}`, articleFormData);
       } else {
-        await axios.post(`${apiUrl}/api/articles`, articleFormData);
+        await authAxios.post(`${apiUrl}/api/articles`, articleFormData);
       }
       setShowArticleModal(false);
       loadData();
@@ -528,7 +542,7 @@ export default function AdminDashboard() {
     if (!confirm('Bu makaleyi silmek istediğinizden emin misiniz?')) return;
     
     try {
-      await axios.delete(`${apiUrl}/api/articles/${id}`);
+      await authAxios.delete(`${apiUrl}/api/articles/${id}`);
       loadData();
     } catch (error) {
       console.error('Makale silme hatası:', error);
@@ -574,9 +588,9 @@ export default function AdminDashboard() {
 
     try {
       if (editingBranch) {
-        await axios.put(`${apiUrl}/api/branches/${editingBranch.id}`, branchFormData);
+        await authAxios.put(`${apiUrl}/api/branches/${editingBranch.id}`, branchFormData);
       } else {
-        await axios.post(`${apiUrl}/api/branches`, branchFormData);
+        await authAxios.post(`${apiUrl}/api/branches`, branchFormData);
       }
       setShowBranchModal(false);
       loadData();
@@ -590,7 +604,7 @@ export default function AdminDashboard() {
     if (!confirm('Bu şubeyi silmek istediğinizden emin misiniz?')) return;
     
     try {
-      await axios.delete(`${apiUrl}/api/branches/${id}`);
+      await authAxios.delete(`${apiUrl}/api/branches/${id}`);
       loadData();
     } catch (error) {
       console.error('Şube silme hatası:', error);
@@ -640,7 +654,7 @@ export default function AdminDashboard() {
     try {
       // Paralel olarak tüm fiyatları güncelle
       await Promise.all(updatedPrices.map(price =>
-        axios.put(`${apiUrl}/api/custom-prices/${price.id}`, { order: price.order })
+        authAxios.put(`${apiUrl}/api/custom-prices/${price.id}`, { order: price.order })
       ));
       console.log('✅ Sıralama kaydedildi');
     } catch (error) {
@@ -689,7 +703,7 @@ export default function AdminDashboard() {
     // Backend'e sıralama gönder - her bir fiyatı ayrı güncelle
     try {
       await Promise.all(updatedPrices.map(price =>
-        axios.put(`${apiUrl}/api/custom-prices/${price.id}`, { order: price.order })
+        authAxios.put(`${apiUrl}/api/custom-prices/${price.id}`, { order: price.order })
       ));
       console.log('✅ Sıra numaraları güncellendi');
     } catch (error) {
