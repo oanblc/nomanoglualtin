@@ -474,7 +474,7 @@ const getCurrentPrices = () => {
 // Custom fiyatlar değiştiğinde fiyatları yeniden yükle ve broadcast et
 const refreshPrices = async () => {
   console.log('🔄 Custom fiyatlar değişti, fiyatlar yeniden yükleniyor...');
-  
+
   if (!lastRawData) {
     console.log('⚠️ Henüz ham veri yok, bir sonraki güncellemede dahil edilecek');
     return false;
@@ -485,7 +485,7 @@ const refreshPrices = async () => {
     const processedData = await processPrices(lastRawData);
     if (processedData && processedData.prices) {
       console.log(`✅ ${processedData.prices.length} fiyat yeniden işlendi`);
-      
+
       currentPrices = processedData.prices.reduce((acc, price) => {
         acc[price.code] = price;
         return acc;
@@ -496,6 +496,45 @@ const refreshPrices = async () => {
         serverIO.emit('priceUpdate', processedData);
         console.log('📡 Güncellenmiş fiyatlar broadcast edildi');
       }
+
+      // Cache'e de kaydet (yeni eklenen fiyatların hemen görünmesi için)
+      const mongoose = require('mongoose');
+      if (mongoose.connection.readyState === 1) {
+        const validPrices = processedData.prices.filter(p =>
+          p.calculatedAlis > 0 &&
+          p.calculatedSatis > 0 &&
+          !isNaN(p.calculatedAlis) &&
+          !isNaN(p.calculatedSatis)
+        );
+
+        const customPrices = validPrices.filter(p => p.isCustom && p.isVisible !== false);
+        if (customPrices.length > 0) {
+          await CachedPrices.findOneAndUpdate(
+            { key: 'current_prices' },
+            {
+              key: 'current_prices',
+              prices: customPrices.map(p => ({
+                code: p.code,
+                name: p.name,
+                category: p.category,
+                calculatedAlis: p.calculatedAlis,
+                calculatedSatis: p.calculatedSatis,
+                isCustom: p.isCustom,
+                isVisible: p.isVisible,
+                order: p.order
+              })),
+              meta: {
+                time: new Date().toISOString(),
+                maxDisplayItems: customPrices.length
+              },
+              updatedAt: new Date()
+            },
+            { upsert: true, new: true }
+          );
+          console.log(`💾 ${customPrices.length} custom fiyat cache'e kaydedildi (refresh)`);
+        }
+      }
+
       return true;
     }
   } catch (error) {
