@@ -18,7 +18,9 @@ const allowedOrigins = [
   'https://nomanoglualtin-production.up.railway.app',
   'https://powerful-liberation-production.up.railway.app',
   'https://www.nomanoglualtin.com.tr',
-  'https://nomanoglualtin.com.tr'
+  'https://nomanoglualtin.com.tr',
+  'https://www.nomanoglualtin.com',
+  'https://nomanoglualtin.com'
 ];
 
 const io = socketIo(server, {
