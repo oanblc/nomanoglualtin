@@ -134,10 +134,19 @@ export default function PrivacyPolicy() {
               </div>
 
               {/* Page Content */}
-              <div
-                className="px-6 py-8 prose prose-gray max-w-none"
-                dangerouslySetInnerHTML={{ __html: pageData.content }}
-              />
+              <div className="px-6 py-8">
+                <style jsx>{`
+                  div :global(h2) { font-size: 1.25rem; font-weight: 700; margin-top: 1.5rem; margin-bottom: 0.75rem; color: #1f2937; }
+                  div :global(h3) { font-size: 1.1rem; font-weight: 600; margin-top: 1rem; margin-bottom: 0.5rem; color: #374151; }
+                  div :global(p) { margin-bottom: 0.75rem; color: #4b5563; line-height: 1.6; }
+                  div :global(ul) { margin-left: 1.5rem; margin-bottom: 0.75rem; list-style-type: disc; }
+                  div :global(li) { margin-bottom: 0.25rem; color: #4b5563; }
+                  div :global(strong) { font-weight: 600; color: #1f2937; }
+                  div :global(em) { font-style: italic; }
+                  div :global(a) { color: #d97706; text-decoration: underline; }
+                `}</style>
+                <div dangerouslySetInnerHTML={{ __html: pageData.content }} />
+              </div>
             </div>
           ) : (
             <div className="text-center py-20">
