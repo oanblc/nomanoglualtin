@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import axios from 'axios';
 import Link from 'next/link';
-import { FileText, ArrowLeft, Save, Edit2, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
+import { FileText, ArrowLeft, Save, Edit2, Eye, EyeOff, AlertCircle, CheckCircle, RotateCcw } from 'lucide-react';
 
 // Auth header ile axios instance oluştur
 const createAuthAxios = () => {
@@ -23,6 +23,7 @@ export default function LegalAdmin() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [resetting, setResetting] = useState(false);
   const [activeTab, setActiveTab] = useState('privacy'); // 'privacy' | 'terms'
   const [message, setMessage] = useState({ type: '', text: '' });
 
@@ -112,6 +113,28 @@ export default function LegalAdmin() {
     }
   };
 
+  const resetToDefaults = async () => {
+    if (!confirm('Tüm içerikler App Store/Google Play uyumlu varsayılan içeriklerle değiştirilecek. Devam etmek istiyor musunuz?')) {
+      return;
+    }
+
+    try {
+      setResetting(true);
+      const response = await authAxios.post(`${apiUrl}/api/legal/reset-to-defaults`);
+
+      if (response.data.success) {
+        setMessage({ type: 'success', text: 'Tüm sayfalar varsayılan içeriklere sıfırlandı!' });
+        await loadLegalPages(); // Yeniden yükle
+        setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+      }
+    } catch (error) {
+      console.error('Sıfırlama hatası:', error);
+      setMessage({ type: 'error', text: 'Sıfırlama sırasında bir hata oluştu.' });
+    } finally {
+      setResetting(false);
+    }
+  };
+
   const currentData = activeTab === 'privacy' ? privacyData : termsData;
   const setCurrentData = activeTab === 'privacy' ? setPrivacyData : setTermsData;
 
@@ -152,6 +175,14 @@ export default function LegalAdmin() {
                   <p className="text-sm text-gray-500">Gizlilik politikası ve kullanım koşullarını yönetin</p>
                 </div>
               </div>
+              <button
+                onClick={resetToDefaults}
+                disabled={resetting}
+                className="flex items-center space-x-2 px-4 py-2 bg-amber-100 hover:bg-amber-200 disabled:bg-amber-50 text-amber-700 rounded-lg transition-colors font-medium text-sm"
+              >
+                <RotateCcw size={16} className={resetting ? 'animate-spin' : ''} />
+                <span>{resetting ? 'Sıfırlanıyor...' : 'Varsayılana Sıfırla'}</span>
+              </button>
             </div>
           </div>
         </header>
@@ -275,9 +306,21 @@ export default function LegalAdmin() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Önizleme</label>
                 <div
-                  className="border-2 border-gray-200 rounded-lg p-6 bg-gray-50 prose prose-sm max-w-none"
-                  dangerouslySetInnerHTML={{ __html: currentData.content }}
-                />
+                  className="border-2 border-gray-200 rounded-lg p-6 bg-white overflow-auto max-h-[500px]"
+                  style={{ lineHeight: '1.6' }}
+                >
+                  <style jsx>{`
+                    div :global(h2) { font-size: 1.25rem; font-weight: 700; margin-top: 1.5rem; margin-bottom: 0.75rem; color: #1f2937; }
+                    div :global(h3) { font-size: 1.1rem; font-weight: 600; margin-top: 1rem; margin-bottom: 0.5rem; color: #374151; }
+                    div :global(p) { margin-bottom: 0.75rem; color: #4b5563; }
+                    div :global(ul) { margin-left: 1.5rem; margin-bottom: 0.75rem; list-style-type: disc; }
+                    div :global(li) { margin-bottom: 0.25rem; color: #4b5563; }
+                    div :global(strong) { font-weight: 600; color: #1f2937; }
+                    div :global(em) { font-style: italic; }
+                    div :global(a) { color: #d97706; text-decoration: underline; }
+                  `}</style>
+                  <div dangerouslySetInnerHTML={{ __html: currentData.content }} />
+                </div>
               </div>
             </div>
 

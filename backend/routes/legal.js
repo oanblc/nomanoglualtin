@@ -306,6 +306,39 @@ router.get('/:type', async (req, res) => {
   }
 });
 
+// Varsayılan içeriklere sıfırla - Admin korumalı
+router.post('/reset-to-defaults', authMiddleware, async (req, res) => {
+  try {
+    // Privacy sayfasını güncelle
+    await LegalPage.findOneAndUpdate(
+      { type: 'privacy' },
+      { ...defaultContent.privacy, updatedAt: new Date() },
+      { upsert: true, new: true }
+    );
+
+    // Terms sayfasını güncelle
+    await LegalPage.findOneAndUpdate(
+      { type: 'terms' },
+      { ...defaultContent.terms, updatedAt: new Date() },
+      { upsert: true, new: true }
+    );
+
+    console.log('✅ Legal sayfalar varsayılanlara sıfırlandı');
+
+    res.json({
+      success: true,
+      message: 'Tüm sayfalar varsayılan içeriklere sıfırlandı'
+    });
+  } catch (error) {
+    console.error('Sıfırlama hatası:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Sıfırlama başarısız',
+      error: error.message
+    });
+  }
+});
+
 // Legal sayfa güncelle - Admin korumalı
 router.put('/:type', authMiddleware, async (req, res) => {
   try {
