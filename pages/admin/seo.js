@@ -196,7 +196,7 @@ export default function AdminSeo() {
                           value={seoData.siteTitle}
                           onChange={(e) => handleChange('siteTitle', e.target.value)}
                           placeholder="Nomanoğlu Kuyumculuk - Altın ve Döviz Fiyatları"
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
                         />
                         <p className="text-xs text-gray-500 mt-1">Önerilen: 50-60 karakter</p>
                       </div>
@@ -210,7 +210,7 @@ export default function AdminSeo() {
                           onChange={(e) => handleChange('siteDescription', e.target.value)}
                           placeholder="Anlık altın ve döviz fiyatları. 1967'den bu yana güvenilir kuyumculuk hizmeti."
                           rows={3}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
                         />
                         <p className="text-xs text-gray-500 mt-1">Önerilen: 150-160 karakter</p>
                       </div>
@@ -224,7 +224,7 @@ export default function AdminSeo() {
                           value={seoData.siteKeywords}
                           onChange={(e) => handleChange('siteKeywords', e.target.value)}
                           placeholder="altın fiyatları, döviz kurları, gram altın, çeyrek altın"
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
                         />
                         <p className="text-xs text-gray-500 mt-1">Virgülle ayırarak yazın</p>
                       </div>
@@ -247,7 +247,7 @@ export default function AdminSeo() {
                           value={seoData.ogImage}
                           onChange={(e) => handleChange('ogImage', e.target.value)}
                           placeholder="https://example.com/og-image.jpg"
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
                         />
                         <p className="text-xs text-gray-500 mt-1">Önerilen: 1200x630 piksel</p>
                       </div>
@@ -259,7 +259,7 @@ export default function AdminSeo() {
                         <select
                           value={seoData.ogType}
                           onChange={(e) => handleChange('ogType', e.target.value)}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
                         >
                           <option value="website">website</option>
                           <option value="article">article</option>
@@ -274,7 +274,7 @@ export default function AdminSeo() {
                         <select
                           value={seoData.twitterCard}
                           onChange={(e) => handleChange('twitterCard', e.target.value)}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
                         >
                           <option value="summary">summary</option>
                           <option value="summary_large_image">summary_large_image</option>
@@ -290,7 +290,7 @@ export default function AdminSeo() {
                           value={seoData.canonicalUrl}
                           onChange={(e) => handleChange('canonicalUrl', e.target.value)}
                           placeholder="https://nomanoglualtin.com.tr"
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
                         />
                       </div>
                     </div>
@@ -310,7 +310,7 @@ export default function AdminSeo() {
                         <select
                           value={seoData.robotsContent}
                           onChange={(e) => handleChange('robotsContent', e.target.value)}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
                         >
                           <option value="index, follow">index, follow (Önerilen)</option>
                           <option value="index, nofollow">index, nofollow</option>
@@ -328,7 +328,7 @@ export default function AdminSeo() {
                           value={seoData.googleSiteVerification}
                           onChange={(e) => handleChange('googleSiteVerification', e.target.value)}
                           placeholder="Google doğrulama kodu"
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
                         />
                       </div>
 
@@ -341,7 +341,7 @@ export default function AdminSeo() {
                           value={seoData.bingSiteVerification}
                           onChange={(e) => handleChange('bingSiteVerification', e.target.value)}
                           placeholder="Bing doğrulama kodu"
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
                         />
                       </div>
                     </div>
@@ -367,7 +367,7 @@ export default function AdminSeo() {
                         value={seoData.googleAnalyticsId}
                         onChange={(e) => handleChange('googleAnalyticsId', e.target.value)}
                         placeholder="G-XXXXXXXXXX"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
                       />
                       <p className="text-xs text-gray-500 mt-1">
                         Google Analytics 4 ölçüm ID'si. Örnek: G-ABC123XYZ
@@ -390,7 +390,7 @@ export default function AdminSeo() {
                         value={seoData.googleTagManagerId}
                         onChange={(e) => handleChange('googleTagManagerId', e.target.value)}
                         placeholder="GTM-XXXXXXX"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
                       />
                       <p className="text-xs text-gray-500 mt-1">
                         Google Tag Manager container ID'si. Örnek: GTM-ABC123
@@ -415,7 +415,7 @@ export default function AdminSeo() {
                         value={seoData.metaPixelId}
                         onChange={(e) => handleChange('metaPixelId', e.target.value)}
                         placeholder="123456789012345"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
                       />
                       <p className="text-xs text-gray-500 mt-1">
                         Facebook/Instagram reklamları için Meta Pixel ID. Örnek: 123456789012345
@@ -450,7 +450,7 @@ export default function AdminSeo() {
                       onChange={(e) => handleChange('headScripts', e.target.value)}
                       placeholder="<!-- Örnek: Tawk.to, Hotjar, vb. -->"
                       rows={6}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm text-gray-900 bg-white"
                     />
                     <p className="text-xs text-gray-500 mt-1">
                       Chat widget'ları, heatmap araçları vb. için script'ler
@@ -467,7 +467,7 @@ export default function AdminSeo() {
                       onChange={(e) => handleChange('bodyStartScripts', e.target.value)}
                       placeholder="<!-- Örnek: Google Tag Manager noscript -->"
                       rows={4}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm text-gray-900 bg-white"
                     />
                     <p className="text-xs text-gray-500 mt-1">
                       GTM noscript veya benzeri kodlar için
@@ -484,7 +484,7 @@ export default function AdminSeo() {
                       onChange={(e) => handleChange('bodyEndScripts', e.target.value)}
                       placeholder="<!-- Örnek: Custom tracking scripts -->"
                       rows={4}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm text-gray-900 bg-white"
                     />
                     <p className="text-xs text-gray-500 mt-1">
                       Sayfa yüklendikten sonra çalışacak script'ler
