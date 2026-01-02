@@ -792,6 +792,14 @@ export default function AdminDashboard() {
                   <Search size={18} />
                   <span>SEO</span>
                 </Link>
+                <Link
+                  href="/admin/legal"
+                  className="flex items-center space-x-2 px-4 py-2 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-lg transition-colors font-medium"
+                  title="Yasal Sayfalar"
+                >
+                  <FileText size={18} />
+                  <span>Yasal</span>
+                </Link>
                 <button
                   onClick={() => setActiveTab('settings')}
                   className="flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors font-medium"

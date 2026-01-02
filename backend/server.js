@@ -108,6 +108,7 @@ const articlesRoutes = require('./routes/articles');
 const branchesRoutes = require('./routes/branches');
 const settingsRoutes = require('./routes/settings');
 const seoRoutes = require('./routes/seo');
+const legalRoutes = require('./routes/legal');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/prices', priceRoutes);
@@ -119,6 +120,7 @@ app.use('/api/articles', articlesRoutes);
 app.use('/api/branches', branchesRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/seo', seoRoutes);
+app.use('/api/legal', legalRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

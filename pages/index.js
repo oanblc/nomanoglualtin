@@ -747,6 +747,8 @@ export default function Home() {
                   <li><Link href="/" className="text-gray-500 hover:text-gray-900 text-sm transition-colors">Fiyatlar</Link></li>
                   <li><Link href="/piyasalar" className="text-gray-500 hover:text-gray-900 text-sm transition-colors">Piyasalar</Link></li>
                   <li><Link href="/iletisim" className="text-gray-500 hover:text-gray-900 text-sm transition-colors">İletişim</Link></li>
+                  <li><Link href="/gizlilik-politikasi" className="text-gray-500 hover:text-gray-900 text-sm transition-colors">Gizlilik Politikası</Link></li>
+                  <li><Link href="/kullanim-kosullari" className="text-gray-500 hover:text-gray-900 text-sm transition-colors">Kullanım Koşulları</Link></li>
                 </ul>
               </div>
 
