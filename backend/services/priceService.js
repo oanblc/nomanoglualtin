@@ -384,7 +384,8 @@ const handlePriceData = async (rawData) => {
                     calculatedSatis: p.calculatedSatis,
                     isCustom: p.isCustom,
                     isVisible: p.isVisible,
-                    order: p.order
+                    order: p.order,
+                    tarih: p.tarih || new Date().toISOString()
                   })),
                   meta: {
                     time: new Date().toISOString(),
@@ -521,7 +522,8 @@ const refreshPrices = async () => {
                 calculatedSatis: p.calculatedSatis,
                 isCustom: p.isCustom,
                 isVisible: p.isVisible,
-                order: p.order
+                order: p.order,
+                tarih: p.tarih || new Date().toISOString()
               })),
               meta: {
                 time: new Date().toISOString(),
