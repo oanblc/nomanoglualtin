@@ -15,7 +15,8 @@ const cachedPricesSchema = new mongoose.Schema({
     calculatedSatis: Number,
     isCustom: Boolean,
     isVisible: Boolean,
-    order: Number
+    order: Number,
+    tarih: String
   }],
   meta: {
     time: String,
