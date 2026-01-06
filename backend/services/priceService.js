@@ -1,4 +1,5 @@
 const { io: SocketIOClient } = require('socket.io-client');
+const axios = require('axios');
 const Coefficient = require('../models/Coefficient');
 const PriceHistory = require('../models/PriceHistory');
 const CachedPrices = require('../models/CachedPrices');
@@ -7,7 +8,8 @@ const SourcePrices = require('../models/SourcePrices');
 let currentPrices = {};
 let haremSocket = null;
 let serverIO = null;
-let lastRawData = null; // Son alınan ham veriyi sakla
+let lastRawData = null;
+let pollingInterval = null; // Son alınan ham veriyi sakla
 
 // Fiyat kategorilerini belirle
 const categorizeProduct = (code) => {
@@ -273,8 +275,8 @@ const processPrices = async (rawData) => {
 // Harem Altın WebSocket bağlantısını başlat
 const startWebSocket = (io) => {
   serverIO = io;
-  const wsUrl = process.env.HAREM_ALTIN_WS || 'wss://socketweb.haremaltin.com';
-  
+  const wsUrl = process.env.HAREM_ALTIN_WS || 'wss://hrmsocketonly.haremaltin.com:443';
+
   console.log(`🔌 Harem Altın WebSocket'e bağlanılıyor: ${wsUrl}`);
 
   haremSocket = SocketIOClient(wsUrl, {

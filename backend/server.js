@@ -65,8 +65,8 @@ app.use(cors({
 
 // 3. Rate Limiting - Genel API limiti
 const generalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 dakika
-  max: 100, // IP başına 100 istek
+  windowMs: 1 * 60 * 1000, // 1 dakika
+  max: 1000, // IP başına 1000 istek
   message: { success: false, message: 'Çok fazla istek gönderdiniz. Lütfen 15 dakika sonra tekrar deneyin.' },
   standardHeaders: true,
   legacyHeaders: false
@@ -74,7 +74,7 @@ const generalLimiter = rateLimit({
 
 // 4. Login için özel rate limit (brute force koruması)
 const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 dakika
+  windowMs: 1 * 60 * 1000, // 1 dakika
   max: 5, // IP başına 5 login denemesi
   message: { success: false, message: 'Çok fazla giriş denemesi. Lütfen 15 dakika sonra tekrar deneyin.' },
   standardHeaders: true,

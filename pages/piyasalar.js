@@ -115,7 +115,12 @@ export default function Piyasalar() {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.7; }
           }
-          .price-flash { animation: pulse-gold 0.5s ease-out; }
+          .price-flash { animation: price-highlight 0.8s ease-out; }
+          @keyframes price-highlight {
+            0% { background-color: rgba(247, 222, 0, 0.3); }
+            50% { background-color: rgba(247, 222, 0, 0.15); }
+            100% { background-color: transparent; }
+          }
           #price-table-container:fullscreen { background: #fafafa; padding: 1.5rem; }
           #price-table-container:fullscreen .fullscreen-hide { display: none !important; }
         `}</style>
@@ -302,10 +307,11 @@ export default function Piyasalar() {
                 <table className="w-full table-fixed">
                   <thead>
                     <tr className="bg-[#f7de00]">
-                      <th className="text-left py-3 px-2 sm:px-4 text-gray-900 font-bold text-xs sm:text-sm w-[35%] sm:w-auto">Ürün</th>
-                      <th className="text-right py-3 px-2 sm:px-4 text-gray-900 font-bold text-xs sm:text-sm w-[25%] sm:w-auto">Alış</th>
-                      <th className="text-right py-3 px-2 sm:px-4 text-gray-900 font-bold text-xs sm:text-sm w-[25%] sm:w-auto">Satış</th>
-                      <th className="text-center py-3 px-1 sm:px-4 text-gray-900 font-bold text-xs sm:text-sm w-[15%] sm:w-16">
+                      <th className="text-left py-4 px-3 sm:px-6 text-gray-900 font-bold text-xs sm:text-base w-[28%] sm:w-auto">Ürün</th>
+                      <th className="text-right py-4 px-3 sm:px-6 text-gray-900 font-bold text-xs sm:text-base w-[22%] sm:w-auto">Alış</th>
+                      <th className="text-right py-4 px-3 sm:px-6 text-gray-900 font-bold text-xs sm:text-base w-[22%] sm:w-auto">Satış</th>
+                      <th className="text-right py-4 px-3 sm:px-6 text-gray-900 font-bold text-xs sm:text-base w-[16%] sm:w-24">Fark</th>
+                      <th className="text-center py-4 px-1 sm:px-4 text-gray-900 font-bold text-xs sm:text-base w-[12%] sm:w-16">
                         <Star size={14} className="inline" />
                       </th>
                     </tr>
@@ -320,16 +326,16 @@ export default function Piyasalar() {
                       return (
                         <tr
                           key={price.code}
-                          className={`transition-all duration-300 hover:bg-gray-50 ${
-                            isHighlighted ? 'price-flash bg-[#f7de00]/10' : ''
+                          className={`transition-all duration-200 hover:bg-[#f7de00]/20 ${
+                            isHighlighted ? 'price-flash' : ''
                           } ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}
                         >
                           {/* Product Name */}
-                          <td className="py-3 px-2 sm:px-4">
+                          <td className="py-4 sm:py-5 px-3 sm:px-6">
                             <div className="flex items-center space-x-2">
                               <div className="min-w-0 flex-1">
-                                <p className="text-gray-900 font-semibold text-xs sm:text-sm truncate">{price.name}</p>
-                                <p className="text-gray-400 text-[10px] sm:text-xs">{price.code}</p>
+                                <p className="text-gray-900 font-semibold text-xs sm:text-base truncate uppercase">{price.name}</p>
+                                <p className="text-gray-400 text-[10px] sm:text-sm">{price.code}</p>
                               </div>
                               {/* Trend Indicator */}
                               {isRising && (
@@ -346,25 +352,40 @@ export default function Piyasalar() {
                           </td>
 
                           {/* Buy Price */}
-                          <td className="py-3 px-2 sm:px-4 text-right">
-                            <span className={`font-bold text-xs sm:text-base tabular-nums ${
-                              isRising ? 'text-green-600' : isFalling ? 'text-red-600' : 'text-gray-900'
-                            }`}>
+                          <td className="py-4 sm:py-5 px-3 sm:px-6 text-right">
+                            <span className="font-medium text-sm sm:text-lg tabular-nums text-gray-800" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
                               {formatPrice(price.calculatedAlis)}
                             </span>
                           </td>
 
                           {/* Sell Price */}
-                          <td className="py-3 px-2 sm:px-4 text-right">
-                            <span className={`font-bold text-xs sm:text-base tabular-nums ${
-                              isRising ? 'text-green-600' : isFalling ? 'text-red-600' : 'text-gray-900'
-                            }`}>
+                          <td className="py-4 sm:py-5 px-3 sm:px-6 text-right">
+                            <span className="font-medium text-sm sm:text-lg tabular-nums text-gray-800" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
                               {formatPrice(price.calculatedSatis)}
                             </span>
                           </td>
 
+                          {/* Fark - Anlık Değişim */}
+                          <td className="py-4 sm:py-5 px-3 sm:px-6 text-right">
+                            {(() => {
+                              const spread = price.calculatedSatis && price.calculatedAlis
+                                ? ((price.calculatedSatis - price.calculatedAlis) / price.calculatedAlis * 100)
+                                : 0;
+                              const dirUp = price.direction?.alis_dir === 'up' || price.direction?.satis_dir === 'up';
+                              const dirDown = price.direction?.alis_dir === 'down' || price.direction?.satis_dir === 'down';
+
+                              return (
+                                <span className={`font-medium text-sm sm:text-base tabular-nums whitespace-nowrap ${
+                                  dirUp ? 'text-green-600' : dirDown ? 'text-red-600' : 'text-gray-800'
+                                }`} style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
+                                  {dirUp ? '↑' : dirDown ? '↓' : ''} %{spread.toFixed(2)}
+                                </span>
+                              );
+                            })()}
+                          </td>
+
                           {/* Favorite */}
-                          <td className="py-3 px-1 sm:px-4 text-center">
+                          <td className="py-4 sm:py-5 px-1 sm:px-4 text-center">
                             <button
                               onClick={() => toggleFavorite(price.code)}
                               className="p-1.5 sm:p-2 rounded-lg hover:bg-gray-100 transition-colors"

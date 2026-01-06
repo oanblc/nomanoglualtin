@@ -16,12 +16,6 @@ export default function Home() {
   const [prices, setPrices] = useState([]);
   const previousPricesRef = useRef([]);
   const [lastUpdate, setLastUpdate] = useState(null);
-  const [timeSinceUpdate, setTimeSinceUpdate] = useState('');
-  const [filter, setFilter] = useState('all');
-  const [search, setSearch] = useState('');
-  const [mounted, setMounted] = useState(false);
-  const [favorites, setFavorites] = useState([]);
-  const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
   const [branches, setBranches] = useState([]);
   const [currentBranchIndex, setCurrentBranchIndex] = useState(0);
   const [highlightedPrices, setHighlightedPrices] = useState({});
@@ -74,44 +68,7 @@ export default function Home() {
     setLastUpdate(new Date());
   }, [websocketPrices]);
 
-  // Son güncellemeden bu yana geçen süreyi hesapla
   useEffect(() => {
-    const updateTimeSince = () => {
-      if (!lastUpdate) {
-        setTimeSinceUpdate('');
-        return;
-      }
-
-      const now = new Date();
-      const diffMs = now - lastUpdate;
-      const diffSec = Math.floor(diffMs / 1000);
-      const diffMin = Math.floor(diffSec / 60);
-      const diffHour = Math.floor(diffMin / 60);
-
-      if (diffSec < 5) {
-        setTimeSinceUpdate('Şimdi');
-      } else if (diffSec < 60) {
-        setTimeSinceUpdate(`${diffSec}s`);
-      } else if (diffMin < 60) {
-        setTimeSinceUpdate(`${diffMin}dk`);
-      } else {
-        setTimeSinceUpdate(`${diffHour}sa`);
-      }
-    };
-
-    updateTimeSince();
-    const interval = setInterval(updateTimeSince, 1000);
-
-    return () => clearInterval(interval);
-  }, [lastUpdate]);
-
-  useEffect(() => {
-    setMounted(true);
-    const savedFavorites = localStorage.getItem('favorites');
-    if (savedFavorites) {
-      setFavorites(JSON.parse(savedFavorites));
-    }
-
     fetch((process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001')+'/api/family-cards')
       .then(res => res.json())
       .then(data => {
@@ -140,17 +97,6 @@ export default function Home() {
       .catch(err => console.error('Şube yükleme hatası:', err));
   }, []);
 
-  const toggleFavorite = (code) => {
-    let newFavorites;
-    if (favorites.includes(code)) {
-      newFavorites = favorites.filter(f => f !== code);
-    } else {
-      newFavorites = [...favorites, code];
-    }
-    setFavorites(newFavorites);
-    localStorage.setItem('favorites', JSON.stringify(newFavorites));
-  };
-
   const formatPrice = (price) => {
     if (!price) return '-';
     return new Intl.NumberFormat('tr-TR', {
@@ -159,14 +105,6 @@ export default function Home() {
     }).format(price);
   };
 
-  const filteredPrices = prices
-    .filter(p => {
-      if (showOnlyFavorites && !favorites.includes(p.code)) return false;
-      if (filter !== 'all' && p.category !== filter) return false;
-      if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !p.code.toLowerCase().includes(search.toLowerCase())) return false;
-      return true;
-    })
-    .sort((a, b) => (a.order || 0) - (b.order || 0));
 
   const getIconForFamily = (iconName, size = 16) => {
     switch(iconName) {
@@ -205,7 +143,12 @@ export default function Home() {
           }
           .animate-pulse-gold { animation: pulse-gold 2s ease-in-out infinite; }
           .animate-slide-up { animation: slide-up 0.3s ease-out; }
-          .price-flash { animation: pulse-gold 0.5s ease-out; }
+          .price-flash { animation: price-highlight 0.8s ease-out; }
+          @keyframes price-highlight {
+            0% { background-color: rgba(247, 222, 0, 0.3); }
+            50% { background-color: rgba(247, 222, 0, 0.15); }
+            100% { background-color: transparent; }
+          }
 
           /* Custom scrollbar */
           .custom-scrollbar::-webkit-scrollbar { width: 4px; }
@@ -325,53 +268,6 @@ export default function Home() {
 
         {/* Main Content */}
         <main className="max-w-7xl mx-auto px-4 py-6">
-          {/* Filter and Search Bar - Same Line */}
-          <div className="mb-6 fullscreen-hide">
-            <div className="flex items-center gap-3">
-              {/* Quick Filter Pills */}
-              <div className="flex items-center space-x-2 flex-shrink-0">
-                <button
-                  onClick={() => { setShowOnlyFavorites(false); setFilter('all'); }}
-                  className={`px-4 py-2.5 text-sm font-medium rounded-full whitespace-nowrap transition-all ${
-                    !showOnlyFavorites && filter === 'all'
-                      ? 'bg-[#f7de00] text-gray-900'
-                      : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-                  }`}
-                >
-                  Tümü
-                </button>
-                <button
-                  onClick={() => { setShowOnlyFavorites(true); setFilter('all'); }}
-                  className={`px-4 py-2.5 text-sm font-medium rounded-full whitespace-nowrap transition-all flex items-center space-x-1.5 ${
-                    showOnlyFavorites
-                      ? 'bg-[#f7de00] text-gray-900'
-                      : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-                  }`}
-                >
-                  <Star size={14} className={favorites.length > 0 ? 'fill-current' : ''} />
-                  <span>Favoriler</span>
-                  {favorites.length > 0 && (
-                    <span className={`text-xs ${showOnlyFavorites ? 'text-gray-700' : 'text-gray-400'}`}>
-                      ({favorites.length})
-                    </span>
-                  )}
-                </button>
-              </div>
-
-              {/* Search Bar */}
-              <div className="relative flex-1">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                <input
-                  type="text"
-                  placeholder="Altın, döviz veya kod ile ara..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-12 pr-4 py-2.5 bg-white border border-gray-200 rounded-full text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:border-[#f7de00] focus:ring-2 focus:ring-[#f7de00]/20 transition-all shadow-sm"
-                />
-              </div>
-            </div>
-          </div>
-
           {/* Price Table */}
           <div id="price-table-container" className="mb-8">
             {prices.length === 0 ? (
@@ -379,36 +275,22 @@ export default function Home() {
                 <div className="w-12 h-12 border-4 border-gray-200 border-t-[#f7de00] rounded-full animate-spin mb-4" />
                 <p className="text-gray-500 text-sm">Fiyatlar yükleniyor...</p>
               </div>
-            ) : filteredPrices.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20">
-                <Star size={48} className="text-gray-300 mb-4" />
-                <p className="text-gray-500 text-sm mb-4">
-                  {showOnlyFavorites ? 'Henüz favori eklemediniz' : 'Sonuç bulunamadı'}
-                </p>
-                <button
-                  onClick={() => { setShowOnlyFavorites(false); setSearch(''); }}
-                  className="px-6 py-2 bg-[#f7de00] text-gray-900 text-sm font-medium rounded-lg transition-all"
-                >
-                  Tüm Fiyatlara Dön
-                </button>
-              </div>
             ) : (
               <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
                 {/* Table */}
                 <table className="w-full table-fixed">
                   <thead>
                     <tr className="bg-[#f7de00]">
-                      <th className="text-left py-3 px-2 sm:px-4 text-gray-900 font-bold text-xs sm:text-sm w-[35%] sm:w-auto">Ürün</th>
-                      <th className="text-right py-3 px-2 sm:px-4 text-gray-900 font-bold text-xs sm:text-sm w-[25%] sm:w-auto">Alış</th>
-                      <th className="text-right py-3 px-2 sm:px-4 text-gray-900 font-bold text-xs sm:text-sm w-[25%] sm:w-auto">Satış</th>
-                      <th className="text-center py-3 px-1 sm:px-4 text-gray-900 font-bold text-xs sm:text-sm w-[15%] sm:w-16">
-                        <Star size={14} className="inline" />
+                      <th className="text-left py-4 px-3 sm:px-6 text-gray-900 font-bold text-xs sm:text-base w-[30%] sm:w-auto">Ürün</th>
+                      <th className="text-right py-4 px-3 sm:px-6 text-gray-900 font-bold text-xs sm:text-base w-[23%] sm:w-auto">Alış</th>
+                      <th className="text-right py-4 px-3 sm:px-6 text-gray-900 font-bold text-xs sm:text-base w-[23%] sm:w-auto">Satış</th>
+                      <th className="text-right py-4 px-3 sm:px-6 text-gray-900 font-bold text-xs sm:text-base w-[24%] sm:w-28">
+                        Fark
                       </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {filteredPrices.map((price, index) => {
-                      const isFavorite = favorites.includes(price.code);
+                    {prices.map((price, index) => {
                       const isRising = price.direction && (price.direction.alis_dir === 'up' || price.direction.satis_dir === 'up');
                       const isFalling = price.direction && (price.direction.alis_dir === 'down' || price.direction.satis_dir === 'down');
                       const isHighlighted = highlightedPrices[price.code];
@@ -416,16 +298,16 @@ export default function Home() {
                       return (
                         <tr
                           key={price.code}
-                          className={`transition-all duration-300 hover:bg-gray-50 ${
-                            isHighlighted ? 'price-flash bg-[#f7de00]/10' : ''
+                          className={`transition-all duration-200 hover:bg-[#f7de00]/20 ${
+                            isHighlighted ? 'price-flash' : ''
                           } ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}
                         >
                           {/* Product Name */}
-                          <td className="py-3 px-2 sm:px-4">
+                          <td className="py-4 sm:py-5 px-3 sm:px-6">
                             <div className="flex items-center space-x-2">
                               <div className="min-w-0 flex-1">
-                                <p className="text-gray-900 font-semibold text-xs sm:text-sm truncate">{price.name}</p>
-                                <p className="text-gray-400 text-[10px] sm:text-xs">{price.code}</p>
+                                <p className="text-gray-900 font-semibold text-xs sm:text-base truncate uppercase">{price.name}</p>
+                                <p className="text-gray-400 text-[10px] sm:text-sm">{price.code}</p>
                               </div>
                               {/* Trend Indicator */}
                               {isRising && (
@@ -442,38 +324,39 @@ export default function Home() {
                           </td>
 
                           {/* Buy Price */}
-                          <td className="py-3 px-2 sm:px-4 text-right">
-                            <span className={`font-bold text-xs sm:text-base tabular-nums ${
-                              isRising ? 'text-green-600' : isFalling ? 'text-red-600' : 'text-gray-900'
-                            }`}>
+                          <td className="py-4 sm:py-5 px-3 sm:px-6 text-right">
+                            <span className="font-medium text-sm sm:text-lg tabular-nums text-gray-800" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
                               {formatPrice(price.calculatedAlis)}
                             </span>
                           </td>
 
                           {/* Sell Price */}
-                          <td className="py-3 px-2 sm:px-4 text-right">
-                            <span className={`font-bold text-xs sm:text-base tabular-nums ${
-                              isRising ? 'text-green-600' : isFalling ? 'text-red-600' : 'text-gray-900'
-                            }`}>
+                          <td className="py-4 sm:py-5 px-3 sm:px-6 text-right">
+                            <span className="font-medium text-sm sm:text-lg tabular-nums text-gray-800" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
                               {formatPrice(price.calculatedSatis)}
                             </span>
                           </td>
 
-                          {/* Favorite */}
-                          <td className="py-3 px-1 sm:px-4 text-center">
-                            <button
-                              onClick={() => toggleFavorite(price.code)}
-                              className="p-1.5 sm:p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                            >
-                              <Star
-                                size={16}
-                                className={`transition-all ${
-                                  isFavorite
-                                    ? 'fill-[#f7de00] text-[#f7de00]'
-                                    : 'text-gray-300 hover:text-gray-400'
-                                }`}
-                              />
-                            </button>
+                          {/* Fark - Anlık Değişim */}
+                          <td className="py-4 sm:py-5 px-3 sm:px-6 text-right">
+                            {(() => {
+                              // Spread hesapla (satış - alış farkı yüzdesi)
+                              const spread = price.calculatedSatis && price.calculatedAlis
+                                ? ((price.calculatedSatis - price.calculatedAlis) / price.calculatedAlis * 100)
+                                : 0;
+
+                              // Anlık değişim yönünü belirle
+                              const dirUp = price.direction?.alis_dir === 'up' || price.direction?.satis_dir === 'up';
+                              const dirDown = price.direction?.alis_dir === 'down' || price.direction?.satis_dir === 'down';
+
+                              return (
+                                <span className={`font-medium text-sm sm:text-base tabular-nums whitespace-nowrap ${
+                                  dirUp ? 'text-green-600' : dirDown ? 'text-red-600' : 'text-gray-800'
+                                }`} style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
+                                  {dirUp ? '↑' : dirDown ? '↓' : ''} %{spread.toFixed(2)}
+                                </span>
+                              );
+                            })()}
                           </td>
                         </tr>
                       );
@@ -484,7 +367,7 @@ export default function Home() {
             )}
 
             {/* TV Gösterimi Button */}
-            {filteredPrices.length > 0 && (
+            {prices.length > 0 && (
               <div className="mt-6 text-center fullscreen-hide">
                 <Link
                   href="/tv"
