@@ -32,12 +32,14 @@ export default function Home() {
         const res = await fetch((process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001') + '/api/prices/cached');
         const data = await res.json();
         if (data.success && data.data?.prices?.length > 0) {
-          const customPrices = data.data.prices.filter(p => p.isCustom !== false);
-          if (customPrices.length > 0 && prices.length === 0) {
+          let customPrices = data.data.prices.filter(p => p.isCustom !== false);
+          // Order'a göre sırala
+          customPrices = customPrices.sort((a, b) => (a.order || 999) - (b.order || 999));
+          if (customPrices.length > 0) {
             setPrices(customPrices);
             previousPricesRef.current = customPrices;
             setLastUpdate(new Date(data.updatedAt));
-            console.log(`📦 Cache'den ${customPrices.length} fiyat yüklendi`);
+            console.log(`📦 Cache'den ${customPrices.length} fiyat yüklendi (sıralı)`);
           }
         }
       } catch (error) {
@@ -58,7 +60,7 @@ export default function Home() {
       return;
     }
 
-    const customPrices = websocketPrices.filter(p => p.isCustom === true);
+    let customPrices = websocketPrices.filter(p => p.isCustom === true);
 
     // Custom fiyat yoksa mevcut fiyatları koru
     if (customPrices.length === 0) {
@@ -67,6 +69,9 @@ export default function Home() {
       }
       return;
     }
+
+    // Order'a göre sırala
+    customPrices = customPrices.sort((a, b) => (a.order || 999) - (b.order || 999));
 
     // Fiyat değişikliklerini kontrol et ve highlight yap
     const newHighlighted = {};
