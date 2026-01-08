@@ -357,42 +357,42 @@ export default function Piyasalar() {
                           } ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}
                         >
                           {/* Product Name */}
-                          <td className="py-4 sm:py-5 px-3 sm:px-6">
+                          <td className="py-3 sm:py-2.5 px-3 sm:px-6">
                             <div className="flex items-center space-x-2">
                               <div className="min-w-0 flex-1">
-                                <p className="text-gray-900 font-semibold text-xs sm:text-base uppercase break-words sm:truncate">{price.name}</p>
-                                <p className="text-gray-400 text-[10px] sm:text-sm hidden sm:block">{price.code}</p>
+                                <p className="text-gray-900 font-semibold text-xs sm:text-sm uppercase break-words sm:truncate">{price.name}</p>
+                                <p className="text-gray-400 text-[10px] sm:text-xs hidden sm:block">{price.code}</p>
                               </div>
                               {/* Trend Indicator */}
                               {isRising && (
-                                <div className="hidden sm:flex items-center px-2 py-1 bg-green-100 rounded-full">
-                                  <TrendingUp size={14} className="text-green-600" />
+                                <div className="hidden sm:flex items-center px-1.5 py-0.5 bg-green-100 rounded-full">
+                                  <TrendingUp size={12} className="text-green-600" />
                                 </div>
                               )}
                               {isFalling && (
-                                <div className="hidden sm:flex items-center px-2 py-1 bg-red-100 rounded-full">
-                                  <TrendingDown size={14} className="text-red-600" />
+                                <div className="hidden sm:flex items-center px-1.5 py-0.5 bg-red-100 rounded-full">
+                                  <TrendingDown size={12} className="text-red-600" />
                                 </div>
                               )}
                             </div>
                           </td>
 
                           {/* Buy Price */}
-                          <td className="py-4 sm:py-5 px-3 sm:px-6 text-right">
-                            <span className="font-medium text-sm sm:text-lg tabular-nums text-gray-800" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
+                          <td className="py-3 sm:py-2.5 px-3 sm:px-6 text-right">
+                            <span className="font-medium text-sm sm:text-base tabular-nums text-gray-800" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
                               {formatPrice(price.calculatedAlis)}
                             </span>
                           </td>
 
                           {/* Sell Price */}
-                          <td className="py-4 sm:py-5 px-3 sm:px-6 text-right">
-                            <span className="font-medium text-sm sm:text-lg tabular-nums text-gray-800" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
+                          <td className="py-3 sm:py-2.5 px-3 sm:px-6 text-right">
+                            <span className="font-medium text-sm sm:text-base tabular-nums text-gray-800" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
                               {formatPrice(price.calculatedSatis)}
                             </span>
                           </td>
 
                           {/* Fark - Anlık Değişim */}
-                          <td className="py-4 sm:py-5 px-3 sm:px-6 text-right">
+                          <td className="py-3 sm:py-2.5 px-3 sm:px-6 text-right">
                             {(() => {
                               const spread = price.calculatedSatis && price.calculatedAlis
                                 ? ((price.calculatedSatis - price.calculatedAlis) / price.calculatedAlis * 100)
@@ -411,7 +411,7 @@ export default function Piyasalar() {
                           </td>
 
                           {/* Favorite */}
-                          <td className="py-4 sm:py-5 px-1 sm:px-4 text-center">
+                          <td className="py-3 sm:py-2.5 px-1 sm:px-4 text-center">
                             <button
                               onClick={() => toggleFavorite(price.code)}
                               className="p-1.5 sm:p-2 rounded-lg hover:bg-gray-100 transition-colors"
