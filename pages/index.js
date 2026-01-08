@@ -333,8 +333,8 @@ export default function Home() {
                           <td className="py-4 sm:py-5 px-3 sm:px-6">
                             <div className="flex items-center space-x-2">
                               <div className="min-w-0 flex-1">
-                                <p className="text-gray-900 font-semibold text-xs sm:text-base truncate uppercase">{price.name}</p>
-                                <p className="text-gray-400 text-[10px] sm:text-sm">{price.code}</p>
+                                <p className="text-gray-900 font-semibold text-xs sm:text-base uppercase break-words sm:truncate">{price.name}</p>
+                                <p className="text-gray-400 text-[10px] sm:text-sm hidden sm:block">{price.code}</p>
                               </div>
                               {/* Trend Indicator */}
                               {isRising && (
