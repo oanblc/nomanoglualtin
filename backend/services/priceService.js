@@ -511,14 +511,45 @@ const getCurrentPrices = () => {
 const refreshPrices = async () => {
   console.log('🔄 Custom fiyatlar değişti, fiyatlar yeniden yükleniyor...');
 
-  if (!lastRawData) {
-    console.log('⚠️ Henüz ham veri yok, bir sonraki güncellemede dahil edilecek');
+  let rawDataToUse = lastRawData;
+
+  // Eğer memory'de ham veri yoksa, MongoDB'den çek
+  if (!rawDataToUse) {
+    console.log('⚠️ Memory\'de ham veri yok, MongoDB\'den çekiliyor...');
+    try {
+      const mongoose = require('mongoose');
+      if (mongoose.connection.readyState === 1) {
+        const sourcePrices = await SourcePrices.findOne({ key: 'source_prices' });
+        if (sourcePrices && sourcePrices.prices && sourcePrices.prices.length > 0) {
+          // SourcePrices formatını rawData formatına çevir
+          rawDataToUse = {
+            meta: { time: new Date().toISOString(), source: 'mongodb_cache' },
+            data: {}
+          };
+          sourcePrices.prices.forEach(p => {
+            rawDataToUse.data[p.code] = {
+              alis: p.rawAlis,
+              satis: p.rawSatis,
+              dir: {},
+              tarih: new Date().toISOString()
+            };
+          });
+          console.log(`📦 MongoDB'den ${sourcePrices.prices.length} kaynak fiyat yüklendi`);
+        }
+      }
+    } catch (err) {
+      console.error('❌ MongoDB\'den kaynak fiyat çekme hatası:', err.message);
+    }
+  }
+
+  if (!rawDataToUse) {
+    console.log('⚠️ Hiçbir kaynak veri bulunamadı');
     return false;
   }
 
   // Son alınan ham veriyi tekrar işle
   try {
-    const processedData = await processPrices(lastRawData);
+    const processedData = await processPrices(rawDataToUse);
     if (processedData && processedData.prices) {
       console.log(`✅ ${processedData.prices.length} fiyat yeniden işlendi`);
 
@@ -550,11 +581,15 @@ const refreshPrices = async () => {
             {
               key: 'current_prices',
               prices: customPrices.map(p => ({
+                id: p.id,
                 code: p.code,
                 name: p.name,
                 category: p.category,
                 calculatedAlis: p.calculatedAlis,
                 calculatedSatis: p.calculatedSatis,
+                rawAlis: p.rawAlis,
+                rawSatis: p.rawSatis,
+                direction: p.direction,
                 isCustom: p.isCustom,
                 isVisible: p.isVisible,
                 order: p.order,
@@ -570,6 +605,36 @@ const refreshPrices = async () => {
           );
           console.log(`💾 ${customPrices.length} custom fiyat cache'e kaydedildi (refresh)`);
         }
+
+        // Tüm fiyatları da kaydet (all_prices)
+        await CachedPrices.findOneAndUpdate(
+          { key: 'all_prices' },
+          {
+            key: 'all_prices',
+            prices: validPrices.map(p => ({
+              id: p.id,
+              code: p.code,
+              name: p.name,
+              category: p.category,
+              calculatedAlis: p.calculatedAlis,
+              calculatedSatis: p.calculatedSatis,
+              rawAlis: p.rawAlis,
+              rawSatis: p.rawSatis,
+              direction: p.direction,
+              isCustom: p.isCustom,
+              isVisible: p.isVisible,
+              order: p.order,
+              tarih: p.tarih || new Date().toISOString()
+            })),
+            meta: {
+              time: new Date().toISOString(),
+              count: validPrices.length
+            },
+            updatedAt: new Date()
+          },
+          { upsert: true, new: true }
+        );
+        console.log(`💾 ${validPrices.length} toplam fiyat all_prices cache'e kaydedildi (refresh)`);
       }
 
       return true;
