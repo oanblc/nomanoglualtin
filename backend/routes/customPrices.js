@@ -60,10 +60,10 @@ router.post('/', authMiddleware, customPriceValidation, async (req, res) => {
     const price = new CustomPrice(req.body);
     await price.save();
     console.log('✅ Yeni custom fiyat oluşturuldu:', price.code);
-    
+
     // Fiyatları hemen yeniden hesapla ve broadcast et
     await priceService.refreshPrices();
-    
+
     res.status(201).json({
       success: true,
       data: price,
@@ -71,10 +71,48 @@ router.post('/', authMiddleware, customPriceValidation, async (req, res) => {
     });
   } catch (error) {
     console.error('Custom price oluşturma hatası:', error);
-    res.status(400).json({ 
-      success: false, 
+    res.status(400).json({
+      success: false,
       message: error.code === 11000 ? 'Bu kod zaten kullanılıyor' : 'Oluşturma başarısız',
-      error: error.message 
+      error: error.message
+    });
+  }
+});
+
+// Fiyat sıralamasını güncelle (Admin korumalı) - /:id'den ÖNCE olmalı!
+router.put('/reorder', authMiddleware, async (req, res) => {
+  try {
+    const { orders } = req.body; // [{ id: '...', order: 0 }, { id: '...', order: 1 }, ...]
+
+    if (!orders || !Array.isArray(orders)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Geçersiz sıralama verisi'
+      });
+    }
+
+    // Her fiyatın order'ını güncelle
+    const updatePromises = orders.map(item =>
+      CustomPrice.findByIdAndUpdate(item.id, { order: item.order })
+    );
+
+    await Promise.all(updatePromises);
+
+    console.log('✅ Fiyat sıralaması güncellendi');
+
+    // Fiyatları yeniden hesapla ve broadcast et
+    await priceService.refreshPrices();
+
+    res.json({
+      success: true,
+      message: 'Sıralama başarıyla güncellendi'
+    });
+  } catch (error) {
+    console.error('Sıralama güncelleme hatası:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Sıralama güncellenemedi',
+      error: error.message
     });
   }
 });
@@ -115,56 +153,18 @@ router.put('/:id', authMiddleware, idParamValidation, customPriceValidation, asy
   }
 });
 
-// Fiyat sıralamasını güncelle (Admin korumalı)
-router.put('/reorder', authMiddleware, async (req, res) => {
-  try {
-    const { orders } = req.body; // [{ id: '...', order: 0 }, { id: '...', order: 1 }, ...]
-
-    if (!orders || !Array.isArray(orders)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Geçersiz sıralama verisi'
-      });
-    }
-
-    // Her fiyatın order'ını güncelle
-    const updatePromises = orders.map(item =>
-      CustomPrice.findByIdAndUpdate(item.id, { order: item.order })
-    );
-
-    await Promise.all(updatePromises);
-
-    console.log('✅ Fiyat sıralaması güncellendi');
-
-    // Fiyatları yeniden hesapla ve broadcast et
-    await priceService.refreshPrices();
-
-    res.json({
-      success: true,
-      message: 'Sıralama başarıyla güncellendi'
-    });
-  } catch (error) {
-    console.error('Sıralama güncelleme hatası:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Sıralama güncellenemedi',
-      error: error.message
-    });
-  }
-});
-
 // Custom fiyat sil (Admin korumalı + validation)
 router.delete('/:id', authMiddleware, idParamValidation, async (req, res) => {
   try {
     const price = await CustomPrice.findByIdAndDelete(req.params.id);
-    
+
     if (!price) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Fiyat bulunamadı' 
+      return res.status(404).json({
+        success: false,
+        message: 'Fiyat bulunamadı'
       });
     }
-    
+
     console.log('✅ Custom fiyat silindi:', price.code);
     
     // Fiyatları hemen yeniden hesapla ve broadcast et
