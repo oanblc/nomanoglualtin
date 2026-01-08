@@ -650,12 +650,13 @@ export default function AdminDashboard() {
     // State'i güncelle
     setCustomPrices(updatedPrices);
 
-    // Backend'e sıralama gönder - her bir fiyatı ayrı güncelle (fallback)
+    // Backend'e sıralama gönder
     try {
-      // Paralel olarak tüm fiyatları güncelle
-      await Promise.all(updatedPrices.map(price =>
-        authAxios.put(`${apiUrl}/api/custom-prices/${price.id}`, { order: price.order })
-      ));
+      const orders = updatedPrices.map(price => ({
+        id: price.id,
+        order: price.order
+      }));
+      await authAxios.put(`${apiUrl}/api/custom-prices/reorder`, { orders });
       console.log('✅ Sıralama kaydedildi');
     } catch (error) {
       console.error('❌ Sıralama kaydetme hatası:', error);

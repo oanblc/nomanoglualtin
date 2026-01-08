@@ -115,6 +115,44 @@ router.put('/:id', authMiddleware, idParamValidation, customPriceValidation, asy
   }
 });
 
+// Fiyat sıralamasını güncelle (Admin korumalı)
+router.put('/reorder', authMiddleware, async (req, res) => {
+  try {
+    const { orders } = req.body; // [{ id: '...', order: 0 }, { id: '...', order: 1 }, ...]
+
+    if (!orders || !Array.isArray(orders)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Geçersiz sıralama verisi'
+      });
+    }
+
+    // Her fiyatın order'ını güncelle
+    const updatePromises = orders.map(item =>
+      CustomPrice.findByIdAndUpdate(item.id, { order: item.order })
+    );
+
+    await Promise.all(updatePromises);
+
+    console.log('✅ Fiyat sıralaması güncellendi');
+
+    // Fiyatları yeniden hesapla ve broadcast et
+    await priceService.refreshPrices();
+
+    res.json({
+      success: true,
+      message: 'Sıralama başarıyla güncellendi'
+    });
+  } catch (error) {
+    console.error('Sıralama güncelleme hatası:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Sıralama güncellenemedi',
+      error: error.message
+    });
+  }
+});
+
 // Custom fiyat sil (Admin korumalı + validation)
 router.delete('/:id', authMiddleware, idParamValidation, async (req, res) => {
   try {
