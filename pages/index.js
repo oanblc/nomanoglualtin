@@ -34,7 +34,7 @@ export default function Home() {
         if (data.success && data.data?.prices?.length > 0) {
           let customPrices = data.data.prices.filter(p => p.isCustom !== false);
           // Order'a göre sırala
-          customPrices = customPrices.sort((a, b) => (a.order || 999) - (b.order || 999));
+          customPrices = customPrices.sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
           if (customPrices.length > 0) {
             setPrices(customPrices);
             previousPricesRef.current = customPrices;
@@ -71,7 +71,7 @@ export default function Home() {
     }
 
     // Order'a göre sırala
-    customPrices = customPrices.sort((a, b) => (a.order || 999) - (b.order || 999));
+    customPrices = customPrices.sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
 
     // Fiyat değişikliklerini kontrol et ve highlight yap
     const newHighlighted = {};
