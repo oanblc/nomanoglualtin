@@ -60,18 +60,18 @@ const categorizeProduct = (code) => {
 };
 
 // ============================================
-// ADIM 1: WebSocket'ten ham veri al ve kaydet
+// ADIM 1: WebSocket'ten ham veri al ve kaydet (MERGE)
 // ============================================
 const saveSourcePrices = async (rawData) => {
   if (!rawData || typeof rawData !== 'object') return null;
 
   const priceData = rawData.data || rawData;
-  const sourcePrices = [];
+  const newPrices = [];
 
   Object.keys(priceData).forEach(key => {
     const item = priceData[key];
     if (item && typeof item === 'object' && item.code) {
-      sourcePrices.push({
+      newPrices.push({
         code: key,
         name: productNames[key] || key,
         rawAlis: parseFloat(item.alis || 0),
@@ -85,25 +85,45 @@ const saveSourcePrices = async (rawData) => {
     }
   });
 
-  if (sourcePrices.length === 0) return null;
+  if (newPrices.length === 0) return null;
 
-  // MongoDB'ye kaydet
+  // MongoDB'den mevcut fiyatları çek ve merge et
   try {
+    const existing = await SourcePrices.findOne({ key: 'source_prices' });
+
+    // Mevcut fiyatları map'e çevir
+    const priceMap = {};
+    if (existing && existing.prices) {
+      existing.prices.forEach(p => {
+        priceMap[p.code] = p;
+      });
+    }
+
+    // Yeni gelen fiyatları üzerine yaz veya ekle
+    newPrices.forEach(p => {
+      priceMap[p.code] = p;
+    });
+
+    // Map'i array'e çevir
+    const mergedPrices = Object.values(priceMap);
+
+    // MongoDB'ye kaydet
     await SourcePrices.findOneAndUpdate(
       { key: 'source_prices' },
       {
         key: 'source_prices',
-        prices: sourcePrices,
+        prices: mergedPrices,
         updatedAt: new Date()
       },
       { upsert: true, new: true }
     );
-    console.log(`💾 ${sourcePrices.length} kaynak fiyat MongoDB'ye kaydedildi`);
+    console.log(`💾 ${mergedPrices.length} kaynak fiyat MongoDB'ye kaydedildi (${newPrices.length} yeni/güncellenen)`);
+
+    return mergedPrices;
   } catch (err) {
     console.error('❌ Kaynak fiyat kaydetme hatası:', err.message);
+    return newPrices;
   }
-
-  return sourcePrices;
 };
 
 // ============================================
