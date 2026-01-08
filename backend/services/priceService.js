@@ -403,6 +403,39 @@ const handlePriceData = async (rawData) => {
               });
             }
 
+            // Tüm geçerli fiyatları (custom + normal) ayrı bir key ile kaydet
+            CachedPrices.findOneAndUpdate(
+              { key: 'all_prices' },
+              {
+                key: 'all_prices',
+                prices: validPrices.map(p => ({
+                  id: p.id,
+                  code: p.code,
+                  name: p.name,
+                  category: p.category,
+                  calculatedAlis: p.calculatedAlis,
+                  calculatedSatis: p.calculatedSatis,
+                  rawAlis: p.rawAlis,
+                  rawSatis: p.rawSatis,
+                  direction: p.direction,
+                  isCustom: p.isCustom,
+                  isVisible: p.isVisible,
+                  order: p.order,
+                  tarih: p.tarih || new Date().toISOString()
+                })),
+                meta: {
+                  time: new Date().toISOString(),
+                  count: validPrices.length
+                },
+                updatedAt: new Date()
+              },
+              { upsert: true, new: true }
+            ).then(() => {
+              console.log(`💾 ${validPrices.length} toplam fiyat all_prices cache'e kaydedildi`);
+            }).catch(err => {
+              console.error('❌ All prices cache kaydetme hatası:', err.message);
+            });
+
             // Kaynak fiyatları (ham API fiyatları) - mevcut fiyatları koru, sadece güncelle/ekle
             const newSourcePrices = validPrices.filter(p => p.isCustom === false);
             if (newSourcePrices.length > 0) {

@@ -25,6 +25,28 @@ export default function Home() {
   const [familyCards, setFamilyCards] = useState([]);
   const [articles, setArticles] = useState([]);
 
+  // Sayfa açıldığında cache'den fiyatları çek
+  useEffect(() => {
+    const fetchCachedPrices = async () => {
+      try {
+        const res = await fetch((process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001') + '/api/prices/cached');
+        const data = await res.json();
+        if (data.success && data.data?.prices?.length > 0) {
+          const customPrices = data.data.prices.filter(p => p.isCustom !== false);
+          if (customPrices.length > 0 && prices.length === 0) {
+            setPrices(customPrices);
+            previousPricesRef.current = customPrices;
+            setLastUpdate(new Date(data.updatedAt));
+            console.log(`📦 Cache'den ${customPrices.length} fiyat yüklendi`);
+          }
+        }
+      } catch (error) {
+        console.error('Cache fiyat çekme hatası:', error);
+      }
+    };
+    fetchCachedPrices();
+  }, []);
+
   // WebSocket'ten gelen fiyatları güncelle
   useEffect(() => {
     // Geçersiz veri gelirse mevcut fiyatları koru

@@ -83,7 +83,7 @@ router.get('/history/:code', async (req, res) => {
   }
 });
 
-// Cached fiyatları getir (ilk sayfa yüklemesi için)
+// Cached fiyatları getir (ilk sayfa yüklemesi için - sadece custom)
 router.get('/cached', async (req, res) => {
   try {
     const cached = await CachedPrices.findOne({ key: 'current_prices' });
@@ -116,6 +116,46 @@ router.get('/cached', async (req, res) => {
     }
   } catch (error) {
     console.error('Cache fiyat getirme hatası:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Sunucu hatası',
+      error: error.message
+    });
+  }
+});
+
+// Tüm fiyatları getir (custom + normal - sayfa yüklemesi için)
+router.get('/all', async (req, res) => {
+  try {
+    const cached = await CachedPrices.findOne({ key: 'all_prices' });
+
+    if (cached && cached.prices && cached.prices.length > 0) {
+      res.json({
+        success: true,
+        data: {
+          prices: cached.prices,
+          meta: cached.meta
+        },
+        updatedAt: cached.updatedAt
+      });
+    } else {
+      // Cache yoksa memory'den al
+      const prices = getCurrentPrices();
+
+      res.json({
+        success: true,
+        data: {
+          prices: prices,
+          meta: {
+            time: new Date().toISOString(),
+            count: prices.length
+          }
+        },
+        updatedAt: new Date()
+      });
+    }
+  } catch (error) {
+    console.error('Tüm fiyatları getirme hatası:', error);
     res.status(500).json({
       success: false,
       message: 'Sunucu hatası',

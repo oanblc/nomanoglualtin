@@ -24,6 +24,27 @@ export default function Piyasalar() {
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // Sayfa açıldığında cache'den fiyatları çek
+  useEffect(() => {
+    const fetchCachedPrices = async () => {
+      try {
+        const res = await fetch((process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001') + '/api/prices/cached');
+        const data = await res.json();
+        if (data.success && data.data?.prices?.length > 0) {
+          const customPrices = data.data.prices.filter(p => p.isCustom !== false);
+          if (customPrices.length > 0 && prices.length === 0) {
+            setPrices(customPrices);
+            previousPricesRef.current = customPrices;
+            console.log(`📦 Cache'den ${customPrices.length} fiyat yüklendi`);
+          }
+        }
+      } catch (error) {
+        console.error('Cache fiyat çekme hatası:', error);
+      }
+    };
+    fetchCachedPrices();
+  }, []);
+
   // WebSocket'ten gelen fiyatları güncelle
   useEffect(() => {
     if (!websocketPrices || !Array.isArray(websocketPrices) || websocketPrices.length === 0) {
