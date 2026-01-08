@@ -184,6 +184,9 @@ const calculateCustomPrices = async (sourcePrices) => {
     });
   }
 
+  // Order'a göre sırala
+  calculatedPrices.sort((a, b) => (a.order || 999) - (b.order || 999));
+
   return calculatedPrices;
 };
 
