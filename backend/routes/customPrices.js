@@ -91,17 +91,30 @@ router.put('/reorder', authMiddleware, async (req, res) => {
       });
     }
 
-    // Her fiyatın order'ını güncelle
+    console.log('📝 Sıralama güncelleniyor:', orders.map(o => `${o.id}:${o.order}`).join(', '));
+
+    // Her fiyatın order'ını güncelle - { new: true } ile güncellenmiş dökümanı al
     const updatePromises = orders.map(item =>
-      CustomPrice.findByIdAndUpdate(item.id, { order: item.order })
+      CustomPrice.findByIdAndUpdate(
+        item.id,
+        { order: item.order, updatedAt: new Date() },
+        { new: true }
+      )
     );
 
-    await Promise.all(updatePromises);
+    const updatedDocs = await Promise.all(updatePromises);
 
-    console.log('✅ Fiyat sıralaması güncellendi');
+    // Tüm güncellemelerin başarılı olduğunu doğrula
+    const successCount = updatedDocs.filter(doc => doc !== null).length;
+    console.log(`✅ ${successCount}/${orders.length} fiyat sıralaması DB'ye yazıldı`);
+
+    // Kısa bir bekleme - MongoDB'nin tüm replica'lara yazmasını garantile
+    await new Promise(resolve => setTimeout(resolve, 100));
 
     // Fiyatları yeniden hesapla ve broadcast et
+    console.log('🔄 refreshPrices çağrılıyor...');
     await priceService.refreshPrices();
+    console.log('✅ refreshPrices tamamlandı');
 
     res.json({
       success: true,

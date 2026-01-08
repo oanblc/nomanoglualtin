@@ -153,11 +153,12 @@ const calculateCustomPrices = async (sourcePrices) => {
     sourceMap[p.code] = p;
   });
 
-  // Custom fiyatları MongoDB'den çek
+  // Custom fiyatları MongoDB'den çek - lean() ile düz obje olarak al (daha hızlı)
   let customPriceConfigs = [];
   try {
     const CustomPrice = require('../models/CustomPrice');
-    customPriceConfigs = await CustomPrice.find({ isVisible: true }).sort({ order: 1 });
+    customPriceConfigs = await CustomPrice.find({ isVisible: true }).sort({ order: 1 }).lean();
+    console.log('📋 Custom fiyat sıralaması:', customPriceConfigs.map(c => `${c.code}:${c.order}`).join(', '));
   } catch (err) {
     console.error('❌ Custom fiyat config çekme hatası:', err.message);
     return [];
