@@ -27,7 +27,7 @@ export const useWebSocket = () => {
         const data = await response.json();
 
         if (data.success && data.data && data.data.prices && data.data.prices.length > 0) {
-          const sortedPrices = [...data.data.prices].sort((a, b) => (a.order || 0) - (b.order || 0));
+          const sortedPrices = [...data.data.prices].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
           setPrices(sortedPrices);
           previousPricesRef.current = sortedPrices;
           setLastUpdate(data.data.meta?.time || data.updatedAt);
@@ -52,7 +52,7 @@ export const useWebSocket = () => {
           if (timeDiff < CACHE_DURATION) {
             const cachedPrices = JSON.parse(cached);
             if (cachedPrices && cachedPrices.length > 0) {
-              const sortedPrices = [...cachedPrices].sort((a, b) => (a.order || 0) - (b.order || 0));
+              const sortedPrices = [...cachedPrices].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
               setPrices(sortedPrices);
               previousPricesRef.current = sortedPrices;
               console.log('📦 LocalStorage\'dan fiyatlar yüklendi:', sortedPrices.length);
@@ -117,39 +117,25 @@ export const useWebSocket = () => {
         return;
       }
 
-      // Mevcut fiyatları koru, sadece gelen fiyatları üzerine yaz
-      setPrices(prevPrices => {
-        // Mevcut fiyatları map'e çevir (code veya id ile)
-        const priceMap = {};
-        prevPrices.forEach(p => {
-          const key = p.code || p.id;
-          priceMap[key] = p;
-        });
+      // WebSocket'ten gelen fiyatları DOĞRUDAN kullan (merge etme!)
+      // Backend zaten tüm fiyatları hesaplayıp gönderiyor
+      const sortedPrices = [...validPrices].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
 
-        // Gelen yeni fiyatları üzerine yaz veya ekle
-        validPrices.forEach(p => {
-          const key = p.code || p.id;
-          priceMap[key] = p;
-        });
+      // Debug log
+      console.log('📡 WebSocket fiyat güncellendi:', sortedPrices.map(p => `${p.code}:${p.order}`).join(', '));
 
-        // Map'i array'e çevir ve sırala
-        const mergedPrices = Object.values(priceMap);
-        const sortedPrices = mergedPrices.sort((a, b) => (a.order || 0) - (b.order || 0));
+      // Ref'i güncelle
+      previousPricesRef.current = sortedPrices;
 
-        // Ref'i güncelle
-        previousPricesRef.current = sortedPrices;
+      // Cache'e kaydet
+      try {
+        localStorage.setItem(CACHE_KEY, JSON.stringify(sortedPrices));
+        localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
+      } catch (err) {
+        console.error('Cache yazma hatası:', err);
+      }
 
-        // Cache'e kaydet
-        try {
-          localStorage.setItem(CACHE_KEY, JSON.stringify(sortedPrices));
-          localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
-        } catch (err) {
-          console.error('Cache yazma hatası:', err);
-        }
-
-        return sortedPrices;
-      });
-
+      setPrices(sortedPrices);
       setLastUpdate(data.meta?.time || Date.now());
     });
 

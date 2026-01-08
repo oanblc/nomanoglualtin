@@ -200,7 +200,7 @@ const calculateCustomPrices = async (sourcePrices) => {
       direction: alisSource.direction || satisSource.direction || {},
       isCustom: true,
       isVisible: config.isVisible,
-      order: config.order || 999,
+      order: config.order ?? 999,
       tarih: new Date().toISOString()
     });
   }
