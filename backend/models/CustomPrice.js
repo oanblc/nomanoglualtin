@@ -49,6 +49,12 @@ const customPriceSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  decimals: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 4
+  },
   isVisible: {
     type: Boolean,
     default: true

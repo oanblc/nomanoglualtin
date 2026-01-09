@@ -104,6 +104,7 @@ export default function AdminDashboard() {
     name: '',
     code: '',
     category: 'doviz',
+    decimals: 0,
     alisConfig: {
       sourceCode: '',
       sourceType: 'satis',
@@ -287,6 +288,7 @@ export default function AdminDashboard() {
       name: '',
       code: '',
       category: 'doviz',
+      decimals: 0,
       alisConfig: {
         sourceCode: sourcePrices[0]?.code || '',
         sourceType: 'satis',
@@ -1913,6 +1915,20 @@ export default function AdminDashboard() {
                         <option value="doviz">Döviz</option>
                         <option value="altin">Altın</option>
                         <option value="gumus">Gümüş</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Ondalık Basamak</label>
+                      <select
+                        value={formData.decimals ?? 0}
+                        onChange={(e) => setFormData({...formData, decimals: parseInt(e.target.value)})}
+                        className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white text-gray-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-all"
+                      >
+                        <option value={0}>0 (Örnek: 35)</option>
+                        <option value={1}>1 (Örnek: 35.5)</option>
+                        <option value={2}>2 (Örnek: 35.50)</option>
+                        <option value={3}>3 (Örnek: 35.500)</option>
+                        <option value={4}>4 (Örnek: 35.5000)</option>
                       </select>
                     </div>
                   </div>

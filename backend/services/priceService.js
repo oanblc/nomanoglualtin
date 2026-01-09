@@ -201,6 +201,7 @@ const calculateCustomPrices = async (sourcePrices) => {
       isCustom: true,
       isVisible: config.isVisible,
       order: config.order ?? 999,
+      decimals: config.decimals ?? 0,
       tarih: new Date().toISOString()
     });
   }
@@ -235,6 +236,7 @@ const saveCachedPrices = async (prices) => {
           isCustom: p.isCustom,
           isVisible: p.isVisible,
           order: p.order,
+          decimals: p.decimals ?? 0,
           tarih: p.tarih
         })),
         meta: {

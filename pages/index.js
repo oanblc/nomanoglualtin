@@ -124,12 +124,12 @@ export default function Home() {
       .catch(err => console.error('Şube yükleme hatası:', err));
   }, []);
 
-  const formatPrice = (price) => {
-    if (!price) return '-';
+  const formatPrice = (value, decimals = 0) => {
+    if (!value) return '-';
     return new Intl.NumberFormat('tr-TR', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(price);
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals
+    }).format(value);
   };
 
 
@@ -353,14 +353,14 @@ export default function Home() {
                           {/* Buy Price */}
                           <td className="py-3 sm:py-2.5 px-3 sm:px-6 text-right">
                             <span className="font-medium text-sm sm:text-base tabular-nums text-gray-800" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
-                              {formatPrice(price.calculatedAlis)}
+                              {formatPrice(price.calculatedAlis, price.decimals)}
                             </span>
                           </td>
 
                           {/* Sell Price */}
                           <td className="py-3 sm:py-2.5 px-3 sm:px-6 text-right">
                             <span className="font-medium text-sm sm:text-base tabular-nums text-gray-800" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
-                              {formatPrice(price.calculatedSatis)}
+                              {formatPrice(price.calculatedSatis, price.decimals)}
                             </span>
                           </td>
 
