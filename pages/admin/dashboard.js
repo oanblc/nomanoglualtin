@@ -678,6 +678,14 @@ export default function AdminDashboard() {
     return (rawPrice * config.multiplier) + config.addition;
   };
 
+  const formatPrice = (value, decimals = 0) => {
+    if (!value) return '-';
+    return new Intl.NumberFormat('tr-TR', {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals
+    }).format(value);
+  };
+
   // Sıra numarası değiştirme fonksiyonu
   const handleOrderChange = async (priceId, newOrder) => {
     const orderNum = parseInt(newOrder);
@@ -1138,10 +1146,10 @@ export default function AdminDashboard() {
                             </div>
                           </td>
                           <td className="px-4 py-4 text-right">
-                            <div className="text-green-700 font-mono font-bold text-lg">₺{alisPreview.toFixed(2)}</div>
+                            <div className="text-green-700 font-mono font-bold text-lg">₺{formatPrice(alisPreview, price.decimals ?? 0)}</div>
                           </td>
                           <td className="px-4 py-4 text-right">
-                            <div className="text-red-700 font-mono font-bold text-lg">₺{satisPreview.toFixed(2)}</div>
+                            <div className="text-red-700 font-mono font-bold text-lg">₺{formatPrice(satisPreview, price.decimals ?? 0)}</div>
                           </td>
                           <td className="px-4 py-4">
                             <div className="flex items-center justify-center space-x-2">
@@ -1987,7 +1995,7 @@ export default function AdminDashboard() {
                   </div>
                   <div className="bg-white rounded-lg p-4 border-2 border-green-300">
                     <p className="text-sm text-gray-600 mb-1">Önizleme:</p>
-                    <p className="text-3xl font-bold text-green-700">₺{calculatePreview(formData.alisConfig).toFixed(2)}</p>
+                    <p className="text-3xl font-bold text-green-700">₺{formatPrice(calculatePreview(formData.alisConfig), formData.decimals ?? 0)}</p>
                   </div>
                 </div>
 
@@ -2044,7 +2052,7 @@ export default function AdminDashboard() {
                   </div>
                   <div className="bg-white rounded-lg p-4 border-2 border-red-300">
                     <p className="text-sm text-gray-600 mb-1">Önizleme:</p>
-                    <p className="text-3xl font-bold text-red-700">₺{calculatePreview(formData.satisConfig).toFixed(2)}</p>
+                    <p className="text-3xl font-bold text-red-700">₺{formatPrice(calculatePreview(formData.satisConfig), formData.decimals ?? 0)}</p>
                   </div>
                 </div>
               </div>
