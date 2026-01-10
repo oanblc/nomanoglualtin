@@ -311,35 +311,25 @@ const handlePriceData = async (rawData) => {
 };
 
 // ============================================
-// HTTP API'den fiyat çekme (Bigpara)
+// HTTP API'den fiyat çekme (Sadece Harem Altın)
 // ============================================
 const fetchPricesFromAPI = async () => {
   try {
-    // Bigpara API - altın ve döviz fiyatları
-    const [goldResponse, currencyResponse] = await Promise.all([
-      axios.get('https://www.haremaltin.com/dashboard/ajax/doviz', {
-        headers: {
-          'Accept': 'application/json',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-          'Referer': 'https://www.haremaltin.com/',
-          'Origin': 'https://www.haremaltin.com'
-        },
-        timeout: 10000
-      }).catch(() => null),
-      axios.get('https://api.bigpara.hurriyet.com.tr/doviz/headerlist/anasayfa', {
-        headers: {
-          'Accept': 'application/json',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-        },
-        timeout: 10000
-      }).catch(() => null)
-    ]);
+    const response = await axios.get('https://www.haremaltin.com/dashboard/ajax/doviz', {
+      headers: {
+        'Accept': 'application/json, text/plain, */*',
+        'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Referer': 'https://www.haremaltin.com/',
+        'Origin': 'https://www.haremaltin.com'
+      },
+      timeout: 10000
+    });
 
-    const rawData = {};
+    if (response.data && response.data.data) {
+      const haremData = response.data.data;
+      const rawData = {};
 
-    // Harem Altın verisini işle
-    if (goldResponse && goldResponse.data && goldResponse.data.data) {
-      const haremData = goldResponse.data.data;
       Object.keys(haremData).forEach(key => {
         const item = haremData[key];
         if (item && typeof item === 'object') {
@@ -355,41 +345,17 @@ const fetchPricesFromAPI = async () => {
           };
         }
       });
-      console.log(`📊 Harem Altın API'den ${Object.keys(haremData).length} fiyat alındı`);
-    }
 
-    // Bigpara verisini işle (yedek kaynak)
-    if (currencyResponse && currencyResponse.data && currencyResponse.data.data) {
-      const bigparaData = currencyResponse.data.data;
-
-      // Bigpara formatını dönüştür
-      bigparaData.forEach(item => {
-        if (item.kod && !rawData[item.kod]) {
-          rawData[item.kod] = {
-            code: item.kod,
-            alis: parseFloat(item.alis) || 0,
-            satis: parseFloat(item.satis) || 0,
-            dir: { alis: item.pipiyon > 0 ? 'up' : 'down' },
-            dusuk: parseFloat(item.dusuk) || 0,
-            yuksek: parseFloat(item.yuksek) || 0,
-            kapanis: parseFloat(item.kapanis) || 0,
-            tarih: new Date().toISOString()
-          };
-        }
-      });
-      console.log(`📊 Bigpara API'den ${bigparaData.length} ek fiyat alındı`);
-    }
-
-    if (Object.keys(rawData).length > 0) {
+      console.log(`📊 Harem Altın'dan ${Object.keys(rawData).length} fiyat alındı`);
       await handlePriceData({ data: rawData });
       return true;
     }
 
-    console.log('⚠️ API\'lerden veri alınamadı');
+    console.log('⚠️ Harem Altın API\'den veri alınamadı');
     return false;
 
   } catch (error) {
-    console.error('❌ API fiyat çekme hatası:', error.message);
+    console.error('❌ Harem Altın API hatası:', error.message);
     return false;
   }
 };
