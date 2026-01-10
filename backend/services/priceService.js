@@ -324,11 +324,15 @@ const startWebSocket = (io) => {
     transports: ['websocket'],
     reconnection: true,
     reconnectionDelay: 1000,
-    reconnectionAttempts: 10
+    reconnectionAttempts: 10,
+    timeout: 20000
   });
+
+  console.log('🔌 Socket oluşturuldu, bağlantı bekleniyor...');
 
   haremSocket.on('connect', () => {
     console.log('✅ Harem Altın WebSocket bağlantısı kuruldu!');
+    console.log('🔍 Socket ID:', haremSocket.id);
   });
 
   haremSocket.on('disconnect', (reason) => {
@@ -337,6 +341,23 @@ const startWebSocket = (io) => {
 
   haremSocket.on('error', (error) => {
     console.error('❌ Harem Altın WebSocket hatası:', error.message);
+  });
+
+  haremSocket.on('connect_error', (error) => {
+    console.error('❌ Harem Altın bağlantı hatası:', error.message);
+    console.error('🔍 Hata detayı:', error);
+  });
+
+  haremSocket.io.on('error', (error) => {
+    console.error('❌ Transport hatası:', error);
+  });
+
+  haremSocket.io.on('reconnect_attempt', (attempt) => {
+    console.log(`🔄 Yeniden bağlanma denemesi: ${attempt}`);
+  });
+
+  haremSocket.io.on('reconnect_failed', () => {
+    console.error('❌ Tüm yeniden bağlanma denemeleri başarısız!');
   });
 
   // Tüm event'leri dinle
