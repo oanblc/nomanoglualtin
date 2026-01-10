@@ -1,10 +1,9 @@
-const { io: SocketIOClient } = require('socket.io-client');
-const Coefficient = require('../models/Coefficient');
+const axios = require('axios');
 const PriceHistory = require('../models/PriceHistory');
 const CachedPrices = require('../models/CachedPrices');
 const SourcePrices = require('../models/SourcePrices');
 
-let haremSocket = null;
+let pollingInterval = null;
 let serverIO = null;
 let currentPrices = {};
 
@@ -312,73 +311,114 @@ const handlePriceData = async (rawData) => {
 };
 
 // ============================================
-// WebSocket bağlantısı
+// HTTP API'den fiyat çekme (Bigpara)
 // ============================================
-const startWebSocket = (io) => {
-  serverIO = io;
-  const wsUrl = process.env.HAREM_ALTIN_WS || 'wss://hrmsocketonly.haremaltin.com:443';
+const fetchPricesFromAPI = async () => {
+  try {
+    // Bigpara API - altın ve döviz fiyatları
+    const [goldResponse, currencyResponse] = await Promise.all([
+      axios.get('https://www.haremaltin.com/dashboard/ajax/doviz', {
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'Referer': 'https://www.haremaltin.com/',
+          'Origin': 'https://www.haremaltin.com'
+        },
+        timeout: 10000
+      }).catch(() => null),
+      axios.get('https://api.bigpara.hurriyet.com.tr/doviz/headerlist/anasayfa', {
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        },
+        timeout: 10000
+      }).catch(() => null)
+    ]);
 
-  console.log(`🔌 Harem Altın WebSocket'e bağlanılıyor: ${wsUrl}`);
+    const rawData = {};
 
-  haremSocket = SocketIOClient(wsUrl, {
-    transports: ['websocket'],
-    reconnection: true,
-    reconnectionDelay: 1000,
-    reconnectionAttempts: 10,
-    timeout: 20000,
-    extraHeaders: {
-      'Origin': 'https://www.haremaltin.com',
-      'Referer': 'https://www.haremaltin.com/',
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    // Harem Altın verisini işle
+    if (goldResponse && goldResponse.data && goldResponse.data.data) {
+      const haremData = goldResponse.data.data;
+      Object.keys(haremData).forEach(key => {
+        const item = haremData[key];
+        if (item && typeof item === 'object') {
+          rawData[key] = {
+            code: key,
+            alis: item.alis,
+            satis: item.satis,
+            dir: item.dir || {},
+            dusuk: item.dusuk,
+            yuksek: item.yuksek,
+            kapanis: item.kapanis,
+            tarih: item.tarih
+          };
+        }
+      });
+      console.log(`📊 Harem Altın API'den ${Object.keys(haremData).length} fiyat alındı`);
     }
-  });
 
-  console.log('🔌 Socket oluşturuldu, bağlantı bekleniyor...');
+    // Bigpara verisini işle (yedek kaynak)
+    if (currencyResponse && currencyResponse.data && currencyResponse.data.data) {
+      const bigparaData = currencyResponse.data.data;
 
-  haremSocket.on('connect', () => {
-    console.log('✅ Harem Altın WebSocket bağlantısı kuruldu!');
-    console.log('🔍 Socket ID:', haremSocket.id);
-  });
+      // Bigpara formatını dönüştür
+      bigparaData.forEach(item => {
+        if (item.kod && !rawData[item.kod]) {
+          rawData[item.kod] = {
+            code: item.kod,
+            alis: parseFloat(item.alis) || 0,
+            satis: parseFloat(item.satis) || 0,
+            dir: { alis: item.pipiyon > 0 ? 'up' : 'down' },
+            dusuk: parseFloat(item.dusuk) || 0,
+            yuksek: parseFloat(item.yuksek) || 0,
+            kapanis: parseFloat(item.kapanis) || 0,
+            tarih: new Date().toISOString()
+          };
+        }
+      });
+      console.log(`📊 Bigpara API'den ${bigparaData.length} ek fiyat alındı`);
+    }
 
-  haremSocket.on('disconnect', (reason) => {
-    console.log('❌ Harem Altın bağlantısı kesildi:', reason);
-  });
+    if (Object.keys(rawData).length > 0) {
+      await handlePriceData({ data: rawData });
+      return true;
+    }
 
-  haremSocket.on('error', (error) => {
-    console.error('❌ Harem Altın WebSocket hatası:', error.message);
-  });
+    console.log('⚠️ API\'lerden veri alınamadı');
+    return false;
 
-  haremSocket.on('connect_error', (error) => {
-    console.error('❌ Harem Altın bağlantı hatası:', error.message);
-    console.error('🔍 Hata detayı:', error);
-  });
-
-  haremSocket.io.on('error', (error) => {
-    console.error('❌ Transport hatası:', error);
-  });
-
-  haremSocket.io.on('reconnect_attempt', (attempt) => {
-    console.log(`🔄 Yeniden bağlanma denemesi: ${attempt}`);
-  });
-
-  haremSocket.io.on('reconnect_failed', () => {
-    console.error('❌ Tüm yeniden bağlanma denemeleri başarısız!');
-  });
-
-  // Tüm event'leri dinle
-  haremSocket.onAny(async (eventName, data) => {
-    if (['connect', 'disconnect', 'error', 'connect_error'].includes(eventName)) return;
-
-    console.log(`📊 Harem Altın'dan ${eventName} event'i alındı`);
-    await handlePriceData(data);
-  });
+  } catch (error) {
+    console.error('❌ API fiyat çekme hatası:', error.message);
+    return false;
+  }
 };
 
-const stopWebSocket = () => {
-  if (haremSocket) {
-    haremSocket.disconnect();
-    haremSocket = null;
-    console.log('⏹️ Harem Altın WebSocket bağlantısı kapatıldı');
+// ============================================
+// Polling başlat (her 3 saniyede bir)
+// ============================================
+const startPolling = (io) => {
+  serverIO = io;
+  const pollInterval = parseInt(process.env.POLL_INTERVAL) || 3000;
+
+  console.log(`🔄 Fiyat polling başlatılıyor (${pollInterval}ms aralıkla)...`);
+
+  // İlk çekimi hemen yap
+  fetchPricesFromAPI();
+
+  // Düzenli aralıklarla çek
+  pollingInterval = setInterval(async () => {
+    await fetchPricesFromAPI();
+  }, pollInterval);
+
+  console.log('✅ Polling başlatıldı');
+};
+
+const stopPolling = () => {
+  if (pollingInterval) {
+    clearInterval(pollingInterval);
+    pollingInterval = null;
+    console.log('⏹️ Polling durduruldu');
   }
 };
 
@@ -429,14 +469,12 @@ const getCurrentPrices = () => {
 };
 
 module.exports = {
-  startWebSocket,
-  stopWebSocket,
+  startPolling,
+  stopPolling,
   getCurrentPrices,
   refreshPrices,
   getSourcePrices,
-  // Backward compatibility
-  startPolling: startWebSocket,
-  stopPolling: stopWebSocket,
+  fetchPricesFromAPI,
   calculatePrice: (rawPrice, coefficient) => {
     if (!coefficient || rawPrice === null || rawPrice === undefined) {
       return parseFloat(rawPrice) || 0;
