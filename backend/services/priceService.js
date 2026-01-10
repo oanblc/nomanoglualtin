@@ -8,7 +8,7 @@ let serverIO = null;
 let currentPrices = {};
 
 // PHP Proxy URL
-const PROXY_URL = 'https://piyasa.akakuyumculuk.com/api/haremaltin_fiyatlar.php';
+const PROXY_URL = 'https://piyasa.akakuyumculuk.com/api/fiyatlar.php?api=1';
 const POLLING_INTERVAL = 2000; // 2 saniye
 
 // Türkçe isim mapping
@@ -329,13 +329,20 @@ const fetchPricesFromProxy = async () => {
 
     if (response.data && typeof response.data === 'object') {
       // Hata kontrolü
-      if (response.data.error) {
-        console.error('❌ PHP Proxy hatası:', response.data.error);
+      if (response.data.error || !response.data.success) {
+        console.error('❌ PHP Proxy hatası:', response.data.error || 'success=false');
         return null;
       }
 
-      console.log(`📊 PHP Proxy'den ${Object.keys(response.data).length} fiyat alındı`);
-      return response.data;
+      // API formatı: { success: true, prices: { USDTRY: {...}, ALTIN: {...}, ... } }
+      if (response.data.prices && typeof response.data.prices === 'object') {
+        const priceCount = Object.keys(response.data.prices).length;
+        console.log(`📊 PHP Proxy'den ${priceCount} fiyat alındı`);
+        return response.data.prices;
+      }
+
+      console.log('⚠️ PHP Proxy: prices objesi bulunamadı');
+      return null;
     }
 
     return null;
