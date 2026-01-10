@@ -325,7 +325,12 @@ const startWebSocket = (io) => {
     reconnection: true,
     reconnectionDelay: 1000,
     reconnectionAttempts: 10,
-    timeout: 20000
+    timeout: 20000,
+    extraHeaders: {
+      'Origin': 'https://www.haremaltin.com',
+      'Referer': 'https://www.haremaltin.com/',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    }
   });
 
   console.log('🔌 Socket oluşturuldu, bağlantı bekleniyor...');
