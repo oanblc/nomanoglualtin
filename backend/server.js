@@ -10,10 +10,6 @@ require('dotenv').config();
 const app = express();
 const server = http.createServer(app);
 
-// Proxy arkasında çalışırken (Railway, Render, Heroku vb.) gerekli
-// Rate limiting ve IP tespiti için
-app.set('trust proxy', 1);
-
 // İzin verilen originler (production ve development)
 const allowedOrigins = [
   'http://localhost:3000',

@@ -1,17 +1,12 @@
-const axios = require('axios');
-const WebSocket = require('ws');
+const { io: SocketIOClient } = require('socket.io-client');
+const Coefficient = require('../models/Coefficient');
 const PriceHistory = require('../models/PriceHistory');
 const CachedPrices = require('../models/CachedPrices');
 const SourcePrices = require('../models/SourcePrices');
 
+let haremSocket = null;
 let serverIO = null;
 let currentPrices = {};
-let vpsSocket = null;
-let reconnectTimeout = null;
-
-// VPS WebSocket URL
-const VPS_WS_URL = process.env.VPS_WS_URL || 'ws://72.61.185.228:8080';
-const RECONNECT_INTERVAL = 5000; // 5 saniye
 
 // Türkçe isim mapping
 const productNames = {
@@ -317,74 +312,48 @@ const handlePriceData = async (rawData) => {
 };
 
 // ============================================
-// VPS WebSocket'e bağlan
+// WebSocket bağlantısı
 // ============================================
-const connectToVPS = () => {
-  if (vpsSocket && vpsSocket.readyState === WebSocket.OPEN) {
-    console.log('⚠️ VPS WebSocket zaten bağlı');
-    return;
-  }
-
-  console.log(`🔌 VPS WebSocket'e bağlanılıyor: ${VPS_WS_URL}`);
-
-  vpsSocket = new WebSocket(VPS_WS_URL);
-
-  vpsSocket.on('open', () => {
-    console.log('✅ VPS WebSocket bağlantısı kuruldu');
-    if (reconnectTimeout) {
-      clearTimeout(reconnectTimeout);
-      reconnectTimeout = null;
-    }
-  });
-
-  vpsSocket.on('message', async (data) => {
-    try {
-      const message = JSON.parse(data.toString());
-      if (message.event === 'priceUpdate' && message.data) {
-        console.log(`📡 VPS'ten ${Object.keys(message.data).length} fiyat alındı`);
-        await handlePriceData(message.data);
-      }
-    } catch (err) {
-      console.error('❌ VPS mesaj parse hatası:', err.message);
-    }
-  });
-
-  vpsSocket.on('close', () => {
-    console.log('❌ VPS WebSocket bağlantısı kapandı');
-    scheduleReconnect();
-  });
-
-  vpsSocket.on('error', (err) => {
-    console.error('❌ VPS WebSocket hatası:', err.message);
-  });
-};
-
-const scheduleReconnect = () => {
-  if (reconnectTimeout) return;
-
-  console.log(`🔄 ${RECONNECT_INTERVAL / 1000} saniye sonra yeniden bağlanılacak...`);
-  reconnectTimeout = setTimeout(() => {
-    reconnectTimeout = null;
-    connectToVPS();
-  }, RECONNECT_INTERVAL);
-};
-
-const startPolling = (io) => {
+const startWebSocket = (io) => {
   serverIO = io;
-  console.log('🚀 VPS WebSocket modu başlatılıyor...');
-  connectToVPS();
+  const wsUrl = process.env.HAREM_ALTIN_WS || 'wss://hrmsocketonly.haremaltin.com:443';
+
+  console.log(`🔌 Harem Altın WebSocket'e bağlanılıyor: ${wsUrl}`);
+
+  haremSocket = SocketIOClient(wsUrl, {
+    transports: ['websocket'],
+    reconnection: true,
+    reconnectionDelay: 1000,
+    reconnectionAttempts: 10
+  });
+
+  haremSocket.on('connect', () => {
+    console.log('✅ Harem Altın WebSocket bağlantısı kuruldu!');
+  });
+
+  haremSocket.on('disconnect', (reason) => {
+    console.log('❌ Harem Altın bağlantısı kesildi:', reason);
+  });
+
+  haremSocket.on('error', (error) => {
+    console.error('❌ Harem Altın WebSocket hatası:', error.message);
+  });
+
+  // Tüm event'leri dinle
+  haremSocket.onAny(async (eventName, data) => {
+    if (['connect', 'disconnect', 'error', 'connect_error'].includes(eventName)) return;
+
+    console.log(`📊 Harem Altın'dan ${eventName} event'i alındı`);
+    await handlePriceData(data);
+  });
 };
 
-const stopPolling = () => {
-  if (vpsSocket) {
-    vpsSocket.close();
-    vpsSocket = null;
+const stopWebSocket = () => {
+  if (haremSocket) {
+    haremSocket.disconnect();
+    haremSocket = null;
+    console.log('⏹️ Harem Altın WebSocket bağlantısı kapatıldı');
   }
-  if (reconnectTimeout) {
-    clearTimeout(reconnectTimeout);
-    reconnectTimeout = null;
-  }
-  console.log('⏹️ VPS WebSocket bağlantısı kapatıldı');
 };
 
 // ============================================
@@ -434,11 +403,14 @@ const getCurrentPrices = () => {
 };
 
 module.exports = {
-  startPolling,
-  stopPolling,
+  startWebSocket,
+  stopWebSocket,
   getCurrentPrices,
   refreshPrices,
   getSourcePrices,
+  // Backward compatibility
+  startPolling: startWebSocket,
+  stopPolling: stopWebSocket,
   calculatePrice: (rawPrice, coefficient) => {
     if (!coefficient || rawPrice === null || rawPrice === undefined) {
       return parseFloat(rawPrice) || 0;
