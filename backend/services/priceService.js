@@ -311,20 +311,26 @@ const handlePriceData = async (rawData) => {
 };
 
 // ============================================
-// WebSocket bağlantısı (socket.haremaltin.com)
+// WebSocket bağlantısı (hrmsocketonly.haremaltin.com)
 // ============================================
 const startPolling = (io) => {
   serverIO = io;
-  const wsUrl = 'wss://socket.haremaltin.com';
+  const wsUrl = 'wss://hrmsocketonly.haremaltin.com';
 
   console.log(`🔌 Harem Altın WebSocket'e bağlanılıyor: ${wsUrl}`);
 
   haremSocket = SocketIOClient(wsUrl, {
+    path: '/socket.io/',
     transports: ['websocket'],
     reconnection: true,
     reconnectionDelay: 1000,
     reconnectionAttempts: Infinity,
-    timeout: 20000
+    timeout: 20000,
+    forceNew: true,
+    extraHeaders: {
+      'Origin': 'https://www.haremaltin.com',
+      'Referer': 'https://www.haremaltin.com/'
+    }
   });
 
   haremSocket.on('connect', () => {
@@ -340,21 +346,32 @@ const startPolling = (io) => {
     console.error('❌ Harem Altın bağlantı hatası:', error.message);
   });
 
-  // Fiyat güncellemelerini dinle
+  // Fiyat güncellemelerini dinle - tüm olası event isimleri
   haremSocket.on('price', async (data) => {
-    console.log('📊 Harem Altın fiyat güncellemesi alındı');
+    console.log('📊 price event alındı');
     await handlePriceData(data);
   });
 
   haremSocket.on('prices', async (data) => {
-    console.log('📊 Harem Altın toplu fiyat alındı');
+    console.log('📊 prices event alındı');
+    await handlePriceData(data);
+  });
+
+  haremSocket.on('data', async (data) => {
+    console.log('📊 data event alındı');
+    await handlePriceData(data);
+  });
+
+  haremSocket.on('update', async (data) => {
+    console.log('📊 update event alındı');
     await handlePriceData(data);
   });
 
   // Tüm event'leri dinle (debug için)
   haremSocket.onAny(async (eventName, data) => {
-    if (['connect', 'disconnect', 'connect_error', 'price', 'prices'].includes(eventName)) return;
-    console.log(`📡 Event alındı: ${eventName}`);
+    console.log(`📡 Event: ${eventName}`, typeof data === 'object' ? `(${Object.keys(data || {}).length} keys)` : '');
+    // Bilinen event'leri atla (zaten dinleniyor)
+    if (['connect', 'disconnect', 'connect_error', 'price', 'prices', 'data', 'update'].includes(eventName)) return;
     // Bilinmeyen event'lerde de veri işlemeyi dene
     if (data && typeof data === 'object') {
       await handlePriceData(data);
