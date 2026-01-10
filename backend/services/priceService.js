@@ -8,7 +8,7 @@ let serverIO = null;
 let currentPrices = {};
 
 // PHP Proxy URL
-const PROXY_URL = 'https://piyasa.akakuyumculuk.com/api/fiyatlar.php?api=1';
+const PROXY_URL = 'https://piyasa.akakuyumculuk.com/api/fiyatlar_api.php?api=1';
 const POLLING_INTERVAL = 2000; // 2 saniye
 
 // Türkçe isim mapping
