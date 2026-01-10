@@ -1,11 +1,15 @@
-const { io: SocketIOClient } = require('socket.io-client');
+const axios = require('axios');
 const PriceHistory = require('../models/PriceHistory');
 const CachedPrices = require('../models/CachedPrices');
 const SourcePrices = require('../models/SourcePrices');
 
-let haremSocket = null;
+let pollingInterval = null;
 let serverIO = null;
 let currentPrices = {};
+
+// PHP Proxy URL
+const PROXY_URL = 'https://piyasa.akakuyumculuk.com/api/haremaltin_fiyatlar.php';
+const POLLING_INTERVAL = 2000; // 2 saniye
 
 // Türkçe isim mapping
 const productNames = {
@@ -311,81 +315,64 @@ const handlePriceData = async (rawData) => {
 };
 
 // ============================================
-// WebSocket bağlantısı (hrmsocketonly.haremaltin.com)
+// PHP Proxy'den fiyat çekme (HTTP Polling)
 // ============================================
+const fetchPricesFromProxy = async () => {
+  try {
+    const response = await axios.get(PROXY_URL, {
+      timeout: 10000,
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'NomanogluAltin-Backend/1.0'
+      }
+    });
+
+    if (response.data && typeof response.data === 'object') {
+      // Hata kontrolü
+      if (response.data.error) {
+        console.error('❌ PHP Proxy hatası:', response.data.error);
+        return null;
+      }
+
+      console.log(`📊 PHP Proxy'den ${Object.keys(response.data).length} fiyat alındı`);
+      return response.data;
+    }
+
+    return null;
+  } catch (error) {
+    console.error('❌ PHP Proxy fetch hatası:', error.message);
+    return null;
+  }
+};
+
 const startPolling = (io) => {
   serverIO = io;
-  const wsUrl = 'wss://hrmsocketonly.haremaltin.com';
 
-  console.log(`🔌 Harem Altın WebSocket'e bağlanılıyor: ${wsUrl}`);
+  console.log(`🔄 PHP Proxy polling başlatılıyor: ${PROXY_URL}`);
+  console.log(`⏱️ Polling aralığı: ${POLLING_INTERVAL}ms`);
 
-  haremSocket = SocketIOClient(wsUrl, {
-    path: '/socket.io/',
-    transports: ['websocket'],
-    reconnection: true,
-    reconnectionDelay: 1000,
-    reconnectionAttempts: Infinity,
-    timeout: 20000,
-    forceNew: true,
-    extraHeaders: {
-      'Origin': 'https://www.haremaltin.com',
-      'Referer': 'https://www.haremaltin.com/'
-    }
-  });
-
-  haremSocket.on('connect', () => {
-    console.log('✅ Harem Altın WebSocket bağlantısı kuruldu!');
-    console.log('🔍 Socket ID:', haremSocket.id);
-  });
-
-  haremSocket.on('disconnect', (reason) => {
-    console.log('❌ Harem Altın bağlantısı kesildi:', reason);
-  });
-
-  haremSocket.on('connect_error', (error) => {
-    console.error('❌ Harem Altın bağlantı hatası:', error.message);
-  });
-
-  // Fiyat güncellemelerini dinle - tüm olası event isimleri
-  haremSocket.on('price', async (data) => {
-    console.log('📊 price event alındı');
-    await handlePriceData(data);
-  });
-
-  haremSocket.on('prices', async (data) => {
-    console.log('📊 prices event alındı');
-    await handlePriceData(data);
-  });
-
-  haremSocket.on('data', async (data) => {
-    console.log('📊 data event alındı');
-    await handlePriceData(data);
-  });
-
-  haremSocket.on('update', async (data) => {
-    console.log('📊 update event alındı');
-    await handlePriceData(data);
-  });
-
-  // Tüm event'leri dinle (debug için)
-  haremSocket.onAny(async (eventName, data) => {
-    console.log(`📡 Event: ${eventName}`, typeof data === 'object' ? `(${Object.keys(data || {}).length} keys)` : '');
-    // Bilinen event'leri atla (zaten dinleniyor)
-    if (['connect', 'disconnect', 'connect_error', 'price', 'prices', 'data', 'update'].includes(eventName)) return;
-    // Bilinmeyen event'lerde de veri işlemeyi dene
-    if (data && typeof data === 'object') {
+  // İlk fetch'i hemen yap
+  const poll = async () => {
+    const data = await fetchPricesFromProxy();
+    if (data) {
       await handlePriceData(data);
     }
-  });
+  };
 
-  console.log('✅ WebSocket bağlantısı başlatıldı');
+  // İlk çekimi yap
+  poll();
+
+  // Düzenli aralıklarla çek
+  pollingInterval = setInterval(poll, POLLING_INTERVAL);
+
+  console.log('✅ HTTP Polling başlatıldı');
 };
 
 const stopPolling = () => {
-  if (haremSocket) {
-    haremSocket.disconnect();
-    haremSocket = null;
-    console.log('⏹️ WebSocket bağlantısı kapatıldı');
+  if (pollingInterval) {
+    clearInterval(pollingInterval);
+    pollingInterval = null;
+    console.log('⏹️ HTTP Polling durduruldu');
   }
 };
 
