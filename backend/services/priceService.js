@@ -1,15 +1,17 @@
 const axios = require('axios');
+const WebSocket = require('ws');
 const PriceHistory = require('../models/PriceHistory');
 const CachedPrices = require('../models/CachedPrices');
 const SourcePrices = require('../models/SourcePrices');
 
-let pollingInterval = null;
 let serverIO = null;
 let currentPrices = {};
+let vpsSocket = null;
+let reconnectTimeout = null;
 
-// PHP Proxy URL
-const PROXY_URL = 'https://piyasa.akakuyumculuk.com/api/fiyatlar_api.php?api=1';
-const POLLING_INTERVAL = 2000; // 2 saniye
+// VPS WebSocket URL
+const VPS_WS_URL = process.env.VPS_WS_URL || 'ws://72.61.185.228:8080';
+const RECONNECT_INTERVAL = 5000; // 5 saniye
 
 // Türkçe isim mapping
 const productNames = {
@@ -315,72 +317,74 @@ const handlePriceData = async (rawData) => {
 };
 
 // ============================================
-// PHP Proxy'den fiyat çekme (HTTP Polling)
+// VPS WebSocket'e bağlan
 // ============================================
-const fetchPricesFromProxy = async () => {
-  try {
-    const response = await axios.get(PROXY_URL, {
-      timeout: 10000,
-      headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'NomanogluAltin-Backend/1.0'
-      }
-    });
-
-    if (response.data && typeof response.data === 'object') {
-      // Hata kontrolü
-      if (response.data.error || !response.data.success) {
-        console.error('❌ PHP Proxy hatası:', response.data.error || 'success=false');
-        return null;
-      }
-
-      // API formatı: { success: true, prices: { USDTRY: {...}, ALTIN: {...}, ... } }
-      if (response.data.prices && typeof response.data.prices === 'object') {
-        const priceCount = Object.keys(response.data.prices).length;
-        console.log(`📊 PHP Proxy'den ${priceCount} fiyat alındı`);
-        return response.data.prices;
-      }
-
-      console.log('⚠️ PHP Proxy: prices objesi bulunamadı');
-      return null;
-    }
-
-    return null;
-  } catch (error) {
-    console.error('❌ PHP Proxy fetch hatası:', error.message);
-    return null;
+const connectToVPS = () => {
+  if (vpsSocket && vpsSocket.readyState === WebSocket.OPEN) {
+    console.log('⚠️ VPS WebSocket zaten bağlı');
+    return;
   }
+
+  console.log(`🔌 VPS WebSocket'e bağlanılıyor: ${VPS_WS_URL}`);
+
+  vpsSocket = new WebSocket(VPS_WS_URL);
+
+  vpsSocket.on('open', () => {
+    console.log('✅ VPS WebSocket bağlantısı kuruldu');
+    if (reconnectTimeout) {
+      clearTimeout(reconnectTimeout);
+      reconnectTimeout = null;
+    }
+  });
+
+  vpsSocket.on('message', async (data) => {
+    try {
+      const message = JSON.parse(data.toString());
+      if (message.event === 'priceUpdate' && message.data) {
+        console.log(`📡 VPS'ten ${Object.keys(message.data).length} fiyat alındı`);
+        await handlePriceData(message.data);
+      }
+    } catch (err) {
+      console.error('❌ VPS mesaj parse hatası:', err.message);
+    }
+  });
+
+  vpsSocket.on('close', () => {
+    console.log('❌ VPS WebSocket bağlantısı kapandı');
+    scheduleReconnect();
+  });
+
+  vpsSocket.on('error', (err) => {
+    console.error('❌ VPS WebSocket hatası:', err.message);
+  });
+};
+
+const scheduleReconnect = () => {
+  if (reconnectTimeout) return;
+
+  console.log(`🔄 ${RECONNECT_INTERVAL / 1000} saniye sonra yeniden bağlanılacak...`);
+  reconnectTimeout = setTimeout(() => {
+    reconnectTimeout = null;
+    connectToVPS();
+  }, RECONNECT_INTERVAL);
 };
 
 const startPolling = (io) => {
   serverIO = io;
-
-  console.log(`🔄 PHP Proxy polling başlatılıyor: ${PROXY_URL}`);
-  console.log(`⏱️ Polling aralığı: ${POLLING_INTERVAL}ms`);
-
-  // İlk fetch'i hemen yap
-  const poll = async () => {
-    const data = await fetchPricesFromProxy();
-    if (data) {
-      await handlePriceData(data);
-    }
-  };
-
-  // İlk çekimi yap
-  poll();
-
-  // Düzenli aralıklarla çek
-  pollingInterval = setInterval(poll, POLLING_INTERVAL);
-
-  console.log('✅ HTTP Polling başlatıldı');
+  console.log('🚀 VPS WebSocket modu başlatılıyor...');
+  connectToVPS();
 };
 
 const stopPolling = () => {
-  if (pollingInterval) {
-    clearInterval(pollingInterval);
-    pollingInterval = null;
-    console.log('⏹️ HTTP Polling durduruldu');
+  if (vpsSocket) {
+    vpsSocket.close();
+    vpsSocket = null;
   }
+  if (reconnectTimeout) {
+    clearTimeout(reconnectTimeout);
+    reconnectTimeout = null;
+  }
+  console.log('⏹️ VPS WebSocket bağlantısı kapatıldı');
 };
 
 // ============================================
