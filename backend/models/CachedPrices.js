@@ -13,9 +13,13 @@ const cachedPricesSchema = new mongoose.Schema({
     category: String,
     calculatedAlis: Number,
     calculatedSatis: Number,
+    rawAlis: Number,
+    rawSatis: Number,
+    direction: Object,
     isCustom: Boolean,
     isVisible: Boolean,
     order: Number,
+    decimals: { type: Number, default: 0 },
     tarih: String
   }],
   meta: {
