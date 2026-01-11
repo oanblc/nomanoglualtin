@@ -8,6 +8,7 @@ const cachedPricesSchema = new mongoose.Schema({
     unique: true
   },
   prices: [{
+    id: String,
     code: String,
     name: String,
     category: String,
