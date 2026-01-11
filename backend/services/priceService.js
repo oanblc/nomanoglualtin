@@ -1,18 +1,19 @@
 const axios = require('axios');
+const { io: SocketIOClient } = require('socket.io-client');
 const Coefficient = require('../models/Coefficient');
 const PriceHistory = require('../models/PriceHistory');
 const CachedPrices = require('../models/CachedPrices');
 const SourcePrices = require('../models/SourcePrices');
 
-// PHP API URL (Harem Altın fiyatları burada kaydediliyor)
-const PHP_API_URL = process.env.PHP_API_URL || 'https://piyasa.akakuyumculuk.com/fiyat/api.php';
-const POLLING_INTERVAL = parseInt(process.env.POLLING_INTERVAL) || 60000; // 60 saniye (webhook varken yedek)
+// VPS WebSocket URL (Türk VPS - Harem Altın fiyatları)
+const VPS_WS_URL = process.env.VPS_WS_URL || 'http://37.148.208.13:3000';
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || 'nomanoglu_webhook_2024_gizli';
 
-let pollingTimer = null;
+let vpsSocket = null;
 let serverIO = null;
 let currentPrices = {};
-let lastWebhookTime = 0; // Son webhook zamanı
+let isConnected = false;
+let reconnectTimer = null;
 
 // Türkçe isim mapping
 const productNames = {
@@ -66,27 +67,52 @@ const categorizeProduct = (code) => {
 };
 
 // ============================================
-// ADIM 1: PHP API'den fiyatları çek
+// VPS WebSocket'ten fiyat geldiğinde işle
 // ============================================
-const fetchFromPHPApi = async () => {
+const handleVpsPrices = async (data) => {
   try {
-    const response = await axios.get(`${PHP_API_URL}?action=current`, {
-      timeout: 10000,
-      headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'NomanogluBackend/1.0'
-      }
-    });
-
-    if (response.data && response.data.success && response.data.prices) {
-      console.log(`🌐 PHP API'den ${response.data.prices.length} fiyat çekildi`);
-      return response.data.prices;
+    const prices = data.prices || data;
+    if (!prices || !Array.isArray(prices) || prices.length === 0) {
+      console.log('⚠️ VPS: Geçersiz fiyat verisi');
+      return;
     }
 
-    throw new Error('Geçersiz API yanıtı');
-  } catch (err) {
-    console.error('❌ PHP API hatası:', err.message);
-    return null;
+    console.log(`📡 VPS'ten ${prices.length} fiyat alındı`);
+
+    // 1. Kaynak fiyatları kaydet
+    const sourcePrices = await saveSourcePrices(prices);
+    if (!sourcePrices || sourcePrices.length === 0) {
+      console.log('⚠️ Kaynak fiyat kaydedilemedi');
+      return;
+    }
+
+    // 2. Custom fiyatları hesapla
+    const calculatedPrices = await calculateCustomPrices(sourcePrices);
+    if (calculatedPrices.length === 0) {
+      console.log('⚠️ Hesaplanmış fiyat yok');
+      return;
+    }
+
+    // 3. Cache'e kaydet
+    await saveCachedPrices(calculatedPrices);
+
+    // 4. Memory'de tut
+    currentPrices = calculatedPrices.reduce((acc, p) => {
+      acc[p.code] = p;
+      return acc;
+    }, {});
+
+    // 5. Socket.IO ile frontend'e gönder
+    if (serverIO) {
+      serverIO.emit('priceUpdate', {
+        meta: { time: new Date().toISOString(), source: 'vps-websocket' },
+        prices: calculatedPrices
+      });
+      console.log(`📤 ${calculatedPrices.length} fiyat frontend'e gönderildi`);
+    }
+
+  } catch (error) {
+    console.error('❌ VPS fiyat işleme hatası:', error.message);
   }
 };
 
@@ -256,95 +282,77 @@ const saveCachedPrices = async (prices) => {
 };
 
 // ============================================
-// ANA FONKSİYON: Fiyatları çek ve işle
+// VPS WebSocket bağlantısını başlat
 // ============================================
-const fetchAndProcessPrices = async () => {
-  try {
-    // 1. PHP API'den fiyatları çek
-    const apiPrices = await fetchFromPHPApi();
-    if (!apiPrices || apiPrices.length === 0) {
-      console.log('⚠️ PHP API\'den fiyat alınamadı');
-      return;
-    }
-
-    // 2. Kaynak fiyatları kaydet
-    const sourcePrices = await saveSourcePrices(apiPrices);
-    if (!sourcePrices || sourcePrices.length === 0) {
-      console.log('⚠️ Kaynak fiyat kaydedilemedi');
-      return;
-    }
-
-    // 3. Custom fiyatları hesapla
-    const calculatedPrices = await calculateCustomPrices(sourcePrices);
-    if (calculatedPrices.length === 0) {
-      console.log('⚠️ Hesaplanmış fiyat yok');
-      return;
-    }
-
-    // 4. Cache'e kaydet
-    await saveCachedPrices(calculatedPrices);
-
-    // 5. Memory'de tut
-    currentPrices = calculatedPrices.reduce((acc, p) => {
-      acc[p.code] = p;
-      return acc;
-    }, {});
-
-    // 6. Socket.IO ile frontend'e gönder
-    if (serverIO) {
-      serverIO.emit('priceUpdate', {
-        meta: { time: new Date().toISOString() },
-        prices: calculatedPrices
-      });
-      console.log(`📡 ${calculatedPrices.length} fiyat frontend'e gönderildi`);
-    }
-
-    // 7. Fiyat geçmişine kaydet (opsiyonel)
-    try {
-      for (const price of calculatedPrices) {
-        await PriceHistory.create({
-          code: price.code,
-          rawAlis: price.rawAlis,
-          rawSatis: price.rawSatis,
-          calculatedAlis: price.calculatedAlis,
-          calculatedSatis: price.calculatedSatis,
-          direction: price.direction
-        });
-      }
-    } catch (err) {
-      // History hatası kritik değil, devam et
-    }
-
-  } catch (error) {
-    console.error('❌ Fiyat işleme hatası:', error);
-  }
-};
-
-// ============================================
-// Polling başlat (WebSocket yerine)
-// ============================================
-const startPolling = (io) => {
+const startVpsWebSocket = (io) => {
   serverIO = io;
 
-  console.log(`🔄 PHP API Polling başlatılıyor (${POLLING_INTERVAL / 1000} saniye aralıkla)`);
-  console.log(`📡 API URL: ${PHP_API_URL}`);
+  console.log('========================================');
+  console.log('  VPS WEBSOCKET BAGLANTISI');
+  console.log('========================================');
+  console.log(`VPS URL: ${VPS_WS_URL}`);
 
-  // İlk çekim
-  fetchAndProcessPrices();
+  // Mevcut bağlantıyı kapat
+  if (vpsSocket) {
+    vpsSocket.disconnect();
+    vpsSocket = null;
+  }
 
-  // Belirli aralıklarla tekrarla
-  pollingTimer = setInterval(fetchAndProcessPrices, POLLING_INTERVAL);
+  // VPS'e bağlan
+  vpsSocket = SocketIOClient(VPS_WS_URL, {
+    transports: ['websocket', 'polling'],
+    reconnection: true,
+    reconnectionAttempts: Infinity,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+    timeout: 20000
+  });
 
-  console.log('✅ Polling başlatıldı');
+  vpsSocket.on('connect', () => {
+    isConnected = true;
+    console.log('✅ VPS WebSocket bağlandı!');
+
+    // Reconnect timer'ı temizle
+    if (reconnectTimer) {
+      clearTimeout(reconnectTimer);
+      reconnectTimer = null;
+    }
+  });
+
+  vpsSocket.on('disconnect', (reason) => {
+    isConnected = false;
+    console.log(`⚠️ VPS bağlantısı kesildi: ${reason}`);
+  });
+
+  vpsSocket.on('connect_error', (error) => {
+    isConnected = false;
+    console.error('❌ VPS bağlantı hatası:', error.message);
+  });
+
+  // VPS'ten fiyat güncellemesi al
+  vpsSocket.on('prices', (data) => {
+    handleVpsPrices(data);
+  });
+
+  console.log('🔄 VPS WebSocket bağlantısı başlatıldı');
 };
 
-const stopPolling = () => {
-  if (pollingTimer) {
-    clearInterval(pollingTimer);
-    pollingTimer = null;
-    console.log('⏹️ Polling durduruldu');
+const stopVpsWebSocket = () => {
+  if (vpsSocket) {
+    vpsSocket.disconnect();
+    vpsSocket = null;
+    isConnected = false;
+    console.log('⏹️ VPS WebSocket kapatıldı');
+  }
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
   }
 };
+
+// Eski fonksiyonlar backward compatibility için
+const startPolling = startVpsWebSocket;
+const stopPolling = stopVpsWebSocket;
 
 // ============================================
 // Custom fiyat değiştiğinde yeniden hesapla
@@ -452,6 +460,8 @@ const handleWebhook = async (prices, secret) => {
 const getWebhookSecret = () => WEBHOOK_SECRET;
 
 module.exports = {
+  startVpsWebSocket,
+  stopVpsWebSocket,
   startPolling,
   stopPolling,
   getCurrentPrices,
@@ -459,9 +469,10 @@ module.exports = {
   getSourcePrices,
   handleWebhook,
   getWebhookSecret,
+  isConnected: () => isConnected,
   // Backward compatibility
-  startWebSocket: startPolling,
-  stopWebSocket: stopPolling,
+  startWebSocket: startVpsWebSocket,
+  stopWebSocket: stopVpsWebSocket,
   calculatePrice: (rawPrice, coefficient) => {
     if (!coefficient || rawPrice === null || rawPrice === undefined) {
       return parseFloat(rawPrice) || 0;

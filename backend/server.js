@@ -136,9 +136,9 @@ io.on('connection', (socket) => {
   });
 });
 
-// NOT: Polling kapatildi. Fiyatlar Turk VPS'ten MongoDB'ye anlik yaziliyor.
-// const priceService = require('./services/priceService');
-// priceService.startPolling(io);
+// VPS WebSocket bağlantısını başlat (Türk VPS'ten anlık fiyat çekme)
+const priceService = require('./services/priceService');
+priceService.startVpsWebSocket(io);
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
