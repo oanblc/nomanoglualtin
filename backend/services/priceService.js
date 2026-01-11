@@ -232,6 +232,11 @@ const calculateCustomPrices = async (sourcePrices) => {
       continue;
     }
 
+    // Debug: decimals değerini kontrol et
+    if (config.code === 'HAS ALTIN') {
+      console.log(`🔍 HAS ALTIN decimals: config.decimals=${config.decimals}, type=${typeof config.decimals}`);
+    }
+
     calculatedPrices.push({
       id: config._id.toString(),
       code: config.code,

@@ -8,6 +8,10 @@ const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const app = express();
+
+// Railway/Heroku gibi proxy arkasında çalışırken gerekli
+app.set('trust proxy', 1);
+
 const server = http.createServer(app);
 
 // İzin verilen originler (production ve development)
