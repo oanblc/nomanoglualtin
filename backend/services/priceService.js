@@ -321,7 +321,7 @@ const startWebSocket = (io) => {
   console.log(`🔌 Harem Altın WebSocket'e bağlanılıyor: ${wsUrl}`);
 
   haremSocket = SocketIOClient(wsUrl, {
-    transports: ['websocket'],
+    transports: ['polling', 'websocket'],
     reconnection: true,
     reconnectionDelay: 1000,
     reconnectionAttempts: 10,
