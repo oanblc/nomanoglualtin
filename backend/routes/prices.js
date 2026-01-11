@@ -1,11 +1,54 @@
 const express = require('express');
 const router = express.Router();
-const { getCurrentPrices } = require('../services/priceService');
+const { getCurrentPrices, handleWebhook } = require('../services/priceService');
 const PriceHistory = require('../models/PriceHistory');
 const CachedPrices = require('../models/CachedPrices');
 const SourcePrices = require('../models/SourcePrices');
 
-// Mevcut fiyatları getir (ham kaynak fiyatları)
+// ============================================
+// WEBHOOK: PHP'den anlik fiyat bildirimi al
+// ============================================
+router.post('/webhook', async (req, res) => {
+  try {
+    const { prices, secret } = req.body;
+
+    if (!prices || !secret) {
+      return res.status(400).json({
+        success: false,
+        error: 'prices ve secret gerekli'
+      });
+    }
+
+    // Fiyatlari array formatina donustur (object geldiyse)
+    let pricesArray = prices;
+    if (!Array.isArray(prices)) {
+      pricesArray = Object.entries(prices).map(([code, data]) => ({
+        code,
+        ...data
+      }));
+    }
+
+    const result = await handleWebhook(pricesArray, secret);
+
+    if (result.success) {
+      res.json({
+        success: true,
+        message: 'Fiyatlar alindi ve yayinlandi',
+        processed: result.processed
+      });
+    } else {
+      res.status(400).json(result);
+    }
+  } catch (error) {
+    console.error('Webhook hatasi:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Mevcut fiyatlari getir (ham kaynak fiyatlari)
 router.get('/current', (req, res) => {
   try {
     const prices = getCurrentPrices();
@@ -14,15 +57,14 @@ router.get('/current', (req, res) => {
       data: prices
     });
   } catch (error) {
-    console.error('Fiyat getirme hatası:', error);
-    res.status(500).json({ message: 'Sunucu hatası' });
+    console.error('Fiyat getirme hatasi:', error);
+    res.status(500).json({ message: 'Sunucu hatasi' });
   }
 });
 
-// Kaynak fiyatları getir (admin panel için - MongoDB'den)
+// Kaynak fiyatlari getir (admin panel icin - MongoDB'den)
 router.get('/sources', async (req, res) => {
   try {
-    // Önce MongoDB'den kaynak fiyatları al
     const cached = await SourcePrices.findOne({ key: 'source_prices' });
 
     if (cached && cached.prices && cached.prices.length > 0) {
@@ -33,7 +75,6 @@ router.get('/sources', async (req, res) => {
         count: cached.prices.length
       });
     } else {
-      // Cache yoksa memory'den al
       const prices = getCurrentPrices();
       const sourcePrices = prices.filter(p => !p.isCustom).map(p => ({
         code: p.code,
@@ -50,16 +91,16 @@ router.get('/sources', async (req, res) => {
       });
     }
   } catch (error) {
-    console.error('Kaynak fiyat getirme hatası:', error);
+    console.error('Kaynak fiyat getirme hatasi:', error);
     res.status(500).json({
       success: false,
-      message: 'Sunucu hatası',
+      message: 'Sunucu hatasi',
       error: error.message
     });
   }
 });
 
-// Belirli bir ürünün fiyat geçmişini getir
+// Belirli bir urunun fiyat gecmisini getir
 router.get('/history/:code', async (req, res) => {
   try {
     const { code } = req.params;
@@ -78,12 +119,12 @@ router.get('/history/:code', async (req, res) => {
       data: history
     });
   } catch (error) {
-    console.error('Fiyat geçmişi hatası:', error);
-    res.status(500).json({ message: 'Sunucu hatası' });
+    console.error('Fiyat gecmisi hatasi:', error);
+    res.status(500).json({ message: 'Sunucu hatasi' });
   }
 });
 
-// Cached fiyatları getir (ilk sayfa yüklemesi için - sadece custom)
+// Cached fiyatlari getir (ilk sayfa yuklemesi icin - sadece custom)
 router.get('/cached', async (req, res) => {
   try {
     const cached = await CachedPrices.findOne({ key: 'current_prices' });
@@ -98,7 +139,6 @@ router.get('/cached', async (req, res) => {
         updatedAt: cached.updatedAt
       });
     } else {
-      // Cache yoksa mevcut fiyatlardan custom olanları döndür
       const prices = getCurrentPrices();
       const customPrices = prices.filter(p => p.isCustom);
 
@@ -115,16 +155,16 @@ router.get('/cached', async (req, res) => {
       });
     }
   } catch (error) {
-    console.error('Cache fiyat getirme hatası:', error);
+    console.error('Cache fiyat getirme hatasi:', error);
     res.status(500).json({
       success: false,
-      message: 'Sunucu hatası',
+      message: 'Sunucu hatasi',
       error: error.message
     });
   }
 });
 
-// Tüm fiyatları getir (custom + normal - sayfa yüklemesi için)
+// Tum fiyatlari getir (custom + normal - sayfa yuklemesi icin)
 router.get('/all', async (req, res) => {
   try {
     const cached = await CachedPrices.findOne({ key: 'all_prices' });
@@ -139,7 +179,6 @@ router.get('/all', async (req, res) => {
         updatedAt: cached.updatedAt
       });
     } else {
-      // Cache yoksa memory'den al
       const prices = getCurrentPrices();
 
       res.json({
@@ -155,14 +194,13 @@ router.get('/all', async (req, res) => {
       });
     }
   } catch (error) {
-    console.error('Tüm fiyatları getirme hatası:', error);
+    console.error('Tum fiyatlari getirme hatasi:', error);
     res.status(500).json({
       success: false,
-      message: 'Sunucu hatası',
+      message: 'Sunucu hatasi',
       error: error.message
     });
   }
 });
 
 module.exports = router;
-

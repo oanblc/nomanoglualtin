@@ -1,12 +1,18 @@
-const { io: SocketIOClient } = require('socket.io-client');
+const axios = require('axios');
 const Coefficient = require('../models/Coefficient');
 const PriceHistory = require('../models/PriceHistory');
 const CachedPrices = require('../models/CachedPrices');
 const SourcePrices = require('../models/SourcePrices');
 
-let haremSocket = null;
+// PHP API URL (Harem Altın fiyatları burada kaydediliyor)
+const PHP_API_URL = process.env.PHP_API_URL || 'https://piyasa.akakuyumculuk.com/fiyat/api.php';
+const POLLING_INTERVAL = parseInt(process.env.POLLING_INTERVAL) || 60000; // 60 saniye (webhook varken yedek)
+const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || 'nomanoglu_webhook_2024_gizli';
+
+let pollingTimer = null;
 let serverIO = null;
 let currentPrices = {};
+let lastWebhookTime = 0; // Son webhook zamanı
 
 // Türkçe isim mapping
 const productNames = {
@@ -60,66 +66,62 @@ const categorizeProduct = (code) => {
 };
 
 // ============================================
-// ADIM 1: WebSocket'ten ham veri al ve kaydet (MERGE)
+// ADIM 1: PHP API'den fiyatları çek
 // ============================================
-const saveSourcePrices = async (rawData) => {
-  if (!rawData || typeof rawData !== 'object') return null;
-
-  const priceData = rawData.data || rawData;
-  const newPrices = [];
-
-  Object.keys(priceData).forEach(key => {
-    const item = priceData[key];
-    if (item && typeof item === 'object' && item.code) {
-      newPrices.push({
-        code: key,
-        name: productNames[key] || key,
-        rawAlis: parseFloat(item.alis || 0),
-        rawSatis: parseFloat(item.satis || 0),
-        direction: item.dir || {},
-        dusuk: parseFloat(item.dusuk || 0),
-        yuksek: parseFloat(item.yuksek || 0),
-        kapanis: parseFloat(item.kapanis || 0),
-        tarih: item.tarih || new Date().toISOString()
-      });
-    }
-  });
-
-  if (newPrices.length === 0) return null;
-
-  // MongoDB'den mevcut fiyatları çek ve merge et
+const fetchFromPHPApi = async () => {
   try {
-    const existing = await SourcePrices.findOne({ key: 'source_prices' });
-
-    // Mevcut fiyatları map'e çevir
-    const priceMap = {};
-    if (existing && existing.prices) {
-      existing.prices.forEach(p => {
-        priceMap[p.code] = p;
-      });
-    }
-
-    // Yeni gelen fiyatları üzerine yaz veya ekle
-    newPrices.forEach(p => {
-      priceMap[p.code] = p;
+    const response = await axios.get(`${PHP_API_URL}?action=current`, {
+      timeout: 10000,
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'NomanogluBackend/1.0'
+      }
     });
 
-    // Map'i array'e çevir
-    const mergedPrices = Object.values(priceMap);
+    if (response.data && response.data.success && response.data.prices) {
+      console.log(`🌐 PHP API'den ${response.data.prices.length} fiyat çekildi`);
+      return response.data.prices;
+    }
 
-    // MongoDB'ye kaydet
+    throw new Error('Geçersiz API yanıtı');
+  } catch (err) {
+    console.error('❌ PHP API hatası:', err.message);
+    return null;
+  }
+};
+
+// ============================================
+// PHP API verisini kaynak formatına dönüştür ve kaydet
+// ============================================
+const saveSourcePrices = async (apiPrices) => {
+  if (!apiPrices || !Array.isArray(apiPrices) || apiPrices.length === 0) return null;
+
+  const newPrices = apiPrices.map(item => ({
+    code: item.code,
+    name: productNames[item.code] || item.name || item.code,
+    rawAlis: parseFloat(item.alis || 0),
+    rawSatis: parseFloat(item.satis || 0),
+    direction: {},
+    dusuk: 0,
+    yuksek: 0,
+    kapanis: 0,
+    tarih: item.tarih || new Date().toISOString()
+  }));
+
+  // MongoDB'ye kaydet
+  try {
     await SourcePrices.findOneAndUpdate(
       { key: 'source_prices' },
       {
         key: 'source_prices',
-        prices: mergedPrices,
+        prices: newPrices,
         updatedAt: new Date()
       },
       { upsert: true, new: true }
     );
-    console.log(`💾 ${mergedPrices.length} kaynak fiyat MongoDB'ye kaydedildi (${newPrices.length} yeni/güncellenen)`);
+    console.log(`💾 ${newPrices.length} kaynak fiyat MongoDB'ye kaydedildi`);
 
-    return mergedPrices;
+    return newPrices;
   } catch (err) {
     console.error('❌ Kaynak fiyat kaydetme hatası:', err.message);
     return newPrices;
@@ -254,34 +256,41 @@ const saveCachedPrices = async (prices) => {
 };
 
 // ============================================
-// ANA FONKSİYON: WebSocket verisini işle
+// ANA FONKSİYON: Fiyatları çek ve işle
 // ============================================
-const handlePriceData = async (rawData) => {
+const fetchAndProcessPrices = async () => {
   try {
-    // 1. Kaynak fiyatları kaydet
-    const sourcePrices = await saveSourcePrices(rawData);
-    if (!sourcePrices || sourcePrices.length === 0) {
-      console.log('⚠️ Kaynak fiyat bulunamadı');
+    // 1. PHP API'den fiyatları çek
+    const apiPrices = await fetchFromPHPApi();
+    if (!apiPrices || apiPrices.length === 0) {
+      console.log('⚠️ PHP API\'den fiyat alınamadı');
       return;
     }
 
-    // 2. Custom fiyatları hesapla
+    // 2. Kaynak fiyatları kaydet
+    const sourcePrices = await saveSourcePrices(apiPrices);
+    if (!sourcePrices || sourcePrices.length === 0) {
+      console.log('⚠️ Kaynak fiyat kaydedilemedi');
+      return;
+    }
+
+    // 3. Custom fiyatları hesapla
     const calculatedPrices = await calculateCustomPrices(sourcePrices);
     if (calculatedPrices.length === 0) {
       console.log('⚠️ Hesaplanmış fiyat yok');
       return;
     }
 
-    // 3. Cache'e kaydet
+    // 4. Cache'e kaydet
     await saveCachedPrices(calculatedPrices);
 
-    // 4. Memory'de tut
+    // 5. Memory'de tut
     currentPrices = calculatedPrices.reduce((acc, p) => {
       acc[p.code] = p;
       return acc;
     }, {});
 
-    // 5. WebSocket ile frontend'e gönder
+    // 6. Socket.IO ile frontend'e gönder
     if (serverIO) {
       serverIO.emit('priceUpdate', {
         meta: { time: new Date().toISOString() },
@@ -290,7 +299,7 @@ const handlePriceData = async (rawData) => {
       console.log(`📡 ${calculatedPrices.length} fiyat frontend'e gönderildi`);
     }
 
-    // 6. Fiyat geçmişine kaydet (opsiyonel)
+    // 7. Fiyat geçmişine kaydet (opsiyonel)
     try {
       for (const price of calculatedPrices) {
         await PriceHistory.create({
@@ -312,56 +321,28 @@ const handlePriceData = async (rawData) => {
 };
 
 // ============================================
-// WebSocket bağlantısı
+// Polling başlat (WebSocket yerine)
 // ============================================
-const startWebSocket = (io) => {
+const startPolling = (io) => {
   serverIO = io;
-  const wsUrl = process.env.HAREM_ALTIN_WS || 'wss://hrmsocketonly.haremaltin.com:443';
 
-  console.log(`🔌 Harem Altın WebSocket'e bağlanılıyor: ${wsUrl}`);
+  console.log(`🔄 PHP API Polling başlatılıyor (${POLLING_INTERVAL / 1000} saniye aralıkla)`);
+  console.log(`📡 API URL: ${PHP_API_URL}`);
 
-  haremSocket = SocketIOClient(wsUrl, {
-    transports: ['polling', 'websocket'],
-    reconnection: true,
-    reconnectionDelay: 1000,
-    reconnectionAttempts: 10,
-    extraHeaders: {
-      'Origin': 'https://www.haremaltin.com',
-      'Referer': 'https://www.haremaltin.com/',
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-    }
-  });
+  // İlk çekim
+  fetchAndProcessPrices();
 
-  haremSocket.on('connect', () => {
-    console.log('✅ Harem Altın WebSocket bağlantısı kuruldu!');
-  });
+  // Belirli aralıklarla tekrarla
+  pollingTimer = setInterval(fetchAndProcessPrices, POLLING_INTERVAL);
 
-  haremSocket.on('disconnect', (reason) => {
-    console.log('❌ Harem Altın bağlantısı kesildi:', reason);
-  });
-
-  haremSocket.on('error', (error) => {
-    console.error('❌ Harem Altın WebSocket hatası:', error.message);
-  });
-
-  haremSocket.on('connect_error', (error) => {
-    console.error('❌ Harem Altın bağlantı hatası:', error.message);
-  });
-
-  // Tüm event'leri dinle
-  haremSocket.onAny(async (eventName, data) => {
-    if (['connect', 'disconnect', 'error', 'connect_error'].includes(eventName)) return;
-
-    console.log(`📊 Harem Altın'dan ${eventName} event'i alındı`);
-    await handlePriceData(data);
-  });
+  console.log('✅ Polling başlatıldı');
 };
 
-const stopWebSocket = () => {
-  if (haremSocket) {
-    haremSocket.disconnect();
-    haremSocket = null;
-    console.log('⏹️ Harem Altın WebSocket bağlantısı kapatıldı');
+const stopPolling = () => {
+  if (pollingTimer) {
+    clearInterval(pollingTimer);
+    pollingTimer = null;
+    console.log('⏹️ Polling durduruldu');
   }
 };
 
@@ -394,7 +375,7 @@ const refreshPrices = async () => {
     return acc;
   }, {});
 
-  // WebSocket ile frontend'e gönder
+  // Socket.IO ile frontend'e gönder
   if (serverIO) {
     serverIO.emit('priceUpdate', {
       meta: { time: new Date().toISOString() },
@@ -411,15 +392,76 @@ const getCurrentPrices = () => {
   return Object.values(currentPrices);
 };
 
+// ============================================
+// WEBHOOK: PHP'den anlık fiyat bildirimi al
+// ============================================
+const handleWebhook = async (prices, secret) => {
+  // Secret kontrolü
+  if (secret !== WEBHOOK_SECRET) {
+    console.log('❌ Webhook: Geçersiz secret key');
+    return { success: false, error: 'Geçersiz secret key' };
+  }
+
+  if (!prices || !Array.isArray(prices) || prices.length === 0) {
+    console.log('❌ Webhook: Geçersiz veri');
+    return { success: false, error: 'Geçersiz veri' };
+  }
+
+  console.log(`🔔 Webhook: ${prices.length} fiyat alındı`);
+  lastWebhookTime = Date.now();
+
+  try {
+    // 1. Kaynak fiyatları kaydet
+    const sourcePrices = await saveSourcePrices(prices);
+    if (!sourcePrices || sourcePrices.length === 0) {
+      return { success: false, error: 'Kaynak fiyat kaydedilemedi' };
+    }
+
+    // 2. Custom fiyatları hesapla
+    const calculatedPrices = await calculateCustomPrices(sourcePrices);
+    if (calculatedPrices.length === 0) {
+      return { success: false, error: 'Hesaplanmış fiyat yok' };
+    }
+
+    // 3. Cache'e kaydet
+    await saveCachedPrices(calculatedPrices);
+
+    // 4. Memory'de tut
+    currentPrices = calculatedPrices.reduce((acc, p) => {
+      acc[p.code] = p;
+      return acc;
+    }, {});
+
+    // 5. Socket.IO ile frontend'e ANLIK gönder
+    if (serverIO) {
+      serverIO.emit('priceUpdate', {
+        meta: { time: new Date().toISOString(), source: 'webhook' },
+        prices: calculatedPrices
+      });
+      console.log(`📡 Webhook: ${calculatedPrices.length} fiyat frontend'e gönderildi`);
+    }
+
+    return { success: true, processed: calculatedPrices.length };
+  } catch (error) {
+    console.error('❌ Webhook işleme hatası:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Webhook secret'ı al
+const getWebhookSecret = () => WEBHOOK_SECRET;
+
 module.exports = {
-  startWebSocket,
-  stopWebSocket,
+  startPolling,
+  stopPolling,
   getCurrentPrices,
   refreshPrices,
   getSourcePrices,
+  handleWebhook,
+  getWebhookSecret,
   // Backward compatibility
-  startPolling: startWebSocket,
-  stopPolling: stopWebSocket,
+  startWebSocket: startPolling,
+  stopWebSocket: stopPolling,
   calculatePrice: (rawPrice, coefficient) => {
     if (!coefficient || rawPrice === null || rawPrice === undefined) {
       return parseFloat(rawPrice) || 0;
