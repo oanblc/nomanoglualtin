@@ -344,6 +344,10 @@ const startWebSocket = (io) => {
     console.error('❌ Harem Altın WebSocket hatası:', error.message);
   });
 
+  haremSocket.on('connect_error', (error) => {
+    console.error('❌ Harem Altın bağlantı hatası:', error.message);
+  });
+
   // Tüm event'leri dinle
   haremSocket.onAny(async (eventName, data) => {
     if (['connect', 'disconnect', 'error', 'connect_error'].includes(eventName)) return;
