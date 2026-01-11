@@ -117,40 +117,56 @@ const handleVpsPrices = async (data) => {
 };
 
 // ============================================
-// PHP API verisini kaynak formatına dönüştür ve kaydet
+// Kaynak fiyatları MERGE ederek kaydet (üzerine yazmak yerine güncelle)
 // ============================================
 const saveSourcePrices = async (apiPrices) => {
   if (!apiPrices || !Array.isArray(apiPrices) || apiPrices.length === 0) return null;
 
-  const newPrices = apiPrices.map(item => ({
-    code: item.code,
-    name: productNames[item.code] || item.name || item.code,
-    rawAlis: parseFloat(item.alis || 0),
-    rawSatis: parseFloat(item.satis || 0),
-    direction: {},
-    dusuk: 0,
-    yuksek: 0,
-    kapanis: 0,
-    tarih: item.tarih || new Date().toISOString()
-  }));
-
-  // MongoDB'ye kaydet
   try {
+    // 1. Mevcut fiyatları çek
+    const existing = await SourcePrices.findOne({ key: 'source_prices' });
+    const existingPrices = existing?.prices || [];
+
+    // 2. Mevcut fiyatları code'a göre map'e çevir
+    const priceMap = {};
+    existingPrices.forEach(p => {
+      priceMap[p.code] = p;
+    });
+
+    // 3. Gelen fiyatları güncelle/ekle (merge)
+    apiPrices.forEach(item => {
+      priceMap[item.code] = {
+        code: item.code,
+        name: productNames[item.code] || item.name || item.code,
+        rawAlis: parseFloat(item.rawAlis || item.alis || 0),
+        rawSatis: parseFloat(item.rawSatis || item.satis || 0),
+        direction: item.direction || {},
+        dusuk: item.dusuk || 0,
+        yuksek: item.yuksek || 0,
+        kapanis: item.kapanis || 0,
+        tarih: item.tarih || new Date().toISOString()
+      };
+    });
+
+    // 4. Map'i array'e çevir
+    const mergedPrices = Object.values(priceMap);
+
+    // 5. MongoDB'ye kaydet
     await SourcePrices.findOneAndUpdate(
       { key: 'source_prices' },
       {
         key: 'source_prices',
-        prices: newPrices,
+        prices: mergedPrices,
         updatedAt: new Date()
       },
       { upsert: true, new: true }
     );
-    console.log(`💾 ${newPrices.length} kaynak fiyat MongoDB'ye kaydedildi`);
 
-    return newPrices;
+    console.log(`💾 ${apiPrices.length} fiyat güncellendi (toplam: ${mergedPrices.length})`);
+    return mergedPrices;
   } catch (err) {
     console.error('❌ Kaynak fiyat kaydetme hatası:', err.message);
-    return newPrices;
+    return null;
   }
 };
 
