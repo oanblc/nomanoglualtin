@@ -136,14 +136,9 @@ io.on('connection', (socket) => {
   });
 });
 
-// WebSocket ve Polling servisini başlat
-const priceService = require('./services/priceService');
-
-// MongoDB bağlantısından bağımsız olarak çalıştır
-setTimeout(() => {
-  console.log('🔄 Price service başlatılıyor...');
-  priceService.startPolling(io);
-}, 2000);
+// NOT: Polling kapatildi. Fiyatlar Turk VPS'ten MongoDB'ye anlik yaziliyor.
+// const priceService = require('./services/priceService');
+// priceService.startPolling(io);
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
