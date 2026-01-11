@@ -8,3 +8,4 @@ build/
 
 backend/.env
 migrate-data.js
+backend/.env
