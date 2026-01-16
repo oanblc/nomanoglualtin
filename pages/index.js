@@ -39,11 +39,10 @@ export default function Home() {
             setPrices(customPrices);
             previousPricesRef.current = customPrices;
             setLastUpdate(new Date(data.updatedAt));
-            console.log(`📦 Cache'den ${customPrices.length} fiyat yüklendi (sıralı)`);
           }
         }
       } catch (error) {
-        console.error('Cache fiyat çekme hatası:', error);
+        // Cache fiyat çekme hatası
       }
     };
     fetchCachedPrices();
@@ -103,7 +102,7 @@ export default function Home() {
           setFamilyCards(data.data || []);
         }
       })
-      .catch(err => console.error('Family cards yükleme hatası:', err));
+      .catch(() => {});
 
     fetch((process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001')+'/api/articles')
       .then(res => res.json())
@@ -112,7 +111,7 @@ export default function Home() {
           setArticles(data.data || []);
         }
       })
-      .catch(err => console.error('Articles yükleme hatası:', err));
+      .catch(() => {});
 
     fetch((process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001')+'/api/branches')
       .then(res => res.json())
@@ -121,7 +120,7 @@ export default function Home() {
           setBranches(data.data);
         }
       })
-      .catch(err => console.error('Şube yükleme hatası:', err));
+      .catch(() => {});
   }, []);
 
   const formatPrice = (value, decimals = 0) => {

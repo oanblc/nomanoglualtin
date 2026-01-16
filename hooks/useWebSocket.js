@@ -31,7 +31,6 @@ export const useWebSocket = () => {
           setPrices(sortedPrices);
           previousPricesRef.current = sortedPrices;
           setLastUpdate(data.data.meta?.time || data.updatedAt);
-          console.log('🌐 API\'den fiyatlar yüklendi:', sortedPrices.length);
 
           // LocalStorage'a da kaydet
           localStorage.setItem(CACHE_KEY, JSON.stringify(sortedPrices));
@@ -39,7 +38,7 @@ export const useWebSocket = () => {
           return;
         }
       } catch (err) {
-        console.log('API cache erişilemedi, localStorage denenecek:', err.message);
+        // API cache erişilemedi, localStorage denenecek
       }
 
       // API'den alınamazsa localStorage'dan dene
@@ -55,12 +54,11 @@ export const useWebSocket = () => {
               const sortedPrices = [...cachedPrices].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
               setPrices(sortedPrices);
               previousPricesRef.current = sortedPrices;
-              console.log('📦 LocalStorage\'dan fiyatlar yüklendi:', sortedPrices.length);
             }
           }
         }
       } catch (err) {
-        console.error('LocalStorage okuma hatası:', err);
+        // LocalStorage okuma hatası
       }
     };
 
@@ -78,12 +76,10 @@ export const useWebSocket = () => {
     });
 
     newSocket.on('connect', () => {
-      console.log('✅ WebSocket bağlantısı kuruldu');
       setIsConnected(true);
     });
 
     newSocket.on('disconnect', () => {
-      console.log('❌ WebSocket bağlantısı kesildi');
       setIsConnected(false);
       // Bağlantı kesildiğinde önceki fiyatları koru
       if (previousPricesRef.current.length > 0) {
@@ -94,7 +90,6 @@ export const useWebSocket = () => {
     newSocket.on('priceUpdate', (data) => {
       // Veri kontrolü - boş veya geçersiz veri gelirse önceki fiyatları koru
       if (!data || !data.prices || !Array.isArray(data.prices) || data.prices.length === 0) {
-        console.log('⚠️ Geçersiz veya boş veri, önceki fiyatlar korunuyor');
         return;
       }
 
@@ -113,16 +108,12 @@ export const useWebSocket = () => {
 
       // Hiç geçerli fiyat yoksa önceki fiyatları koru
       if (validPrices.length === 0) {
-        console.log('⚠️ Geçerli fiyat yok, önceki fiyatlar korunuyor');
         return;
       }
 
       // WebSocket'ten gelen fiyatları DOĞRUDAN kullan (merge etme!)
       // Backend zaten tüm fiyatları hesaplayıp gönderiyor
       const sortedPrices = [...validPrices].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
-
-      // Debug log
-      console.log('📡 WebSocket fiyat güncellendi:', sortedPrices.map(p => `${p.code}:${p.order}`).join(', '));
 
       // Ref'i güncelle
       previousPricesRef.current = sortedPrices;
@@ -132,15 +123,14 @@ export const useWebSocket = () => {
         localStorage.setItem(CACHE_KEY, JSON.stringify(sortedPrices));
         localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
       } catch (err) {
-        console.error('Cache yazma hatası:', err);
+        // Cache yazma hatası
       }
 
       setPrices(sortedPrices);
       setLastUpdate(data.meta?.time || Date.now());
     });
 
-    newSocket.on('connect_error', (error) => {
-      console.error('WebSocket bağlantı hatası:', error);
+    newSocket.on('connect_error', () => {
       // Hata durumunda önceki fiyatları koru
       if (previousPricesRef.current.length > 0) {
         setPrices(previousPricesRef.current);
