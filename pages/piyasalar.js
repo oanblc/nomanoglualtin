@@ -348,7 +348,7 @@ export default function Piyasalar() {
                 </button>
               </div>
             ) : (
-              <section className="bg-white rounded-[10px] shadow-[0_10px_30px_rgba(16,24,40,0.08)] p-6 pb-4">
+              <section className="bg-white rounded-[10px] shadow-[0_10px_30px_rgba(16,24,40,0.08)] p-6 pb-4 sm:p-6 sm:pb-4 px-2">
                 <h2 className="text-center text-[22px] tracking-[0.08em] text-[#111827] font-normal mb-3">
                   PİYASA FİYATLARI
                 </h2>
