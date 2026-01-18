@@ -450,11 +450,11 @@ export default function Piyasalar() {
                     <table className="w-full border-collapse">
                       <thead>
                         <tr>
-                          <th className="py-2 px-1 text-left text-[#b0b7c3] font-normal text-xs border-b border-[#e9ecef] bg-white sticky top-0 z-10">{currentTime}</th>
-                          <th className="py-2 px-1 text-right text-[#b0b7c3] font-normal text-xs border-b border-[#e9ecef] bg-white sticky top-0 z-10">Alış</th>
-                          <th className="py-2 px-1 text-right text-[#b0b7c3] font-normal text-xs border-b border-[#e9ecef] bg-white sticky top-0 z-10">Satış</th>
-                          <th className="py-2 px-1 text-right text-[#b0b7c3] font-normal text-xs border-b border-[#e9ecef] bg-white sticky top-0 z-10">Fark</th>
-                          <th className="py-2 px-1 text-center text-[#b0b7c3] font-normal text-xs border-b border-[#e9ecef] bg-white sticky top-0 z-10"><Star size={12} className="inline" /></th>
+                          <th className="py-2.5 px-1.5 text-left text-[#b0b7c3] font-normal text-sm border-b border-[#e9ecef] bg-white sticky top-0 z-10">{currentTime}</th>
+                          <th className="py-2.5 px-1.5 text-right text-[#b0b7c3] font-normal text-sm border-b border-[#e9ecef] bg-white sticky top-0 z-10">Alış</th>
+                          <th className="py-2.5 px-1.5 text-right text-[#b0b7c3] font-normal text-sm border-b border-[#e9ecef] bg-white sticky top-0 z-10">Satış</th>
+                          <th className="py-2.5 px-1.5 text-right text-[#b0b7c3] font-normal text-sm border-b border-[#e9ecef] bg-white sticky top-0 z-10">Fark</th>
+                          <th className="py-2.5 px-1.5 text-center text-[#b0b7c3] font-normal text-sm border-b border-[#e9ecef] bg-white sticky top-0 z-10"><Star size={14} className="inline" /></th>
                         </tr>
                       </thead>
                       <tbody>
@@ -469,15 +469,15 @@ export default function Piyasalar() {
 
                           return (
                             <tr key={price.code} className={`${isHighlighted ? 'price-flash' : ''}`}>
-                              <td className="py-2 px-1 border-b border-[#e9ecef] text-sm font-semibold text-[#111827] uppercase">{price.name}</td>
-                              <td className="py-2 px-1 border-b border-[#e9ecef] text-sm text-[#111827] text-right">{formatPrice(price.calculatedAlis, price.decimals)}</td>
-                              <td className="py-2 px-1 border-b border-[#e9ecef] text-sm text-[#111827] text-right">{formatPrice(price.calculatedSatis, price.decimals)}</td>
-                              <td className={`py-2 px-1 border-b border-[#e9ecef] text-xs text-right font-medium ${dirUp ? 'text-[#23a455]' : dirDown ? 'text-red-500' : 'text-[#23a455]'}`}>
+                              <td className="py-2.5 px-1.5 border-b border-[#e9ecef] text-base font-bold text-[#111827] uppercase leading-tight">{price.name}</td>
+                              <td className="py-2.5 px-1.5 border-b border-[#e9ecef] text-base text-[#111827] text-right whitespace-nowrap">{formatPrice(price.calculatedAlis, price.decimals)}</td>
+                              <td className="py-2.5 px-1.5 border-b border-[#e9ecef] text-base text-[#111827] text-right whitespace-nowrap">{formatPrice(price.calculatedSatis, price.decimals)}</td>
+                              <td className={`py-2.5 px-1.5 border-b border-[#e9ecef] text-sm text-right font-semibold whitespace-nowrap ${dirUp ? 'text-[#23a455]' : dirDown ? 'text-red-500' : 'text-[#23a455]'}`}>
                                 {dirUp ? '↑' : dirDown ? '↓' : '↑'}%{spread.toFixed(1)}
                               </td>
-                              <td className="py-2 px-1 border-b border-[#e9ecef] text-center">
+                              <td className="py-2.5 px-1.5 border-b border-[#e9ecef] text-center">
                                 <button onClick={() => toggleFavorite(price.code)} className="p-0.5">
-                                  <Star size={14} className={`transition-all ${isFavorite ? 'fill-[#f7de00] text-[#f7de00]' : 'text-gray-300'}`} />
+                                  <Star size={16} className={`transition-all ${isFavorite ? 'fill-[#f7de00] text-[#f7de00]' : 'text-gray-300'}`} />
                                 </button>
                               </td>
                             </tr>
