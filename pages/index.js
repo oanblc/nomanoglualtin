@@ -326,7 +326,7 @@ export default function Home() {
                   </h2>
                   <div className="h-px bg-[#e9ecef] mb-3"></div>
 
-                  <div className="h-[520px] overflow-auto border-t border-[#e9ecef] custom-scrollbar">
+                  <div className="h-[470px] overflow-auto border-t border-[#e9ecef] custom-scrollbar">
                     <table className="w-full border-collapse table-fixed">
                       <colgroup>
                         <col className="w-[30%]" />
@@ -364,25 +364,25 @@ export default function Home() {
                               key={price.code}
                               className={`transition-all duration-200 hover:bg-[#f7de00]/10 ${isHighlighted ? 'price-flash' : ''}`}
                             >
-                              <td className="py-4 px-1.5 border-b border-[#e9ecef] align-middle">
+                              <td className="py-2.5 px-1.5 border-b border-[#e9ecef] align-middle">
                                 <div className="font-bold text-lg text-[#111827] tracking-wide uppercase">
                                   {price.name}
                                 </div>
-                                <div className="mt-1.5 text-sm text-[#9aa0a6] font-normal uppercase">
+                                <div className="mt-1 text-sm text-[#9aa0a6] font-normal uppercase">
                                   {price.code}
                                 </div>
                               </td>
-                              <td className="py-4 px-1.5 border-b border-[#e9ecef] align-middle">
+                              <td className="py-2.5 px-1.5 border-b border-[#e9ecef] align-middle">
                                 <span className="text-[22px] font-normal text-[#111827] whitespace-nowrap">
                                   {formatPrice(price.calculatedAlis, price.decimals)}
                                 </span>
                               </td>
-                              <td className="py-4 px-1.5 border-b border-[#e9ecef] align-middle">
+                              <td className="py-2.5 px-1.5 border-b border-[#e9ecef] align-middle">
                                 <span className="text-[22px] font-normal text-[#111827] whitespace-nowrap">
                                   {formatPrice(price.calculatedSatis, price.decimals)}
                                 </span>
                               </td>
-                              <td className="py-4 px-1.5 border-b border-[#e9ecef] align-middle">
+                              <td className="py-2.5 px-1.5 border-b border-[#e9ecef] align-middle">
                                 <span className={`text-lg font-medium whitespace-nowrap ${
                                   dirUp ? 'text-[#23a455]' : dirDown ? 'text-red-500' : 'text-[#23a455]'
                                 }`}>
@@ -399,7 +399,7 @@ export default function Home() {
                 </section>
 
                 {/* Sağ - Görsel (Mobilde gizli) */}
-                <aside className="hidden lg:block bg-white rounded-[10px] shadow-[0_10px_30px_rgba(16,24,40,0.08)] overflow-hidden h-[620px]">
+                <aside className="hidden lg:block bg-white rounded-[10px] shadow-[0_10px_30px_rgba(16,24,40,0.08)] overflow-hidden h-[570px]">
                   {priceTableImage ? (
                     <img
                       src={priceTableImage}
