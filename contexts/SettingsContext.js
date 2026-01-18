@@ -7,6 +7,7 @@ export function SettingsProvider({ children }) {
   const [logoHeight, setLogoHeight] = useState(48);
   const [logoWidth, setLogoWidth] = useState('auto');
   const [faviconBase64, setFaviconBase64] = useState('');
+  const [priceTableImage, setPriceTableImage] = useState('');
   const [isLoaded, setIsLoaded] = useState(false);
 
   // İletişim Bilgileri - boş başla, API'den gelsin
@@ -59,6 +60,7 @@ export function SettingsProvider({ children }) {
           setLogoHeight(s.logoHeight || 48);
           setLogoWidth(s.logoWidth || 'auto');
           setFaviconBase64(s.faviconBase64 || '');
+          setPriceTableImage(s.priceTableImage || '');
           // İletişim bilgileri
           setContactPhone(s.contactPhone || '');
           setContactEmail(s.contactEmail || '');
@@ -88,7 +90,7 @@ export function SettingsProvider({ children }) {
 
   return (
     <SettingsContext.Provider value={{
-      logoBase64, logoHeight, logoWidth, faviconBase64, isLoaded,
+      logoBase64, logoHeight, logoWidth, faviconBase64, priceTableImage, isLoaded,
       contactPhone, contactEmail, contactAddress, workingHours, workingHoursNote,
       socialFacebook, socialTwitter, socialInstagram, socialYoutube, socialTiktok, socialWhatsapp,
       seo

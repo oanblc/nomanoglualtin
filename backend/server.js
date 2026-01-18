@@ -89,8 +89,9 @@ const loginLimiter = rateLimit({
 app.use('/api/', generalLimiter);
 app.use('/api/auth/login', loginLimiter);
 
-// Body parser
-app.use(express.json({ limit: '10kb' })); // Body size limiti
+// Body parser - Görsel yüklemeleri için limit artırıldı
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // MongoDB bağlantısı (opsiyonel)
 mongoose.connect(process.env.MONGODB_URI, {

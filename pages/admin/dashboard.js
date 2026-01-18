@@ -37,6 +37,7 @@ export default function AdminDashboard() {
   const [logoHeight, setLogoHeight] = useState(48); // px
   const [logoWidth, setLogoWidth] = useState('auto'); // 'auto' veya px değeri
   const [faviconBase64, setFaviconBase64] = useState('');
+  const [priceTableImage, setPriceTableImage] = useState('');
 
   // İletişim Bilgileri state
   const [contactPhone, setContactPhone] = useState('+90 (XXX) XXX XX XX');
@@ -235,6 +236,7 @@ export default function AdminDashboard() {
         setLogoHeight(s.logoHeight || 48);
         setLogoWidth(s.logoWidth || 'auto');
         setFaviconBase64(s.faviconBase64 || '');
+        setPriceTableImage(s.priceTableImage || '');
         // İletişim bilgileri
         setContactPhone(s.contactPhone || '+90 (XXX) XXX XX XX');
         setContactEmail(s.contactEmail || 'info@nomanoglu.com');
@@ -429,6 +431,46 @@ export default function AdminDashboard() {
     setFaviconBase64('');
   };
 
+  const handlePriceTableImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        alert('Lütfen sadece resim dosyası yükleyin!');
+        e.target.value = '';
+        return;
+      }
+
+      const fileSizeMB = file.size / 1024 / 1024;
+      if (file.size > 5 * 1024 * 1024) { // 5MB
+        const proceed = confirm(
+          `UYARI: Dosya boyutu ${fileSizeMB.toFixed(2)} MB\n\n` +
+          `Önerilen maksimum: 5 MB\n\n` +
+          `Büyük dosyalar yavaş yüklenebilir.\n` +
+          `Devam etmek istiyor musunuz?`
+        );
+        if (!proceed) {
+          e.target.value = '';
+          return;
+        }
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        console.log(`Fiyat tablosu görseli yüklendi: ${fileSizeMB.toFixed(2)}MB`);
+        setPriceTableImage(reader.result);
+      };
+      reader.onerror = () => {
+        alert('Dosya okuma hatası! Lütfen tekrar deneyin.');
+        e.target.value = '';
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removePriceTableImage = () => {
+    setPriceTableImage('');
+  };
+
   const saveSettings = async () => {
     try {
       await authAxios.post(`${apiUrl}/api/settings`, {
@@ -437,6 +479,7 @@ export default function AdminDashboard() {
         logoHeight,
         logoWidth,
         faviconBase64,
+        priceTableImage,
         contactPhone,
         contactEmail,
         contactAddress,
@@ -1691,7 +1734,7 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* Görüntüleme Ayarları - Ayrı Satır */}
+            {/* Görüntüleme Ayarları ve Fiyat Tablosu Görseli - Ayrı Satır */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
               <div className="bg-white rounded-xl border border-gray-200 p-6">
                 <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center space-x-2">
@@ -1717,6 +1760,70 @@ export default function AdminDashboard() {
                     />
                   </div>
                 </div>
+              </div>
+
+              {/* Fiyat Tablosu Görseli */}
+              <div className="bg-white rounded-xl border border-gray-200 p-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center space-x-2">
+                  <Settings size={20} />
+                  <span>Fiyat Tablosu Görseli</span>
+                </h3>
+                <p className="text-sm text-gray-500 mb-4">
+                  Anasayfada fiyat tablosunun yanında görünecek görsel (Önerilen: 5MB, dikey format)
+                </p>
+
+                {priceTableImage ? (
+                  <div className="space-y-4">
+                    <div className="border-2 border-gray-200 rounded-lg p-4 bg-gray-50">
+                      <div className="flex items-center justify-center h-48 bg-white rounded-lg overflow-hidden">
+                        <img
+                          src={priceTableImage}
+                          alt="Fiyat Tablosu Görseli"
+                          className="object-cover h-full w-full"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex space-x-2">
+                      <label className="flex-1 cursor-pointer">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handlePriceTableImageUpload}
+                          className="hidden"
+                        />
+                        <div className="w-full px-4 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors font-medium text-center border border-blue-200">
+                          Değiştir
+                        </div>
+                      </label>
+                      <button
+                        onClick={removePriceTableImage}
+                        className="px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors font-medium border border-red-200"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePriceTableImageUpload}
+                      className="hidden"
+                    />
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 hover:border-amber-500 hover:bg-amber-50 transition-all">
+                      <div className="flex flex-col items-center space-y-3">
+                        <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
+                          <Plus size={32} className="text-gray-400" />
+                        </div>
+                        <div className="text-center">
+                          <p className="text-sm font-medium text-gray-700">Görsel Yükle</p>
+                          <p className="text-xs text-gray-500 mt-1">PNG, JPG (Önerilen: maks 5MB)</p>
+                        </div>
+                      </div>
+                    </div>
+                  </label>
+                )}
               </div>
             </div>
 

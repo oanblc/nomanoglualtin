@@ -77,6 +77,11 @@ const settingsSchema = new mongoose.Schema({
     type: String,
     default: '905322904601'
   },
+  // Fiyat tablosu yanındaki görsel
+  priceTableImage: {
+    type: String,
+    default: ''
+  },
   updatedAt: {
     type: Date,
     default: Date.now

@@ -9,7 +9,7 @@ import { Menu, Search, TrendingUp, TrendingDown, DollarSign, Euro, Coins, Gem, S
 export default function Home() {
   const { prices: websocketPrices, isConnected, lastUpdate: wsLastUpdate } = useWebSocket();
   const {
-    logoBase64, logoHeight, logoWidth, faviconBase64, isLoaded: logoLoaded,
+    logoBase64, logoHeight, logoWidth, faviconBase64, priceTableImage, isLoaded: logoLoaded,
     contactPhone, contactEmail, contactAddress, workingHours, workingHoursNote,
     socialFacebook, socialTwitter, socialInstagram, socialYoutube, socialTiktok, socialWhatsapp
   } = useSettings();
@@ -20,6 +20,7 @@ export default function Home() {
   const [currentBranchIndex, setCurrentBranchIndex] = useState(0);
   const [highlightedPrices, setHighlightedPrices] = useState({});
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [currentTime, setCurrentTime] = useState('');
 
   // İçerik state'leri
   const [familyCards, setFamilyCards] = useState([]);
@@ -123,6 +124,17 @@ export default function Home() {
       .catch(() => {});
   }, []);
 
+  // Canlı saat güncellemesi
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      setCurrentTime(now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+    };
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   const formatPrice = (value, decimals = 0) => {
     if (!value) return '-';
     return new Intl.NumberFormat('tr-TR', {
@@ -177,10 +189,15 @@ export default function Home() {
           }
 
           /* Custom scrollbar */
-          .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-          .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
-          .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-          .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+          .custom-scrollbar::-webkit-scrollbar { width: 10px; }
+          .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+          .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cfd5dd;
+            border-radius: 999px;
+            border: 3px solid transparent;
+            background-clip: padding-box;
+          }
+          .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #b0b7c3; }
 
           /* Fullscreen mode */
           #price-table-container:fullscreen { background: #fafafa; padding: 1.5rem; }
@@ -202,8 +219,7 @@ export default function Home() {
                     className="object-contain"
                     style={{
                       height: `${logoHeight}px`,
-                      width: logoWidth === 'auto' ? 'auto' : `${logoWidth}px`,
-                      maxHeight: '80px'
+                      width: logoWidth === 'auto' ? 'auto' : `${logoWidth}px`
                     }}
                   />
                 ) : (
@@ -218,13 +234,13 @@ export default function Home() {
 
               {/* Desktop Navigation */}
               <nav className="hidden md:flex items-center space-x-1">
-                <Link href="/" className="px-4 py-2 text-sm font-semibold text-gray-900 bg-white/30 rounded-lg">
+                <Link href="/" className="px-4 py-2 text-base font-normal text-gray-900 bg-white/30 rounded-lg">
                   Fiyatlar
                 </Link>
-                <Link href="/piyasalar" className="px-4 py-2 text-sm font-medium text-gray-800 hover:text-gray-900 hover:bg-white/20 rounded-lg transition-colors">
+                <Link href="/piyasalar" className="px-4 py-2 text-base font-normal text-gray-800 hover:text-gray-900 hover:bg-white/20 rounded-lg transition-colors">
                   Piyasalar
                 </Link>
-                <Link href="/iletisim" className="px-4 py-2 text-sm font-medium text-gray-800 hover:text-gray-900 hover:bg-white/20 rounded-lg transition-colors">
+                <Link href="/iletisim" className="px-4 py-2 text-base font-normal text-gray-800 hover:text-gray-900 hover:bg-white/20 rounded-lg transition-colors">
                   İletişim
                 </Link>
               </nav>
@@ -237,7 +253,7 @@ export default function Home() {
                     href={`https://wa.me/${socialWhatsapp}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="hidden sm:flex items-center space-x-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
+                    className="hidden sm:flex items-center space-x-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-base font-normal rounded-lg transition-colors shadow-sm"
                   >
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
@@ -294,101 +310,110 @@ export default function Home() {
 
         {/* Main Content */}
         <main className="max-w-7xl mx-auto px-4 py-6">
-          {/* Price Table */}
+          {/* Price Table - New Design */}
           <div id="price-table-container" className="mb-8">
             {prices.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20">
-                <div className="w-12 h-12 border-4 border-gray-200 border-t-[#f7de00] rounded-full animate-spin mb-4" />
+                <div className="w-12 h-12 border-4 border-gray-200 border-t-[#b88a2b] rounded-full animate-spin mb-4" />
                 <p className="text-gray-500 text-sm">Fiyatlar yükleniyor...</p>
               </div>
             ) : (
-              <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-                {/* Table */}
-                <table className="w-full table-fixed">
-                  <thead>
-                    <tr className="bg-[#f7de00]">
-                      <th className="text-left py-4 px-3 sm:px-6 text-gray-900 font-bold text-xs sm:text-base w-[30%] sm:w-auto">Ürün</th>
-                      <th className="text-right py-4 px-3 sm:px-6 text-gray-900 font-bold text-xs sm:text-base w-[23%] sm:w-auto">Alış</th>
-                      <th className="text-right py-4 px-3 sm:px-6 text-gray-900 font-bold text-xs sm:text-base w-[23%] sm:w-auto">Satış</th>
-                      <th className="text-right py-4 px-3 sm:px-6 text-gray-900 font-bold text-xs sm:text-base w-[24%] sm:w-28">
-                        Fark
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {prices.map((price, index) => {
-                      const isRising = price.direction && (price.direction.alis_dir === 'up' || price.direction.satis_dir === 'up');
-                      const isFalling = price.direction && (price.direction.alis_dir === 'down' || price.direction.satis_dir === 'down');
-                      const isHighlighted = highlightedPrices[price.code];
+              <div className="grid grid-cols-1 lg:grid-cols-[1.7fr_1fr] gap-6 items-start">
+                {/* Sol - Fiyat Tablosu */}
+                <section className="bg-white rounded-[10px] shadow-[0_10px_30px_rgba(16,24,40,0.08)] p-6 pb-4">
+                  <h2 className="text-center text-[22px] tracking-[0.08em] text-[#111827] font-normal mb-3">
+                    ALTIN FİYATLARI
+                  </h2>
+                  <div className="h-px bg-[#e9ecef] mb-3"></div>
 
-                      return (
-                        <tr
-                          key={price.code}
-                          className={`transition-all duration-200 hover:bg-[#f7de00]/20 ${
-                            isHighlighted ? 'price-flash' : ''
-                          } ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}
-                        >
-                          {/* Product Name */}
-                          <td className="py-3 sm:py-2.5 px-3 sm:px-6">
-                            <div className="flex items-center space-x-2">
-                              <div className="min-w-0 flex-1">
-                                <p className="text-gray-900 font-semibold text-xs sm:text-sm uppercase break-words sm:truncate">{price.name}</p>
-                                <p className="text-gray-400 text-[10px] sm:text-xs hidden sm:block">{price.code}</p>
-                              </div>
-                              {/* Trend Indicator */}
-                              {isRising && (
-                                <div className="hidden sm:flex items-center px-1.5 py-0.5 bg-green-100 rounded-full">
-                                  <TrendingUp size={12} className="text-green-600" />
-                                </div>
-                              )}
-                              {isFalling && (
-                                <div className="hidden sm:flex items-center px-1.5 py-0.5 bg-red-100 rounded-full">
-                                  <TrendingDown size={12} className="text-red-600" />
-                                </div>
-                              )}
-                            </div>
-                          </td>
-
-                          {/* Buy Price */}
-                          <td className="py-3 sm:py-2.5 px-3 sm:px-6 text-right">
-                            <span className="font-medium text-sm sm:text-base tabular-nums text-gray-800" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
-                              {formatPrice(price.calculatedAlis, price.decimals)}
-                            </span>
-                          </td>
-
-                          {/* Sell Price */}
-                          <td className="py-3 sm:py-2.5 px-3 sm:px-6 text-right">
-                            <span className="font-medium text-sm sm:text-base tabular-nums text-gray-800" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
-                              {formatPrice(price.calculatedSatis, price.decimals)}
-                            </span>
-                          </td>
-
-                          {/* Fark - Anlık Değişim */}
-                          <td className="py-3 sm:py-2.5 px-3 sm:px-6 text-right">
-                            {(() => {
-                              // Spread hesapla (satış - alış farkı yüzdesi)
-                              const spread = price.calculatedSatis && price.calculatedAlis
-                                ? ((price.calculatedSatis - price.calculatedAlis) / price.calculatedAlis * 100)
-                                : 0;
-
-                              // Anlık değişim yönünü belirle
-                              const dirUp = price.direction?.alis_dir === 'up' || price.direction?.satis_dir === 'up';
-                              const dirDown = price.direction?.alis_dir === 'down' || price.direction?.satis_dir === 'down';
-
-                              return (
-                                <span className={`font-medium text-sm sm:text-base tabular-nums whitespace-nowrap ${
-                                  dirUp ? 'text-green-600' : dirDown ? 'text-red-600' : 'text-gray-800'
-                                }`} style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
-                                  {dirUp ? '↑' : dirDown ? '↓' : ''} %{spread.toFixed(2)}
-                                </span>
-                              );
-                            })()}
-                          </td>
+                  <div className="h-[520px] overflow-auto border-t border-[#e9ecef] custom-scrollbar">
+                    <table className="w-full border-collapse table-fixed">
+                      <colgroup>
+                        <col className="w-[30%]" />
+                        <col className="w-[23%]" />
+                        <col className="w-[23%]" />
+                        <col className="w-[24%]" />
+                      </colgroup>
+                      <thead>
+                        <tr>
+                          <th className="py-3.5 px-1.5 text-left text-[#b0b7c3] font-normal text-sm border-b border-[#e9ecef] bg-white sticky top-0 z-10">
+                            {currentTime}
+                          </th>
+                          <th className="py-3.5 px-1.5 text-left text-[#b0b7c3] font-normal text-sm border-b border-[#e9ecef] bg-white sticky top-0 z-10">
+                            Alış
+                          </th>
+                          <th className="py-3.5 px-1.5 text-left text-[#b0b7c3] font-normal text-sm border-b border-[#e9ecef] bg-white sticky top-0 z-10">
+                            Satış
+                          </th>
+                          <th className="py-3.5 px-1.5 text-left text-[#b0b7c3] font-normal text-sm border-b border-[#e9ecef] bg-white sticky top-0 z-10">
+                            Fark
+                          </th>
                         </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                      </thead>
+                      <tbody>
+                        {prices.map((price) => {
+                          const isHighlighted = highlightedPrices[price.code];
+                          const spread = price.calculatedSatis && price.calculatedAlis
+                            ? ((price.calculatedSatis - price.calculatedAlis) / price.calculatedAlis * 100)
+                            : 0;
+                          const dirUp = price.direction?.alis_dir === 'up' || price.direction?.satis_dir === 'up';
+                          const dirDown = price.direction?.alis_dir === 'down' || price.direction?.satis_dir === 'down';
+
+                          return (
+                            <tr
+                              key={price.code}
+                              className={`transition-all duration-200 hover:bg-[#f7de00]/10 ${isHighlighted ? 'price-flash' : ''}`}
+                            >
+                              <td className="py-4 px-1.5 border-b border-[#e9ecef] align-middle">
+                                <div className="font-bold text-lg text-[#111827] tracking-wide uppercase">
+                                  {price.name}
+                                </div>
+                                <div className="mt-1.5 text-sm text-[#9aa0a6] font-normal uppercase">
+                                  {price.code}
+                                </div>
+                              </td>
+                              <td className="py-4 px-1.5 border-b border-[#e9ecef] align-middle">
+                                <span className="text-[22px] font-normal text-[#111827] whitespace-nowrap">
+                                  {formatPrice(price.calculatedAlis, price.decimals)}
+                                </span>
+                              </td>
+                              <td className="py-4 px-1.5 border-b border-[#e9ecef] align-middle">
+                                <span className="text-[22px] font-normal text-[#111827] whitespace-nowrap">
+                                  {formatPrice(price.calculatedSatis, price.decimals)}
+                                </span>
+                              </td>
+                              <td className="py-4 px-1.5 border-b border-[#e9ecef] align-middle">
+                                <span className={`text-lg font-medium whitespace-nowrap ${
+                                  dirUp ? 'text-[#23a455]' : dirDown ? 'text-red-500' : 'text-[#23a455]'
+                                }`}>
+                                  <span className="mr-1.5">{dirUp ? '↑' : dirDown ? '↓' : '↑'}</span>
+                                  %{spread.toFixed(2)}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+
+                {/* Sağ - Görsel (Mobilde gizli) */}
+                <aside className="hidden lg:block bg-white rounded-[10px] shadow-[0_10px_30px_rgba(16,24,40,0.08)] overflow-hidden h-[620px]">
+                  {priceTableImage ? (
+                    <img
+                      src={priceTableImage}
+                      alt="Altın"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <img
+                      src="https://images.unsplash.com/photo-1610371316114-2bb0104a0f74?auto=format&fit=crop&w=1200&q=70"
+                      alt="Altın"
+                      className="w-full h-full object-cover"
+                    />
+                  )}
+                </aside>
               </div>
             )}
 
@@ -630,9 +655,8 @@ export default function Home() {
                       alt="Logo"
                       className="object-contain"
                       style={{
-                        height: `${logoHeight}px`,
-                        width: logoWidth === 'auto' ? 'auto' : `${logoWidth}px`,
-                        maxHeight: '80px'
+                        height: `${Math.min(logoHeight, 50)}px`,
+                        width: logoWidth === 'auto' ? 'auto' : `${logoWidth}px`
                       }}
                     />
                   ) : (
