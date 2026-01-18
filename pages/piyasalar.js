@@ -169,8 +169,31 @@ export default function Piyasalar() {
             background-clip: padding-box;
           }
           .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #b0b7c3; }
-          #price-table-container:fullscreen { background: #fafafa; padding: 1.5rem; }
+          #price-table-container:fullscreen {
+            background: #fafafa;
+            padding: 1rem 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+          }
           #price-table-container:fullscreen .fullscreen-hide { display: none !important; }
+          #price-table-container:fullscreen section {
+            width: 100%;
+            max-width: 1400px;
+            height: auto;
+            max-height: none;
+            overflow: visible;
+          }
+          #price-table-container:fullscreen h2 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+          #price-table-container:fullscreen table { font-size: 1rem; }
+          #price-table-container:fullscreen td { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+          #price-table-container:fullscreen th { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+          #price-table-container:fullscreen .text-lg { font-size: 1rem; }
+          #price-table-container:fullscreen .text-\[22px\] { font-size: 1.15rem; }
+          #price-table-container:fullscreen .mt-1\.5 { margin-top: 0.125rem; }
+          #price-table-container:fullscreen .text-sm { font-size: 0.75rem; }
+          #price-table-container:fullscreen .favorite-col { display: none; }
         `}</style>
       </Head>
 
@@ -261,14 +284,8 @@ export default function Piyasalar() {
 
         {/* Main Content */}
         <main className="max-w-7xl mx-auto px-4 py-6">
-          {/* Page Title */}
-          <div className="mb-6 fullscreen-hide">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">Canlı Piyasa Fiyatları</h1>
-            <p className="text-gray-500 text-sm">Gerçek zamanlı döviz ve altın fiyatları</p>
-          </div>
-
-          {/* Filter Pills */}
-          <div className="flex items-center space-x-2 overflow-x-auto pb-4 mb-4 fullscreen-hide">
+          {/* Filter Pills and Search */}
+          <div className="flex flex-wrap items-center gap-2 mb-6 fullscreen-hide">
             <button
               onClick={() => { setFilter('all'); setShowOnlyFavorites(false); }}
               className={`px-4 py-2 text-sm font-medium rounded-full whitespace-nowrap transition-all ${
@@ -299,32 +316,14 @@ export default function Piyasalar() {
             >
               Gümüş
             </button>
-            <button
-              onClick={() => { setShowOnlyFavorites(true); setFilter('all'); }}
-              className={`px-4 py-2 text-sm font-medium rounded-full whitespace-nowrap transition-all flex items-center space-x-1.5 ${
-                showOnlyFavorites
-                  ? 'bg-[#f7de00] text-gray-900'
-                  : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-              }`}
-            >
-              <Star size={14} className={favorites.length > 0 ? 'fill-current' : ''} />
-              <span>Favoriler</span>
-              {favorites.length > 0 && (
-                <span className="text-xs">({favorites.length})</span>
-              )}
-            </button>
-          </div>
-
-          {/* Search */}
-          <div className="mb-6 fullscreen-hide">
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
               <input
                 type="text"
-                placeholder="Altın, döviz veya kod ile ara..."
+                placeholder="Ara..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:border-[#f7de00] focus:ring-2 focus:ring-[#f7de00]/20 transition-all"
+                className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-full text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:border-[#f7de00] focus:ring-2 focus:ring-[#f7de00]/20 transition-all"
               />
             </div>
           </div>
@@ -351,19 +350,19 @@ export default function Piyasalar() {
               </div>
             ) : (
               <section className="bg-white rounded-[10px] shadow-[0_10px_30px_rgba(16,24,40,0.08)] p-6 pb-4">
-                <h2 className="text-center text-[22px] tracking-[0.08em] text-[#b88a2b] font-normal mb-3">
+                <h2 className="text-center text-[22px] tracking-[0.08em] text-[#111827] font-normal mb-3">
                   PİYASA FİYATLARI
                 </h2>
                 <div className="h-px bg-[#e9ecef] mb-3"></div>
 
-                <div className="h-[520px] overflow-auto border-t border-[#e9ecef] custom-scrollbar">
+                <div className="border-t border-[#e9ecef]">
                   <table className="w-full border-collapse table-fixed">
                     <colgroup>
                       <col className="w-[28%]" />
                       <col className="w-[20%]" />
                       <col className="w-[20%]" />
                       <col className="w-[20%]" />
-                      <col className="w-[12%]" />
+                      <col className="w-[12%] favorite-col" />
                     </colgroup>
                     <thead>
                       <tr>
@@ -379,7 +378,7 @@ export default function Piyasalar() {
                         <th className="py-3.5 px-1.5 text-left text-[#b0b7c3] font-normal text-sm border-b border-[#e9ecef] bg-white sticky top-0 z-10">
                           Fark
                         </th>
-                        <th className="py-3.5 px-1.5 text-center text-[#b0b7c3] font-normal text-sm border-b border-[#e9ecef] bg-white sticky top-0 z-10">
+                        <th className="py-3.5 px-1.5 text-center text-[#b0b7c3] font-normal text-sm border-b border-[#e9ecef] bg-white sticky top-0 z-10 favorite-col">
                           <Star size={14} className="inline" />
                         </th>
                       </tr>
@@ -425,7 +424,7 @@ export default function Piyasalar() {
                                 %{spread.toFixed(2)}
                               </span>
                             </td>
-                            <td className="py-4 px-1.5 border-b border-[#e9ecef] align-middle text-center">
+                            <td className="py-4 px-1.5 border-b border-[#e9ecef] align-middle text-center favorite-col">
                               <button
                                 onClick={() => toggleFavorite(price.code)}
                                 className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
@@ -449,9 +448,19 @@ export default function Piyasalar() {
               </section>
             )}
 
-            {/* TV Gösterimi Button */}
+            {/* TV Gösterimi ve Tam Ekran Butonları */}
             {filteredPrices.length > 0 && (
-              <div className="mt-6 text-center fullscreen-hide">
+              <div className="mt-6 flex justify-center gap-4 fullscreen-hide">
+                <button
+                  onClick={() => {
+                    const elem = document.getElementById('price-table-container');
+                    if (elem?.requestFullscreen) elem.requestFullscreen();
+                  }}
+                  className="inline-flex items-center space-x-2 px-6 py-3 bg-gray-700 text-white hover:bg-gray-600 rounded-xl transition-all"
+                >
+                  <Maximize2 size={18} />
+                  <span className="text-sm font-medium">Tam Ekran</span>
+                </button>
                 <Link href="/tv" className="inline-flex items-center space-x-2 px-6 py-3 bg-gray-900 text-white hover:bg-gray-800 rounded-xl transition-all">
                   <Maximize2 size={18} />
                   <span className="text-sm font-medium">TV Gösterimi</span>
