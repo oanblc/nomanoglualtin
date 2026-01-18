@@ -445,75 +445,46 @@ export default function Piyasalar() {
                     </tbody>
                   </table>
 
-                  {/* Mobile Cards */}
+                  {/* Mobile Table */}
                   <div className="sm:hidden">
-                    <div className="sticky top-0 bg-white py-2 px-1 border-b border-[#e9ecef] z-10 flex items-center justify-between">
-                      <span className="text-[#b0b7c3] font-normal text-sm">{currentTime}</span>
-                      <Star size={14} className="text-[#b0b7c3]" />
-                    </div>
-                    <div className="divide-y divide-[#e9ecef]">
-                      {filteredPrices.map((price) => {
-                        const isFavorite = favorites.includes(price.code);
-                        const isHighlighted = highlightedPrices[price.code];
-                        const spread = price.calculatedSatis && price.calculatedAlis
-                          ? ((price.calculatedSatis - price.calculatedAlis) / price.calculatedAlis * 100)
-                          : 0;
-                        const dirUp = price.direction?.alis_dir === 'up' || price.direction?.satis_dir === 'up';
-                        const dirDown = price.direction?.alis_dir === 'down' || price.direction?.satis_dir === 'down';
+                    <table className="w-full border-collapse">
+                      <thead>
+                        <tr>
+                          <th className="py-2 px-1 text-left text-[#b0b7c3] font-normal text-xs border-b border-[#e9ecef] bg-white sticky top-0 z-10">{currentTime}</th>
+                          <th className="py-2 px-1 text-right text-[#b0b7c3] font-normal text-xs border-b border-[#e9ecef] bg-white sticky top-0 z-10">Alış</th>
+                          <th className="py-2 px-1 text-right text-[#b0b7c3] font-normal text-xs border-b border-[#e9ecef] bg-white sticky top-0 z-10">Satış</th>
+                          <th className="py-2 px-1 text-right text-[#b0b7c3] font-normal text-xs border-b border-[#e9ecef] bg-white sticky top-0 z-10">Fark</th>
+                          <th className="py-2 px-1 text-center text-[#b0b7c3] font-normal text-xs border-b border-[#e9ecef] bg-white sticky top-0 z-10"><Star size={12} className="inline" /></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredPrices.map((price) => {
+                          const isFavorite = favorites.includes(price.code);
+                          const isHighlighted = highlightedPrices[price.code];
+                          const spread = price.calculatedSatis && price.calculatedAlis
+                            ? ((price.calculatedSatis - price.calculatedAlis) / price.calculatedAlis * 100)
+                            : 0;
+                          const dirUp = price.direction?.alis_dir === 'up' || price.direction?.satis_dir === 'up';
+                          const dirDown = price.direction?.alis_dir === 'down' || price.direction?.satis_dir === 'down';
 
-                        return (
-                          <div
-                            key={price.code}
-                            className={`py-3 px-1 ${isHighlighted ? 'price-flash' : ''}`}
-                          >
-                            <div className="flex items-start justify-between mb-2">
-                              <div className="flex-1">
-                                <div className="font-bold text-base text-[#111827] uppercase">
-                                  {price.name}
-                                </div>
-                                <div className="text-xs text-[#9aa0a6] uppercase">
-                                  {price.code}
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <span className={`text-sm font-medium ${
-                                  dirUp ? 'text-[#23a455]' : dirDown ? 'text-red-500' : 'text-[#23a455]'
-                                }`}>
-                                  {dirUp ? '↑' : dirDown ? '↓' : '↑'} %{spread.toFixed(2)}
-                                </span>
-                                <button
-                                  onClick={() => toggleFavorite(price.code)}
-                                  className="p-1 rounded-lg"
-                                >
-                                  <Star
-                                    size={16}
-                                    className={`transition-all ${
-                                      isFavorite
-                                        ? 'fill-[#f7de00] text-[#f7de00]'
-                                        : 'text-gray-300'
-                                    }`}
-                                  />
+                          return (
+                            <tr key={price.code} className={`${isHighlighted ? 'price-flash' : ''}`}>
+                              <td className="py-2 px-1 border-b border-[#e9ecef] text-sm font-semibold text-[#111827] uppercase">{price.name}</td>
+                              <td className="py-2 px-1 border-b border-[#e9ecef] text-sm text-[#111827] text-right">{formatPrice(price.calculatedAlis, price.decimals)}</td>
+                              <td className="py-2 px-1 border-b border-[#e9ecef] text-sm text-[#111827] text-right">{formatPrice(price.calculatedSatis, price.decimals)}</td>
+                              <td className={`py-2 px-1 border-b border-[#e9ecef] text-xs text-right font-medium ${dirUp ? 'text-[#23a455]' : dirDown ? 'text-red-500' : 'text-[#23a455]'}`}>
+                                {dirUp ? '↑' : dirDown ? '↓' : '↑'}%{spread.toFixed(1)}
+                              </td>
+                              <td className="py-2 px-1 border-b border-[#e9ecef] text-center">
+                                <button onClick={() => toggleFavorite(price.code)} className="p-0.5">
+                                  <Star size={14} className={`transition-all ${isFavorite ? 'fill-[#f7de00] text-[#f7de00]' : 'text-gray-300'}`} />
                                 </button>
-                              </div>
-                            </div>
-                            <div className="flex justify-between">
-                              <div>
-                                <div className="text-xs text-[#b0b7c3] mb-0.5">Alış</div>
-                                <div className="text-lg font-medium text-[#111827]">
-                                  {formatPrice(price.calculatedAlis, price.decimals)}
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <div className="text-xs text-[#b0b7c3] mb-0.5">Satış</div>
-                                <div className="text-lg font-medium text-[#111827]">
-                                  {formatPrice(price.calculatedSatis, price.decimals)}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               </section>
