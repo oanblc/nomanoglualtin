@@ -327,7 +327,8 @@ export default function Home() {
                   <div className="h-px bg-[#e9ecef] mb-3"></div>
 
                   <div className="h-[470px] overflow-auto border-t border-[#e9ecef] custom-scrollbar">
-                    <table className="w-full border-collapse table-fixed">
+                    {/* Desktop Table */}
+                    <table className="w-full border-collapse table-fixed hidden sm:table">
                       <colgroup>
                         <col className="w-[30%]" />
                         <col className="w-[23%]" />
@@ -395,6 +396,60 @@ export default function Home() {
                         })}
                       </tbody>
                     </table>
+
+                    {/* Mobile Cards */}
+                    <div className="sm:hidden">
+                      <div className="sticky top-0 bg-white py-2 px-1 border-b border-[#e9ecef] z-10">
+                        <span className="text-[#b0b7c3] font-normal text-sm">{currentTime}</span>
+                      </div>
+                      <div className="divide-y divide-[#e9ecef]">
+                        {prices.map((price) => {
+                          const isHighlighted = highlightedPrices[price.code];
+                          const spread = price.calculatedSatis && price.calculatedAlis
+                            ? ((price.calculatedSatis - price.calculatedAlis) / price.calculatedAlis * 100)
+                            : 0;
+                          const dirUp = price.direction?.alis_dir === 'up' || price.direction?.satis_dir === 'up';
+                          const dirDown = price.direction?.alis_dir === 'down' || price.direction?.satis_dir === 'down';
+
+                          return (
+                            <div
+                              key={price.code}
+                              className={`py-3 px-1 ${isHighlighted ? 'price-flash' : ''}`}
+                            >
+                              <div className="flex items-center justify-between mb-2">
+                                <div>
+                                  <div className="font-bold text-base text-[#111827] uppercase">
+                                    {price.name}
+                                  </div>
+                                  <div className="text-xs text-[#9aa0a6] uppercase">
+                                    {price.code}
+                                  </div>
+                                </div>
+                                <span className={`text-sm font-medium ${
+                                  dirUp ? 'text-[#23a455]' : dirDown ? 'text-red-500' : 'text-[#23a455]'
+                                }`}>
+                                  {dirUp ? '↑' : dirDown ? '↓' : '↑'} %{spread.toFixed(2)}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <div>
+                                  <div className="text-xs text-[#b0b7c3] mb-0.5">Alış</div>
+                                  <div className="text-lg font-medium text-[#111827]">
+                                    {formatPrice(price.calculatedAlis, price.decimals)}
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <div className="text-xs text-[#b0b7c3] mb-0.5">Satış</div>
+                                  <div className="text-lg font-medium text-[#111827]">
+                                    {formatPrice(price.calculatedSatis, price.decimals)}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
                 </section>
 

@@ -211,8 +211,7 @@ export default function Piyasalar() {
                     className="object-contain"
                     style={{
                       height: `${logoHeight}px`,
-                      width: logoWidth === 'auto' ? 'auto' : `${logoWidth}px`,
-                      maxHeight: '80px'
+                      width: logoWidth === 'auto' ? 'auto' : `${logoWidth}px`
                     }}
                   />
                 ) : (
@@ -356,7 +355,8 @@ export default function Piyasalar() {
                 <div className="h-px bg-[#e9ecef] mb-3"></div>
 
                 <div className="border-t border-[#e9ecef]">
-                  <table className="w-full border-collapse table-fixed">
+                  {/* Desktop Table */}
+                  <table className="w-full border-collapse table-fixed hidden sm:table">
                     <colgroup>
                       <col className="w-[28%]" />
                       <col className="w-[20%]" />
@@ -444,6 +444,77 @@ export default function Piyasalar() {
                       })}
                     </tbody>
                   </table>
+
+                  {/* Mobile Cards */}
+                  <div className="sm:hidden">
+                    <div className="sticky top-0 bg-white py-2 px-1 border-b border-[#e9ecef] z-10 flex items-center justify-between">
+                      <span className="text-[#b0b7c3] font-normal text-sm">{currentTime}</span>
+                      <Star size={14} className="text-[#b0b7c3]" />
+                    </div>
+                    <div className="divide-y divide-[#e9ecef]">
+                      {filteredPrices.map((price) => {
+                        const isFavorite = favorites.includes(price.code);
+                        const isHighlighted = highlightedPrices[price.code];
+                        const spread = price.calculatedSatis && price.calculatedAlis
+                          ? ((price.calculatedSatis - price.calculatedAlis) / price.calculatedAlis * 100)
+                          : 0;
+                        const dirUp = price.direction?.alis_dir === 'up' || price.direction?.satis_dir === 'up';
+                        const dirDown = price.direction?.alis_dir === 'down' || price.direction?.satis_dir === 'down';
+
+                        return (
+                          <div
+                            key={price.code}
+                            className={`py-3 px-1 ${isHighlighted ? 'price-flash' : ''}`}
+                          >
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex-1">
+                                <div className="font-bold text-base text-[#111827] uppercase">
+                                  {price.name}
+                                </div>
+                                <div className="text-xs text-[#9aa0a6] uppercase">
+                                  {price.code}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className={`text-sm font-medium ${
+                                  dirUp ? 'text-[#23a455]' : dirDown ? 'text-red-500' : 'text-[#23a455]'
+                                }`}>
+                                  {dirUp ? '↑' : dirDown ? '↓' : '↑'} %{spread.toFixed(2)}
+                                </span>
+                                <button
+                                  onClick={() => toggleFavorite(price.code)}
+                                  className="p-1 rounded-lg"
+                                >
+                                  <Star
+                                    size={16}
+                                    className={`transition-all ${
+                                      isFavorite
+                                        ? 'fill-[#f7de00] text-[#f7de00]'
+                                        : 'text-gray-300'
+                                    }`}
+                                  />
+                                </button>
+                              </div>
+                            </div>
+                            <div className="flex justify-between">
+                              <div>
+                                <div className="text-xs text-[#b0b7c3] mb-0.5">Alış</div>
+                                <div className="text-lg font-medium text-[#111827]">
+                                  {formatPrice(price.calculatedAlis, price.decimals)}
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-xs text-[#b0b7c3] mb-0.5">Satış</div>
+                                <div className="text-lg font-medium text-[#111827]">
+                                  {formatPrice(price.calculatedSatis, price.decimals)}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
               </section>
             )}
