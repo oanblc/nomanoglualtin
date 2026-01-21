@@ -435,7 +435,7 @@ export default function Home() {
                 </section>
 
                 {/* Sağ - Görsel (Mobilde gizli) */}
-                <aside className="hidden lg:block bg-white rounded-[10px] shadow-[0_10px_30px_rgba(16,24,40,0.08)] overflow-hidden h-[570px]">
+                <aside className="hidden lg:block bg-white rounded-[10px] overflow-hidden h-[570px]">
                   {priceTableImage ? (
                     <img
                       src={priceTableImage}
