@@ -65,7 +65,7 @@ export default function ArticlesPage() {
 
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
-        <header className="sticky top-0 z-50 bg-[#f7de00]">
+        <header className="sticky top-0 z-50 bg-[#F3BA1C]">
           <div className="max-w-7xl mx-auto px-4">
             <div className="flex items-center justify-between h-20">
               {/* Logo */}
@@ -161,7 +161,7 @@ export default function ArticlesPage() {
           {/* Page Title */}
           <div className="mb-8">
             <div className="flex items-center space-x-3 mb-2">
-              <div className="w-10 h-10 rounded-lg bg-[#f7de00]/20 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-lg bg-[#F3BA1C]/20 flex items-center justify-center">
                 <BookOpen size={20} className="text-[#b8860b]" />
               </div>
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Bilgi & Rehber</h1>
@@ -179,7 +179,7 @@ export default function ArticlesPage() {
                 placeholder="Makale ara..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:border-[#f7de00] focus:ring-2 focus:ring-[#f7de00]/20 transition-all"
+                className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:border-[#F3BA1C] focus:ring-2 focus:ring-[#F3BA1C]/20 transition-all"
               />
             </div>
 
@@ -192,7 +192,7 @@ export default function ArticlesPage() {
                     onClick={() => setSelectedCategory(category)}
                     className={`px-4 py-2 text-sm font-medium rounded-full whitespace-nowrap transition-all ${
                       selectedCategory === category
-                        ? 'bg-[#f7de00] text-gray-900'
+                        ? 'bg-[#F3BA1C] text-gray-900'
                         : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
                     }`}
                   >
@@ -206,7 +206,7 @@ export default function ArticlesPage() {
           {/* Articles Grid */}
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20">
-              <div className="w-12 h-12 border-4 border-gray-200 border-t-[#f7de00] rounded-full animate-spin mb-4" />
+              <div className="w-12 h-12 border-4 border-gray-200 border-t-[#F3BA1C] rounded-full animate-spin mb-4" />
               <p className="text-gray-500 text-sm">Makaleler yükleniyor...</p>
             </div>
           ) : filteredArticles.length === 0 ? (
@@ -218,7 +218,7 @@ export default function ArticlesPage() {
               {(search || selectedCategory !== 'all') && (
                 <button
                   onClick={() => { setSearch(''); setSelectedCategory('all'); }}
-                  className="px-6 py-2 bg-[#f7de00] text-gray-900 text-sm font-medium rounded-lg transition-all hover:bg-[#e5cc00]"
+                  className="px-6 py-2 bg-[#F3BA1C] text-gray-900 text-sm font-medium rounded-lg transition-all hover:bg-[#e5cc00]"
                 >
                   Filtreleri Temizle
                 </button>
@@ -228,8 +228,8 @@ export default function ArticlesPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
               {filteredArticles.map((article) => (
                 <Link key={article.id} href={`/articles/${article.id}`}>
-                  <div className="bg-white border border-gray-200 rounded-xl p-6 hover:border-[#f7de00] hover:shadow-lg transition-all cursor-pointer group h-full">
-                    <div className="w-12 h-12 rounded-lg bg-[#f7de00]/20 flex items-center justify-center mb-4">
+                  <div className="bg-white border border-gray-200 rounded-xl p-6 hover:border-[#F3BA1C] hover:shadow-lg transition-all cursor-pointer group h-full">
+                    <div className="w-12 h-12 rounded-lg bg-[#F3BA1C]/20 flex items-center justify-center mb-4">
                       <span className="text-[#b8860b]">{getIconForArticle(article.icon, 24)}</span>
                     </div>
                     {article.category && (
@@ -280,7 +280,7 @@ export default function ArticlesPage() {
                     />
                   ) : (
                     <>
-                      <div className="w-9 h-9 rounded-xl bg-[#f7de00] flex items-center justify-center">
+                      <div className="w-9 h-9 rounded-xl bg-[#F3BA1C] flex items-center justify-center">
                         <Coins size={18} className="text-gray-900" />
                       </div>
                       <span className="text-lg font-bold text-gray-900">NOMANOĞLU</span>

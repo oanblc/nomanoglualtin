@@ -98,7 +98,7 @@ export default function İletişim() {
 
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
-        <header className="sticky top-0 z-50 bg-[#f7de00]">
+        <header className="sticky top-0 z-50 bg-[#F3BA1C]">
           <div className="max-w-7xl mx-auto px-4">
             <div className="flex items-center justify-between h-20">
               {/* Logo */}
@@ -191,7 +191,7 @@ export default function İletişim() {
           {/* Branches Section - Compact Accordion Style */}
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-8">
             {/* Header with Search and Filter */}
-            <div className="bg-[#f7de00] px-4 sm:px-6 py-4">
+            <div className="bg-[#F3BA1C] px-4 sm:px-6 py-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div className="flex items-center space-x-2">
                   <Building2 size={24} className="text-gray-900" />
@@ -261,7 +261,7 @@ export default function İletişim() {
                         className="w-full px-4 sm:px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors text-left"
                       >
                         <div className="flex items-center space-x-3 flex-1 min-w-0">
-                          <div className="w-10 h-10 rounded-lg bg-[#f7de00]/20 flex items-center justify-center flex-shrink-0">
+                          <div className="w-10 h-10 rounded-lg bg-[#F3BA1C]/20 flex items-center justify-center flex-shrink-0">
                             <MapPin size={18} className="text-[#b8860b]" />
                           </div>
                           <div className="min-w-0 flex-1">
@@ -286,7 +286,7 @@ export default function İletişim() {
                               target="_blank"
                               rel="noopener noreferrer"
                               onClick={(e) => e.stopPropagation()}
-                              className="hidden sm:flex items-center space-x-1 px-3 py-1.5 bg-[#f7de00] hover:bg-[#e5cc00] text-gray-900 rounded-lg text-xs font-medium transition-colors"
+                              className="hidden sm:flex items-center space-x-1 px-3 py-1.5 bg-[#F3BA1C] hover:bg-[#e5cc00] text-gray-900 rounded-lg text-xs font-medium transition-colors"
                             >
                               <Navigation size={12} />
                               <span>Yol Tarifi</span>
@@ -351,7 +351,7 @@ export default function İletişim() {
                                   href={branch.mapLink}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="flex-1 flex items-center justify-center space-x-1 py-2.5 bg-[#f7de00] hover:bg-[#e5cc00] text-gray-900 rounded-lg text-sm font-medium transition-colors"
+                                  className="flex-1 flex items-center justify-center space-x-1 py-2.5 bg-[#F3BA1C] hover:bg-[#e5cc00] text-gray-900 rounded-lg text-sm font-medium transition-colors"
                                 >
                                   <Navigation size={14} />
                                   <span>Yol Tarifi</span>
@@ -370,7 +370,7 @@ export default function İletişim() {
 
           {/* Contact Form */}
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-8">
-            <div className="bg-[#f7de00] px-6 py-4">
+            <div className="bg-[#F3BA1C] px-6 py-4">
               <h2 className="text-xl font-bold text-gray-900 flex items-center space-x-2">
                 <MessageSquare size={24} />
                 <span>Bize Ulaşın</span>
@@ -411,7 +411,7 @@ export default function İletişim() {
                       value={formData.name}
                       onChange={handleFormChange}
                       placeholder="Adınız ve soyadınız"
-                      className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:border-[#f7de00] focus:ring-2 focus:ring-[#f7de00]/20 focus:outline-none transition-all"
+                      className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:border-[#F3BA1C] focus:ring-2 focus:ring-[#F3BA1C]/20 focus:outline-none transition-all"
                       required
                     />
                   </div>
@@ -430,7 +430,7 @@ export default function İletişim() {
                       value={formData.email}
                       onChange={handleFormChange}
                       placeholder="ornek@email.com"
-                      className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:border-[#f7de00] focus:ring-2 focus:ring-[#f7de00]/20 focus:outline-none transition-all"
+                      className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:border-[#F3BA1C] focus:ring-2 focus:ring-[#F3BA1C]/20 focus:outline-none transition-all"
                       required
                     />
                   </div>
@@ -449,7 +449,7 @@ export default function İletişim() {
                       value={formData.phone}
                       onChange={handleFormChange}
                       placeholder="0555 555 55 55"
-                      className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:border-[#f7de00] focus:ring-2 focus:ring-[#f7de00]/20 focus:outline-none transition-all"
+                      className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:border-[#F3BA1C] focus:ring-2 focus:ring-[#F3BA1C]/20 focus:outline-none transition-all"
                     />
                   </div>
                 </div>
@@ -463,7 +463,7 @@ export default function İletişim() {
                     name="subject"
                     value={formData.subject}
                     onChange={handleFormChange}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-900 focus:border-[#f7de00] focus:ring-2 focus:ring-[#f7de00]/20 focus:outline-none transition-all"
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-900 focus:border-[#F3BA1C] focus:ring-2 focus:ring-[#F3BA1C]/20 focus:outline-none transition-all"
                   >
                     <option value="">Konu seçin...</option>
                     <option value="genel">Genel Bilgi</option>
@@ -486,7 +486,7 @@ export default function İletişim() {
                   onChange={handleFormChange}
                   placeholder="Mesajınızı buraya yazın..."
                   rows={5}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:border-[#f7de00] focus:ring-2 focus:ring-[#f7de00]/20 focus:outline-none transition-all resize-none"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:border-[#F3BA1C] focus:ring-2 focus:ring-[#F3BA1C]/20 focus:outline-none transition-all resize-none"
                   required
                 />
               </div>
@@ -495,7 +495,7 @@ export default function İletişim() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full sm:w-auto flex items-center justify-center space-x-2 px-8 py-3 bg-[#f7de00] hover:bg-[#e5cc00] disabled:bg-gray-300 disabled:cursor-not-allowed text-gray-900 font-semibold rounded-lg transition-all"
+                className="w-full sm:w-auto flex items-center justify-center space-x-2 px-8 py-3 bg-[#F3BA1C] hover:bg-[#e5cc00] disabled:bg-gray-300 disabled:cursor-not-allowed text-gray-900 font-semibold rounded-lg transition-all"
               >
                 {isSubmitting ? (
                   <>
@@ -518,7 +518,7 @@ export default function İletişim() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
               {contactPhone && (
                 <div className="text-center">
-                  <div className="w-14 h-14 bg-[#f7de00] rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <div className="w-14 h-14 bg-[#F3BA1C] rounded-xl flex items-center justify-center mx-auto mb-3">
                     <Phone size={24} className="text-gray-900" />
                   </div>
                   <h3 className="text-lg font-bold text-gray-900 mb-1">Telefon</h3>
@@ -530,7 +530,7 @@ export default function İletişim() {
 
               {contactEmail && (
                 <div className="text-center">
-                  <div className="w-14 h-14 bg-[#f7de00] rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <div className="w-14 h-14 bg-[#F3BA1C] rounded-xl flex items-center justify-center mx-auto mb-3">
                     <Mail size={24} className="text-gray-900" />
                   </div>
                   <h3 className="text-lg font-bold text-gray-900 mb-1">E-posta</h3>
@@ -542,7 +542,7 @@ export default function İletişim() {
 
               {workingHours && (
                 <div className="text-center">
-                  <div className="w-14 h-14 bg-[#f7de00] rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <div className="w-14 h-14 bg-[#F3BA1C] rounded-xl flex items-center justify-center mx-auto mb-3">
                     <Clock size={24} className="text-gray-900" />
                   </div>
                   <h3 className="text-lg font-bold text-gray-900 mb-1">Çalışma Saatleri</h3>
@@ -573,7 +573,7 @@ export default function İletişim() {
                     />
                   ) : (
                     <>
-                      <div className="w-9 h-9 rounded-xl bg-[#f7de00] flex items-center justify-center">
+                      <div className="w-9 h-9 rounded-xl bg-[#F3BA1C] flex items-center justify-center">
                         <Coins size={18} className="text-gray-900" />
                       </div>
                       <span className="text-lg font-bold text-gray-900">NOMANOGLU</span>

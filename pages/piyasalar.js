@@ -199,7 +199,7 @@ export default function Piyasalar() {
 
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
-        <header className="sticky top-0 z-50 bg-[#f7de00]">
+        <header className="sticky top-0 z-50 bg-[#F3BA1C]">
           <div className="max-w-7xl mx-auto px-4">
             <div className="flex items-center justify-between h-20">
               {/* Logo */}
@@ -289,7 +289,7 @@ export default function Piyasalar() {
               onClick={() => { setFilter('all'); setShowOnlyFavorites(false); }}
               className={`px-4 py-2 text-sm font-medium rounded-full whitespace-nowrap transition-all ${
                 filter === 'all' && !showOnlyFavorites
-                  ? 'bg-[#f7de00] text-gray-900'
+                  ? 'bg-[#F3BA1C] text-gray-900'
                   : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
               }`}
             >
@@ -299,7 +299,7 @@ export default function Piyasalar() {
               onClick={() => { setFilter('altin'); setShowOnlyFavorites(false); }}
               className={`px-4 py-2 text-sm font-medium rounded-full whitespace-nowrap transition-all ${
                 filter === 'altin' && !showOnlyFavorites
-                  ? 'bg-[#f7de00] text-gray-900'
+                  ? 'bg-[#F3BA1C] text-gray-900'
                   : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
               }`}
             >
@@ -309,7 +309,7 @@ export default function Piyasalar() {
               onClick={() => { setFilter('gumus'); setShowOnlyFavorites(false); }}
               className={`px-4 py-2 text-sm font-medium rounded-full whitespace-nowrap transition-all ${
                 filter === 'gumus' && !showOnlyFavorites
-                  ? 'bg-[#f7de00] text-gray-900'
+                  ? 'bg-[#F3BA1C] text-gray-900'
                   : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
               }`}
             >
@@ -322,7 +322,7 @@ export default function Piyasalar() {
                 placeholder="Ara..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-full text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:border-[#f7de00] focus:ring-2 focus:ring-[#f7de00]/20 transition-all"
+                className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-full text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:border-[#F3BA1C] focus:ring-2 focus:ring-[#F3BA1C]/20 transition-all"
               />
             </div>
           </div>
@@ -331,7 +331,7 @@ export default function Piyasalar() {
           <div id="price-table-container" className="mb-8">
             {prices.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20">
-                <div className="w-12 h-12 border-4 border-gray-200 border-t-[#f7de00] rounded-full animate-spin mb-4" />
+                <div className="w-12 h-12 border-4 border-gray-200 border-t-[#F3BA1C] rounded-full animate-spin mb-4" />
                 <p className="text-gray-500 text-sm">Fiyatlar yükleniyor...</p>
               </div>
             ) : filteredPrices.length === 0 ? (
@@ -342,7 +342,7 @@ export default function Piyasalar() {
                 </p>
                 <button
                   onClick={() => { setShowOnlyFavorites(false); setSearch(''); }}
-                  className="px-6 py-2 bg-[#f7de00] text-gray-900 text-sm font-medium rounded-lg transition-all"
+                  className="px-6 py-2 bg-[#F3BA1C] text-gray-900 text-sm font-medium rounded-lg transition-all"
                 >
                   Tüm Fiyatlara Dön
                 </button>
@@ -396,7 +396,7 @@ export default function Piyasalar() {
                         return (
                           <tr
                             key={price.code}
-                            className={`transition-all duration-200 hover:bg-[#f7de00]/10 ${isHighlighted ? 'price-flash' : ''}`}
+                            className={`transition-all duration-200 hover:bg-[#F3BA1C]/10 ${isHighlighted ? 'price-flash' : ''}`}
                           >
                             <td className="py-4 px-1.5 border-b border-[#e9ecef] align-middle">
                               <div className="font-bold text-lg text-[#111827] tracking-wide uppercase">
@@ -433,7 +433,7 @@ export default function Piyasalar() {
                                   size={18}
                                   className={`transition-all ${
                                     isFavorite
-                                      ? 'fill-[#f7de00] text-[#f7de00]'
+                                      ? 'fill-[#F3BA1C] text-[#F3BA1C]'
                                       : 'text-gray-300 hover:text-gray-400'
                                   }`}
                                 />
@@ -477,7 +477,7 @@ export default function Piyasalar() {
                               </td>
                               <td className="py-2.5 px-1.5 border-b border-[#e9ecef] text-center">
                                 <button onClick={() => toggleFavorite(price.code)} className="p-0.5">
-                                  <Star size={16} className={`transition-all ${isFavorite ? 'fill-[#f7de00] text-[#f7de00]' : 'text-gray-300'}`} />
+                                  <Star size={16} className={`transition-all ${isFavorite ? 'fill-[#F3BA1C] text-[#F3BA1C]' : 'text-gray-300'}`} />
                                 </button>
                               </td>
                             </tr>
@@ -543,7 +543,7 @@ export default function Piyasalar() {
                     />
                   ) : (
                     <>
-                      <div className="w-9 h-9 rounded-xl bg-[#f7de00] flex items-center justify-center">
+                      <div className="w-9 h-9 rounded-xl bg-[#F3BA1C] flex items-center justify-center">
                         <Coins size={18} className="text-gray-900" />
                       </div>
                       <span className="text-lg font-bold text-gray-900">NOMANOGLU</span>

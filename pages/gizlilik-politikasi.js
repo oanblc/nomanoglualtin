@@ -37,7 +37,7 @@ export default function PrivacyPolicy() {
 
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
-        <header className="sticky top-0 z-50 bg-[#f7de00]">
+        <header className="sticky top-0 z-50 bg-[#F3BA1C]">
           <div className="max-w-7xl mx-auto px-4">
             <div className="flex items-center justify-between h-20">
               {/* Logo */}
@@ -114,14 +114,14 @@ export default function PrivacyPolicy() {
 
           {loading ? (
             <div className="flex items-center justify-center py-20">
-              <div className="w-12 h-12 border-4 border-gray-200 border-t-[#f7de00] rounded-full animate-spin" />
+              <div className="w-12 h-12 border-4 border-gray-200 border-t-[#F3BA1C] rounded-full animate-spin" />
             </div>
           ) : pageData ? (
             <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
               {/* Page Header */}
               <div className="bg-gray-50 border-b border-gray-200 px-6 py-5">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-[#f7de00] rounded-xl flex items-center justify-center">
+                  <div className="w-10 h-10 bg-[#F3BA1C] rounded-xl flex items-center justify-center">
                     <FileText size={20} className="text-gray-900" />
                   </div>
                   <div>

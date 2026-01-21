@@ -207,7 +207,7 @@ export default function Home() {
 
       <div className="min-h-screen bg-gray-50">
         {/* Header - Gold Theme */}
-        <header className="sticky top-0 z-50 bg-[#f7de00]">
+        <header className="sticky top-0 z-50 bg-[#F3BA1C]">
           <div className="max-w-7xl mx-auto px-4">
             <div className="flex items-center justify-between h-20">
               {/* Logo */}
@@ -363,7 +363,7 @@ export default function Home() {
                           return (
                             <tr
                               key={price.code}
-                              className={`transition-all duration-200 hover:bg-[#f7de00]/10 ${isHighlighted ? 'price-flash' : ''}`}
+                              className={`transition-all duration-200 hover:bg-[#F3BA1C]/10 ${isHighlighted ? 'price-flash' : ''}`}
                             >
                               <td className="py-2.5 px-1.5 border-b border-[#e9ecef] align-middle">
                                 <div className="font-bold text-lg text-[#111827] tracking-wide uppercase">
@@ -472,7 +472,7 @@ export default function Home() {
             {/* Contact Card */}
             <div className="bg-white border border-gray-200 rounded-2xl p-5">
               <h3 className="text-gray-900 font-bold mb-4 flex items-center space-x-2">
-                <div className="w-8 h-8 rounded-lg bg-[#f7de00]/20 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg bg-[#F3BA1C]/20 flex items-center justify-center">
                   <Phone size={16} className="text-[#b8860b]" />
                 </div>
                 <span>İletişim</span>
@@ -504,7 +504,7 @@ export default function Home() {
               <div className="bg-white border border-gray-200 rounded-2xl p-5">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-gray-900 font-bold flex items-center space-x-2">
-                    <div className="w-8 h-8 rounded-lg bg-[#f7de00]/20 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-lg bg-[#F3BA1C]/20 flex items-center justify-center">
                       <MapPin size={16} className="text-[#b8860b]" />
                     </div>
                     <span>Şubelerimiz</span>
@@ -587,7 +587,7 @@ export default function Home() {
           </div>
 
           {/* About Section */}
-          <div className="bg-[#f7de00]/10 border border-[#f7de00]/30 rounded-2xl p-6 sm:p-8 mb-8 fullscreen-hide">
+          <div className="bg-[#F3BA1C]/10 border border-[#F3BA1C]/30 rounded-2xl p-6 sm:p-8 mb-8 fullscreen-hide">
             <div className="text-center mb-8">
               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
                 NOMANOĞLU <span className="text-[#b8860b]">Ailesi</span>
@@ -598,8 +598,8 @@ export default function Home() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {familyCards.length > 0 ? (
                 familyCards.map((card) => (
-                  <div key={card.id} className="bg-white border border-gray-200 rounded-xl p-5 hover:border-[#f7de00] transition-all">
-                    <div className="w-12 h-12 rounded-xl bg-[#f7de00] flex items-center justify-center mb-4">
+                  <div key={card.id} className="bg-white border border-gray-200 rounded-xl p-5 hover:border-[#F3BA1C] transition-all">
+                    <div className="w-12 h-12 rounded-xl bg-[#F3BA1C] flex items-center justify-center mb-4">
                       <span className="text-gray-900">{getIconForFamily(card.icon, 22)}</span>
                     </div>
                     <p className="text-[#b8860b] text-xs font-semibold uppercase tracking-wider mb-2">{card.label}</p>
@@ -609,24 +609,24 @@ export default function Home() {
                 ))
               ) : (
                 <>
-                  <div className="bg-white border border-gray-200 rounded-xl p-5 hover:border-[#f7de00] transition-all">
-                    <div className="w-12 h-12 rounded-xl bg-[#f7de00] flex items-center justify-center mb-4">
+                  <div className="bg-white border border-gray-200 rounded-xl p-5 hover:border-[#F3BA1C] transition-all">
+                    <div className="w-12 h-12 rounded-xl bg-[#F3BA1C] flex items-center justify-center mb-4">
                       <Award size={22} className="text-gray-900" />
                     </div>
                     <p className="text-[#b8860b] text-xs font-semibold uppercase tracking-wider mb-2">1967'den Beri</p>
                     <h3 className="text-gray-900 font-bold mb-2">Yarım Asırlık Deneyim</h3>
                     <p className="text-gray-500 text-sm">1967'den bugüne güvenilir ve kaliteli hizmet.</p>
                   </div>
-                  <div className="bg-white border border-gray-200 rounded-xl p-5 hover:border-[#f7de00] transition-all">
-                    <div className="w-12 h-12 rounded-xl bg-[#f7de00] flex items-center justify-center mb-4">
+                  <div className="bg-white border border-gray-200 rounded-xl p-5 hover:border-[#F3BA1C] transition-all">
+                    <div className="w-12 h-12 rounded-xl bg-[#F3BA1C] flex items-center justify-center mb-4">
                       <Shield size={22} className="text-gray-900" />
                     </div>
                     <p className="text-[#b8860b] text-xs font-semibold uppercase tracking-wider mb-2">Geniş Ağ</p>
                     <h3 className="text-gray-900 font-bold mb-2">19 Mağaza, 6 Üretim</h3>
                     <p className="text-gray-500 text-sm">Türkiye genelinde yaygın hizmet ağı.</p>
                   </div>
-                  <div className="bg-white border border-gray-200 rounded-xl p-5 hover:border-[#f7de00] transition-all">
-                    <div className="w-12 h-12 rounded-xl bg-[#f7de00] flex items-center justify-center mb-4">
+                  <div className="bg-white border border-gray-200 rounded-xl p-5 hover:border-[#F3BA1C] transition-all">
+                    <div className="w-12 h-12 rounded-xl bg-[#F3BA1C] flex items-center justify-center mb-4">
                       <Zap size={22} className="text-gray-900" />
                     </div>
                     <p className="text-[#b8860b] text-xs font-semibold uppercase tracking-wider mb-2">Global Pazar</p>
@@ -652,8 +652,8 @@ export default function Home() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {articles.slice(0, 4).map((article) => (
                   <Link key={article.id} href={`/articles/${article.id}`}>
-                    <div className="bg-white border border-gray-200 rounded-xl p-5 hover:border-[#f7de00] transition-all cursor-pointer group h-full">
-                      <div className="w-10 h-10 rounded-lg bg-[#f7de00]/20 flex items-center justify-center mb-4">
+                    <div className="bg-white border border-gray-200 rounded-xl p-5 hover:border-[#F3BA1C] transition-all cursor-pointer group h-full">
+                      <div className="w-10 h-10 rounded-lg bg-[#F3BA1C]/20 flex items-center justify-center mb-4">
                         <span className="text-[#b8860b]">{getIconForArticle(article.icon, 20)}</span>
                       </div>
                       <p className="text-[#b8860b] text-xs font-semibold uppercase tracking-wider mb-2">{article.category}</p>
@@ -697,7 +697,7 @@ export default function Home() {
                     />
                   ) : (
                     <>
-                      <div className="w-9 h-9 rounded-xl bg-[#f7de00] flex items-center justify-center">
+                      <div className="w-9 h-9 rounded-xl bg-[#F3BA1C] flex items-center justify-center">
                         <Coins size={18} className="text-gray-900" />
                       </div>
                       <span className="text-lg font-bold text-gray-900">NOMANOĞLU</span>

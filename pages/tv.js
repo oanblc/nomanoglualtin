@@ -130,7 +130,7 @@ export default function TVDisplay() {
             overflow: hidden;
             margin: 0;
             padding: 0;
-            background: #f7de00;
+            background: #F3BA1C;
           }
 
           /* TV için optimize edilmiş font boyutları */
@@ -177,9 +177,9 @@ export default function TVDisplay() {
         `}</style>
       </Head>
 
-      <div className={`h-screen w-screen flex flex-col bg-[#f7de00] ${isPortrait ? 'portrait' : ''}`}>
+      <div className={`h-screen w-screen flex flex-col bg-[#F3BA1C] ${isPortrait ? 'portrait' : ''}`}>
         {/* Header */}
-        <header className="flex-shrink-0 bg-[#f7de00] px-[2vmin] py-[1.5vmin]">
+        <header className="flex-shrink-0 bg-[#F3BA1C] px-[2vmin] py-[1.5vmin]">
           <div className="flex items-center justify-between">
             {/* Logo */}
             <div className="flex items-center">

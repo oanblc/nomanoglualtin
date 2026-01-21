@@ -110,7 +110,7 @@ export default function ArticleDetail() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-gray-200 border-t-[#f7de00] rounded-full animate-spin mx-auto mb-4" />
+          <div className="w-12 h-12 border-4 border-gray-200 border-t-[#F3BA1C] rounded-full animate-spin mx-auto mb-4" />
           <p className="text-gray-500 text-sm">Yükleniyor...</p>
         </div>
       </div>
@@ -131,7 +131,7 @@ export default function ArticleDetail() {
 
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
-        <header className="sticky top-0 z-50 bg-[#f7de00]">
+        <header className="sticky top-0 z-50 bg-[#F3BA1C]">
           <div className="max-w-5xl mx-auto px-4">
             <div className="flex items-center justify-between h-20">
               <Link href="/" className="flex items-center space-x-2">
@@ -172,12 +172,12 @@ export default function ArticleDetail() {
           {/* Category Badge & Icon */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-3">
-              <span className="inline-flex items-center space-x-2 px-4 py-2 bg-[#f7de00]/20 text-[#b8860b] rounded-lg text-sm font-semibold">
+              <span className="inline-flex items-center space-x-2 px-4 py-2 bg-[#F3BA1C]/20 text-[#b8860b] rounded-lg text-sm font-semibold">
                 <Tag size={14} />
                 <span>{article.category}</span>
               </span>
             </div>
-            <div className="w-14 h-14 rounded-xl bg-[#f7de00]/20 flex items-center justify-center">
+            <div className="w-14 h-14 rounded-xl bg-[#F3BA1C]/20 flex items-center justify-center">
               {getIcon(article.icon, 28)}
             </div>
           </div>
@@ -218,9 +218,9 @@ export default function ArticleDetail() {
 
           {/* Company Info */}
           <div className="mt-10 pt-8 border-t border-gray-200">
-            <div className="bg-[#f7de00]/10 border border-[#f7de00]/30 rounded-xl p-5">
+            <div className="bg-[#F3BA1C]/10 border border-[#F3BA1C]/30 rounded-xl p-5">
               <div className="flex items-start space-x-4">
-                <div className="w-12 h-12 rounded-xl bg-[#f7de00] flex items-center justify-center flex-shrink-0">
+                <div className="w-12 h-12 rounded-xl bg-[#F3BA1C] flex items-center justify-center flex-shrink-0">
                   <Coins className="text-gray-900" size={22} />
                 </div>
                 <div>
@@ -238,7 +238,7 @@ export default function ArticleDetail() {
           <div className="mt-8 text-center">
             <Link
               href="/"
-              className="inline-flex items-center space-x-2 px-8 py-3 bg-[#f7de00] hover:bg-[#e5cc00] text-gray-900 font-semibold rounded-lg transition-colors"
+              className="inline-flex items-center space-x-2 px-8 py-3 bg-[#F3BA1C] hover:bg-[#e5cc00] text-gray-900 font-semibold rounded-lg transition-colors"
             >
               <ArrowLeft size={18} />
               <span>Tüm Makalelere Dön</span>
@@ -266,7 +266,7 @@ export default function ArticleDetail() {
                     />
                   ) : (
                     <>
-                      <div className="w-9 h-9 rounded-xl bg-[#f7de00] flex items-center justify-center">
+                      <div className="w-9 h-9 rounded-xl bg-[#F3BA1C] flex items-center justify-center">
                         <Coins size={18} className="text-gray-900" />
                       </div>
                       <span className="text-lg font-bold text-gray-900">NOMANOGLU</span>

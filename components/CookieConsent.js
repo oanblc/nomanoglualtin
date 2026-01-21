@@ -93,7 +93,7 @@ export default function CookieConsent() {
               </button>
               <button
                 onClick={acceptCookies}
-                className="px-6 py-2.5 text-sm font-semibold text-gray-900 bg-[#f7de00] hover:bg-[#e5cc00] rounded-lg transition-colors shadow-sm"
+                className="px-6 py-2.5 text-sm font-semibold text-gray-900 bg-[#F3BA1C] hover:bg-[#e5cc00] rounded-lg transition-colors shadow-sm"
               >
                 Kabul Et
               </button>
