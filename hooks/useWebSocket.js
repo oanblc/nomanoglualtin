@@ -3,7 +3,7 @@ import io from 'socket.io-client';
 
 const CACHE_KEY = 'cachedPrices';
 const CACHE_TIME_KEY = 'cachedPricesTime';
-const CACHE_DURATION = 5 * 60 * 1000; // 5 dakika
+const CACHE_DURATION = 60 * 60 * 1000; // 1 saat
 
 export const useWebSocket = () => {
   const [socket, setSocket] = useState(null);
