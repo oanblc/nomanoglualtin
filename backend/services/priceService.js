@@ -13,6 +13,7 @@ let serverIO = null;
 let currentPrices = {};
 let isConnected = false;
 let pollTimer = null;
+let lastPriceHash = null; // Fiyat değişikliği kontrolü için
 
 // Türkçe isim mapping
 const productNames = {
@@ -66,6 +67,22 @@ const categorizeProduct = (code) => {
 };
 
 // ============================================
+// Fiyat hash'i oluştur (değişiklik kontrolü için)
+// ============================================
+const createPriceHash = (prices) => {
+  // Sadece önemli alanları kullanarak basit bir hash oluştur
+  const key = prices.map(p => `${p.code}:${p.rawAlis}:${p.rawSatis}`).sort().join('|');
+  // Basit hash fonksiyonu
+  let hash = 0;
+  for (let i = 0; i < key.length; i++) {
+    const char = key.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return hash.toString();
+};
+
+// ============================================
 // VPS WebSocket'ten fiyat geldiğinde işle
 // ============================================
 const handleVpsPrices = async (data) => {
@@ -76,7 +93,15 @@ const handleVpsPrices = async (data) => {
       return;
     }
 
-    console.log(`📡 VPS'ten ${prices.length} fiyat alındı`);
+    // Fiyat değişikliği kontrolü
+    const newHash = createPriceHash(prices);
+    if (newHash === lastPriceHash) {
+      // Fiyat değişmedi, işlem yapma
+      return;
+    }
+    lastPriceHash = newHash;
+
+    console.log(`📡 ${prices.length} fiyat güncellendi`);
 
     // 1. Kaynak fiyatları kaydet
     const sourcePrices = await saveSourcePrices(prices);
@@ -104,14 +129,14 @@ const handleVpsPrices = async (data) => {
     // 5. Socket.IO ile frontend'e gönder
     if (serverIO) {
       serverIO.emit('priceUpdate', {
-        meta: { time: new Date().toISOString(), source: 'vps-websocket' },
+        meta: { time: new Date().toISOString(), source: 'http-api' },
         prices: calculatedPrices
       });
       console.log(`📤 ${calculatedPrices.length} fiyat frontend'e gönderildi`);
     }
 
   } catch (error) {
-    console.error('❌ VPS fiyat işleme hatası:', error.message);
+    console.error('❌ Fiyat işleme hatası:', error.message);
   }
 };
 
