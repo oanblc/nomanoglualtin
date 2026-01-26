@@ -1,19 +1,18 @@
 const axios = require('axios');
-const { io: SocketIOClient } = require('socket.io-client');
 const Coefficient = require('../models/Coefficient');
 const PriceHistory = require('../models/PriceHistory');
 const CachedPrices = require('../models/CachedPrices');
 const SourcePrices = require('../models/SourcePrices');
 
-// VPS WebSocket URL (Türk VPS - Harem Altın fiyatları)
-const VPS_WS_URL = process.env.VPS_WS_URL || 'http://37.148.208.13:3000';
+// HTTP API URL (Fiyat kaynağı)
+const API_URL = process.env.PRICE_API_URL || 'http://37.148.208.13/api.php';
+const POLL_INTERVAL = parseInt(process.env.POLL_INTERVAL) || 2000; // 2 saniye
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || 'nomanoglu_webhook_2024_gizli';
 
-let vpsSocket = null;
 let serverIO = null;
 let currentPrices = {};
 let isConnected = false;
-let reconnectTimer = null;
+let pollTimer = null;
 
 // Türkçe isim mapping
 const productNames = {
@@ -303,71 +302,90 @@ const saveCachedPrices = async (prices) => {
 };
 
 // ============================================
-// VPS WebSocket bağlantısını başlat
+// HTTP API'den fiyat çek
+// ============================================
+const fetchPricesFromAPI = async () => {
+  try {
+    const response = await axios.get(API_URL, { timeout: 10000 });
+
+    if (response.data && response.data.success && response.data.data) {
+      const apiData = response.data.data;
+
+      // API verisini array formatına çevir
+      const prices = Object.keys(apiData).map(code => {
+        const item = apiData[code];
+        return {
+          code: item.code,
+          alis: parseFloat(item.alis) || 0,
+          satis: parseFloat(item.satis) || 0,
+          rawAlis: parseFloat(item.alis) || 0,
+          rawSatis: parseFloat(item.satis) || 0,
+          direction: item.dir || {},
+          dusuk: parseFloat(item.dusuk) || 0,
+          yuksek: parseFloat(item.yuksek) || 0,
+          kapanis: parseFloat(item.kapanis) || 0,
+          tarih: item.tarih || new Date().toISOString()
+        };
+      });
+
+      if (!isConnected) {
+        isConnected = true;
+        console.log('✅ API bağlantısı başarılı!');
+      }
+
+      return prices;
+    }
+    return null;
+  } catch (error) {
+    if (isConnected) {
+      isConnected = false;
+      console.error('❌ API bağlantı hatası:', error.message);
+    }
+    return null;
+  }
+};
+
+// ============================================
+// HTTP API Polling başlat
 // ============================================
 const startVpsWebSocket = (io) => {
   serverIO = io;
 
   console.log('========================================');
-  console.log('  VPS WEBSOCKET BAGLANTISI');
+  console.log('  HTTP API POLLING');
   console.log('========================================');
-  console.log(`VPS URL: ${VPS_WS_URL}`);
+  console.log(`API URL: ${API_URL}`);
+  console.log(`Poll Interval: ${POLL_INTERVAL}ms`);
 
-  // Mevcut bağlantıyı kapat
-  if (vpsSocket) {
-    vpsSocket.disconnect();
-    vpsSocket = null;
+  // Mevcut timer'ı temizle
+  if (pollTimer) {
+    clearInterval(pollTimer);
+    pollTimer = null;
   }
 
-  // VPS'e bağlan
-  vpsSocket = SocketIOClient(VPS_WS_URL, {
-    transports: ['websocket', 'polling'],
-    reconnection: true,
-    reconnectionAttempts: Infinity,
-    reconnectionDelay: 1000,
-    reconnectionDelayMax: 5000,
-    timeout: 20000
-  });
-
-  vpsSocket.on('connect', () => {
-    isConnected = true;
-    console.log('✅ VPS WebSocket bağlandı!');
-
-    // Reconnect timer'ı temizle
-    if (reconnectTimer) {
-      clearTimeout(reconnectTimer);
-      reconnectTimer = null;
+  // İlk fiyatları hemen çek
+  const pollPrices = async () => {
+    const prices = await fetchPricesFromAPI();
+    if (prices && prices.length > 0) {
+      await handleVpsPrices({ prices });
     }
-  });
+  };
 
-  vpsSocket.on('disconnect', (reason) => {
-    isConnected = false;
-    console.log(`⚠️ VPS bağlantısı kesildi: ${reason}`);
-  });
+  // İlk çekim
+  pollPrices();
 
-  vpsSocket.on('connect_error', (error) => {
-    isConnected = false;
-    console.error('❌ VPS bağlantı hatası:', error.message);
-  });
+  // Periyodik polling başlat
+  pollTimer = setInterval(pollPrices, POLL_INTERVAL);
 
-  // VPS'ten fiyat güncellemesi al
-  vpsSocket.on('prices', (data) => {
-    handleVpsPrices(data);
-  });
-
-  console.log('🔄 VPS WebSocket bağlantısı başlatıldı');
+  console.log('🔄 HTTP API polling başlatıldı');
 };
 
 const stopVpsWebSocket = () => {
-  if (vpsSocket) {
-    vpsSocket.disconnect();
-    vpsSocket = null;
+  if (pollTimer) {
+    clearInterval(pollTimer);
+    pollTimer = null;
     isConnected = false;
-    console.log('⏹️ VPS WebSocket kapatıldı');
-  }
-  if (reconnectTimer) {
-    clearTimeout(reconnectTimer);
-    reconnectTimer = null;
+    console.log('⏹️ HTTP API polling durduruldu');
   }
 };
 
