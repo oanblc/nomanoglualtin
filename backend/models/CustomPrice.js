@@ -1,5 +1,22 @@
 const mongoose = require('mongoose');
 
+// Kaynak konfigürasyonu şeması (tekrar kullanılabilir)
+const sourceConfigSchema = {
+  sourceCode: String,
+  sourceType: {
+    type: String,
+    enum: ['alis', 'satis']
+  },
+  multiplier: {
+    type: Number,
+    default: 1
+  },
+  addition: {
+    type: Number,
+    default: 0
+  }
+};
+
 const customPriceSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -15,35 +32,22 @@ const customPriceSchema = new mongoose.Schema({
     required: true,
     enum: ['doviz', 'altin', 'gumus']
   },
-  alisConfig: {
-    sourceCode: String,
-    sourceType: {
-      type: String,
-      enum: ['alis', 'satis']
-    },
-    multiplier: {
-      type: Number,
-      default: 1
-    },
-    addition: {
-      type: Number,
-      default: 0
-    }
+  // Birincil kaynak (API 1)
+  alisConfig: sourceConfigSchema,
+  satisConfig: sourceConfigSchema,
+  // Yedek kaynak (API 2)
+  backupAlisConfig: sourceConfigSchema,
+  backupSatisConfig: sourceConfigSchema,
+  // Aktif kaynak: 'primary' veya 'backup'
+  activeSource: {
+    type: String,
+    enum: ['primary', 'backup'],
+    default: 'primary'
   },
-  satisConfig: {
-    sourceCode: String,
-    sourceType: {
-      type: String,
-      enum: ['alis', 'satis']
-    },
-    multiplier: {
-      type: Number,
-      default: 1
-    },
-    addition: {
-      type: Number,
-      default: 0
-    }
+  // Manuel olarak değiştirildi mi?
+  manualSourceOverride: {
+    type: Boolean,
+    default: false
   },
   order: {
     type: Number,

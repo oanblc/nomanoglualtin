@@ -4,16 +4,87 @@ const PriceHistory = require('../models/PriceHistory');
 const CachedPrices = require('../models/CachedPrices');
 const SourcePrices = require('../models/SourcePrices');
 
-// HTTP API URL (Fiyat kaynağı)
-const API_URL = process.env.PRICE_API_URL || 'http://37.148.208.13/api.php';
+// HTTP API URLs (Birincil ve Yedek kaynak)
+const API_URL_PRIMARY = process.env.PRICE_API_URL || 'http://37.148.208.13/api.php';
+const API_URL_BACKUP = process.env.PRICE_API_URL_BACKUP || 'https://saglamoglualtin.com/component/tab-group/1';
 const POLL_INTERVAL = parseInt(process.env.POLL_INTERVAL) || 2000; // 2 saniye
+let fallbackTimeoutMs = parseInt(process.env.FALLBACK_TIMEOUT) || 30 * 60 * 1000; // 30 dakika (ms) - değiştirilebilir
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || 'nomanoglu_webhook_2024_gizli';
 
 let serverIO = null;
 let currentPrices = {};
-let isConnected = false;
+let isConnectedPrimary = false;
+let isConnectedBackup = false;
 let pollTimer = null;
+let pollTimerBackup = null;
 let lastPriceHash = null; // Fiyat değişikliği kontrolü için
+
+// API son güncelleme zamanları
+let lastUpdatePrimary = null;
+let lastUpdateBackup = null;
+
+// Aktif kaynak (global): 'primary' veya 'backup'
+let activeGlobalSource = 'primary';
+// Manuel olarak değiştirildi mi? (otomatik geri dönüşü engeller)
+let manualGlobalOverride = false;
+
+// Saglamoglu API kod eşleştirmesi (API2 name -> API1 code)
+const api2CodeMapping = {
+  // Altın ürünleri
+  'HAS ALTIN': 'ALTIN',
+  'Has Altın': 'ALTIN',
+  'Gram Altın': 'KULCEALTIN',
+  'Altın/ONS': 'ONS',
+  'Ons Altın': 'ONS',
+  'USD/Ons': 'ONS',
+  'USD/KG': 'USDKG',
+  'EUR/KG': 'EURKG',
+  '22 Ayar': 'AYAR22',
+  '14 Ayar': 'AYAR14',
+  'Çeyrek Eski': 'CEYREK_ESKI',
+  'Çeyrek Yeni': 'CEYREK_YENI',
+  'Yarım Eski': 'YARIM_ESKI',
+  'Yarım Yeni': 'YARIM_YENI',
+  'Tam Eski': 'TEK_ESKI',
+  'Tam Yeni': 'TEK_YENI',
+  'Ata Eski': 'ATA_ESKI',
+  'Ata Yeni': 'ATA_YENI',
+  'Ata 5\'li Eski': 'ATA5_ESKI',
+  'Ata 5\'li Yeni': 'ATA5_YENI',
+  'Gremse Eski': 'GREMESE_ESKI',
+  'Gremse Yeni': 'GREMESE_YENI',
+  // Gümüş ürünleri
+  'GÜM/TL': 'GUMUSTRY',
+  'Gümüş TL/Gr': 'GUMUSTRY',
+  'Gümüş': 'GUMUSTRY',
+  'GÜM/ONS': 'XAGUSD',
+  'GÜM/USD': 'GUMUSUSD',
+  'GÜM/EUR': 'GUMUSEUR',
+  // Döviz kurları
+  'USD/TL': 'USDTRY',
+  'EUR/TL': 'EURTRY',
+  'GBP/TRY': 'GBPTRY',
+  'GBP/TL': 'GBPTRY',
+  'CHF/TRY': 'CHFTRY',
+  'CHF/TL': 'CHFTRY',
+  'JPY/TRY': 'JPYTRY',
+  'CAD/TRY': 'CADTRY',
+  'AUD/TRY': 'AUDTRY',
+  'SAR/TRY': 'SARTRY',
+  // Çapraz kurlar
+  'EUR/USD': 'EURUSD',
+  'EUR/GBP': 'EURGBP',
+  'GBP/USD': 'GBPUSD',
+  'USD/CHF': 'USDCHF',
+  'USD/JPY': 'USDJPY',
+  'USD/CAD': 'USDCAD',
+  'AUD/USD': 'AUDUSD',
+  'USD/SAR': 'USDSAR'
+};
+
+// Backward compatibility için alias
+const API_URL = API_URL_PRIMARY;
+const isConnected = () => isConnectedPrimary || isConnectedBackup;
 
 // Türkçe isim mapping
 const productNames = {
@@ -210,15 +281,22 @@ const getSourcePrices = async () => {
 };
 
 // ============================================
-// ADIM 3: Custom fiyatları hesapla
+// ADIM 3: Custom fiyatları hesapla (Birincil + Yedek kaynak desteği)
 // ============================================
 const calculateCustomPrices = async (sourcePrices) => {
   if (!sourcePrices || sourcePrices.length === 0) return [];
 
-  // Kaynak fiyatları map'e çevir (hızlı erişim için)
-  const sourceMap = {};
+  // Birincil kaynak fiyatları map'e çevir
+  const primarySourceMap = {};
   sourcePrices.forEach(p => {
-    sourceMap[p.code] = p;
+    primarySourceMap[p.code] = p;
+  });
+
+  // Yedek kaynak fiyatlarını çek
+  const backupPrices = await getBackupSourcePrices();
+  const backupSourceMap = {};
+  backupPrices.forEach(p => {
+    backupSourceMap[p.code] = p;
   });
 
   // Custom fiyatları MongoDB'den çek - lean() ile düz obje olarak al (daha hızlı)
@@ -235,21 +313,50 @@ const calculateCustomPrices = async (sourcePrices) => {
   const calculatedPrices = [];
 
   for (const config of customPriceConfigs) {
-    const alisSource = sourceMap[config.alisConfig?.sourceCode];
-    const satisSource = sourceMap[config.satisConfig?.sourceCode];
+    // Hangi kaynağı kullanacağını belirle
+    const useBackup = config.activeSource === 'backup';
+    const sourceMap = useBackup ? backupSourceMap : primarySourceMap;
+
+    // Kullanılacak config'i seç
+    // Yedek kaynak seçiliyse VE yedek config tanımlıysa yedek config kullan
+    // Yedek kaynak seçiliyse AMA yedek config tanımlı değilse fiyatı gösterme (fallback yapma)
+    let alisConfig, satisConfig;
+
+    if (useBackup) {
+      // Yedek kaynak seçili - sadece yedek config kullan
+      if (!config.backupAlisConfig?.sourceCode || !config.backupSatisConfig?.sourceCode) {
+        // Yedek config tanımlı değil, bu fiyatı atla
+        console.log(`⚠️ ${config.code}: Yedek kaynak config tanımlı değil, atlanıyor`);
+        continue;
+      }
+      alisConfig = config.backupAlisConfig;
+      satisConfig = config.backupSatisConfig;
+    } else {
+      // Birincil kaynak seçili
+      alisConfig = config.alisConfig;
+      satisConfig = config.satisConfig;
+    }
+
+    const alisSource = sourceMap[alisConfig?.sourceCode];
+    const satisSource = sourceMap[satisConfig?.sourceCode];
 
     if (!alisSource || !satisSource) {
-      console.log(`⚠️ ${config.code}: Kaynak bulunamadı (alis: ${config.alisConfig?.sourceCode}, satis: ${config.satisConfig?.sourceCode})`);
+      console.log(`⚠️ ${config.code}: Kaynak bulunamadı (aktif: ${config.activeSource || 'primary'})`);
       continue;
     }
 
+    const finalAlisSource = alisSource;
+    const finalSatisSource = satisSource;
+    const finalAlisConfig = alisConfig;
+    const finalSatisConfig = satisConfig;
+
     // Alış hesapla
-    const alisRaw = config.alisConfig.sourceType === 'alis' ? alisSource.rawAlis : alisSource.rawSatis;
-    const calculatedAlis = (alisRaw * config.alisConfig.multiplier) + config.alisConfig.addition;
+    const alisRaw = finalAlisConfig.sourceType === 'alis' ? finalAlisSource.rawAlis : finalAlisSource.rawSatis;
+    const calculatedAlis = (alisRaw * finalAlisConfig.multiplier) + finalAlisConfig.addition;
 
     // Satış hesapla
-    const satisRaw = config.satisConfig.sourceType === 'alis' ? satisSource.rawAlis : satisSource.rawSatis;
-    const calculatedSatis = (satisRaw * config.satisConfig.multiplier) + config.satisConfig.addition;
+    const satisRaw = finalSatisConfig.sourceType === 'alis' ? finalSatisSource.rawAlis : finalSatisSource.rawSatis;
+    const calculatedSatis = (satisRaw * finalSatisConfig.multiplier) + finalSatisConfig.addition;
 
     // Geçerli fiyat kontrolü
     if (calculatedAlis <= 0 || calculatedSatis <= 0 || isNaN(calculatedAlis) || isNaN(calculatedSatis)) {
@@ -270,12 +377,13 @@ const calculateCustomPrices = async (sourcePrices) => {
       rawSatis: satisRaw,
       calculatedAlis,
       calculatedSatis,
-      direction: alisSource.direction || satisSource.direction || {},
+      direction: finalAlisSource.direction || finalSatisSource.direction || {},
       isCustom: true,
       isVisible: config.isVisible,
       order: config.order ?? 999,
       decimals: config.decimals ?? 0,
-      tarih: new Date().toISOString()
+      tarih: new Date().toISOString(),
+      activeSource: config.activeSource || 'primary'
     });
   }
 
@@ -327,11 +435,11 @@ const saveCachedPrices = async (prices) => {
 };
 
 // ============================================
-// HTTP API'den fiyat çek
+// BİRİNCİL API'den fiyat çek (API 1)
 // ============================================
-const fetchPricesFromAPI = async () => {
+const fetchPricesFromPrimaryAPI = async () => {
   try {
-    const response = await axios.get(API_URL, { timeout: 10000 });
+    const response = await axios.get(API_URL_PRIMARY, { timeout: 10000 });
 
     if (response.data && response.data.success && response.data.data) {
       const apiData = response.data.data;
@@ -349,69 +457,337 @@ const fetchPricesFromAPI = async () => {
           dusuk: parseFloat(item.dusuk) || 0,
           yuksek: parseFloat(item.yuksek) || 0,
           kapanis: parseFloat(item.kapanis) || 0,
-          tarih: item.tarih || new Date().toISOString()
+          tarih: item.tarih || new Date().toISOString(),
+          source: 'primary'
         };
       });
 
-      if (!isConnected) {
-        isConnected = true;
-        console.log('✅ API bağlantısı başarılı!');
+      if (!isConnectedPrimary) {
+        isConnectedPrimary = true;
+        console.log('✅ Birincil API bağlantısı başarılı!');
       }
+      lastUpdatePrimary = Date.now();
 
       return prices;
     }
     return null;
   } catch (error) {
-    if (isConnected) {
-      isConnected = false;
-      console.error('❌ API bağlantı hatası:', error.message);
+    if (isConnectedPrimary) {
+      isConnectedPrimary = false;
+      console.error('❌ Birincil API bağlantı hatası:', error.message);
+    }
+    return null;
+  }
+};
+
+// Backward compatibility
+const fetchPricesFromAPI = fetchPricesFromPrimaryAPI;
+
+// ============================================
+// YEDEK API'den fiyat çek (API 2 - Saglamoglu)
+// ============================================
+const fetchPricesFromBackupAPI = async () => {
+  try {
+    const response = await axios.get(API_URL_BACKUP, { timeout: 10000 });
+
+    // Saglamoglu API yapısı: { status: true, tabGroup: { tabs: [...] } }
+    if (response.data && response.data.status && response.data.tabGroup && response.data.tabGroup.tabs) {
+      const prices = [];
+
+      // Tüm tab'ları dolaş
+      for (const tab of response.data.tabGroup.tabs) {
+        if (!tab.products) continue;
+
+        for (const product of tab.products) {
+          const name = product.name || product.slug || '';
+          const mappedCode = api2CodeMapping[name];
+
+          // Forex verisini al
+          const forex = product.forex || {};
+          // Saglamoglu'nda groups array içinde bid/ask var
+          const group = forex.groups && forex.groups[0] ? forex.groups[0] : forex;
+          const bid = parseFloat(group.bid) || 0; // Satış (alıcının teklifi = sizin satış fiyatınız)
+          const ask = parseFloat(group.ask) || 0; // Alış (satıcının istediği = sizin alış fiyatınız)
+
+          if (bid > 0 && ask > 0) {
+            prices.push({
+              code: mappedCode || name, // Eşleşme yoksa orijinal adı kullan
+              name: name,
+              alis: ask,
+              satis: bid,
+              rawAlis: ask,
+              rawSatis: bid,
+              direction: {},
+              dusuk: parseFloat(forex.lastLow) || 0,
+              yuksek: parseFloat(forex.lastHigh) || 0,
+              kapanis: parseFloat(forex.lastClose) || 0,
+              tarih: new Date().toISOString(),
+              source: 'backup'
+            });
+          }
+        }
+      }
+
+      if (prices.length > 0) {
+        if (!isConnectedBackup) {
+          isConnectedBackup = true;
+          console.log(`✅ Yedek API bağlantısı başarılı! (${prices.length} ürün)`);
+        }
+        lastUpdateBackup = Date.now();
+        return prices;
+      }
+    }
+    return null;
+  } catch (error) {
+    if (isConnectedBackup) {
+      isConnectedBackup = false;
+      console.error('❌ Yedek API bağlantı hatası:', error.message);
     }
     return null;
   }
 };
 
 // ============================================
-// HTTP API Polling başlat
+// Fallback kontrolü - 30 dk birincil kaynak gelmezse yedek kaynağa geç
+// ============================================
+const checkFallback = async () => {
+  const now = Date.now();
+
+  // Birincil kaynak belirlenen süre güncellenmedi mi?
+  if (lastUpdatePrimary && (now - lastUpdatePrimary > fallbackTimeoutMs)) {
+    if (activeGlobalSource === 'primary') {
+      console.log(`⚠️ Birincil kaynak ${Math.round(fallbackTimeoutMs/60000)} dk güncellenmedi, yedek kaynağa geçiliyor...`);
+      activeGlobalSource = 'backup';
+
+      // Tüm custom price'ları yedek kaynağa geçir (manuel override olmayanları)
+      try {
+        const CustomPrice = require('../models/CustomPrice');
+        await CustomPrice.updateMany(
+          { manualSourceOverride: { $ne: true } },
+          { activeSource: 'backup' }
+        );
+        console.log('✅ Tüm fiyatlar yedek kaynağa geçirildi');
+      } catch (err) {
+        console.error('❌ Kaynak geçiş hatası:', err.message);
+      }
+    }
+  }
+
+  // Birincil kaynak geri geldi mi? (sadece manuel override yoksa otomatik dön)
+  if (lastUpdatePrimary && (now - lastUpdatePrimary < 60000) && activeGlobalSource === 'backup' && !manualGlobalOverride) {
+    console.log('✅ Birincil kaynak geri geldi, birincil kaynağa dönülüyor...');
+    activeGlobalSource = 'primary';
+
+    // Tüm custom price'ları birincil kaynağa geçir (manuel override olmayanları)
+    try {
+      const CustomPrice = require('../models/CustomPrice');
+      await CustomPrice.updateMany(
+        { manualSourceOverride: { $ne: true } },
+        { activeSource: 'primary' }
+      );
+      console.log('✅ Tüm fiyatlar birincil kaynağa döndürüldü');
+    } catch (err) {
+      console.error('❌ Kaynak geçiş hatası:', err.message);
+    }
+  }
+};
+
+// ============================================
+// Manuel kaynak değiştirme
+// ============================================
+const switchSource = async (priceCode, newSource) => {
+  try {
+    const CustomPrice = require('../models/CustomPrice');
+    await CustomPrice.findOneAndUpdate(
+      { code: priceCode },
+      {
+        activeSource: newSource,
+        manualSourceOverride: true
+      }
+    );
+    console.log(`🔄 ${priceCode} için kaynak değiştirildi: ${newSource}`);
+
+    // Fiyatları yeniden hesapla
+    await refreshPrices();
+
+    return { success: true };
+  } catch (err) {
+    console.error('❌ Kaynak değiştirme hatası:', err.message);
+    return { success: false, error: err.message };
+  }
+};
+
+// ============================================
+// Tüm kaynakları manuel değiştirme
+// ============================================
+const switchAllSources = async (newSource) => {
+  try {
+    const CustomPrice = require('../models/CustomPrice');
+    await CustomPrice.updateMany(
+      {},
+      {
+        activeSource: newSource,
+        manualSourceOverride: true
+      }
+    );
+    activeGlobalSource = newSource;
+    manualGlobalOverride = true; // Manuel değişiklik yapıldı, otomatik geri dönüşü engelle
+    console.log(`🔄 Tüm fiyatlar için kaynak değiştirildi: ${newSource} (manuel override aktif)`);
+
+    // Fiyatları yeniden hesapla
+    await refreshPrices();
+
+    return { success: true };
+  } catch (err) {
+    console.error('❌ Toplu kaynak değiştirme hatası:', err.message);
+    return { success: false, error: err.message };
+  }
+};
+
+// ============================================
+// API durumunu getir
+// ============================================
+const getApiStatus = () => {
+  return {
+    primary: {
+      connected: isConnectedPrimary,
+      lastUpdate: lastUpdatePrimary,
+      url: API_URL_PRIMARY
+    },
+    backup: {
+      connected: isConnectedBackup,
+      lastUpdate: lastUpdateBackup,
+      url: API_URL_BACKUP
+    },
+    activeSource: activeGlobalSource,
+    fallbackTimeout: fallbackTimeoutMs,
+    fallbackTimeoutMinutes: Math.round(fallbackTimeoutMs / 60000)
+  };
+};
+
+// ============================================
+// Fallback timeout'u güncelle (dakika cinsinden)
+// ============================================
+const setFallbackTimeout = (minutes) => {
+  const ms = Math.max(1, parseInt(minutes) || 30) * 60 * 1000;
+  fallbackTimeoutMs = ms;
+  console.log(`⏱️ Fallback timeout güncellendi: ${minutes} dakika (${ms}ms)`);
+  return { success: true, minutes, ms: fallbackTimeoutMs };
+};
+
+// ============================================
+// HTTP API Polling başlat (Her iki API için)
 // ============================================
 const startVpsWebSocket = (io) => {
   serverIO = io;
 
   console.log('========================================');
-  console.log('  HTTP API POLLING');
+  console.log('  DUAL API POLLING SYSTEM');
   console.log('========================================');
-  console.log(`API URL: ${API_URL}`);
+  console.log(`Birincil API: ${API_URL_PRIMARY}`);
+  console.log(`Yedek API: ${API_URL_BACKUP}`);
   console.log(`Poll Interval: ${POLL_INTERVAL}ms`);
+  console.log(`Fallback Timeout: ${fallbackTimeoutMs / 60000} dakika`);
 
-  // Mevcut timer'ı temizle
+  // Mevcut timer'ları temizle
   if (pollTimer) {
     clearInterval(pollTimer);
     pollTimer = null;
   }
+  if (pollTimerBackup) {
+    clearInterval(pollTimerBackup);
+    pollTimerBackup = null;
+  }
 
-  // İlk fiyatları hemen çek
-  const pollPrices = async () => {
-    const prices = await fetchPricesFromAPI();
+  // Birincil API polling
+  const pollPrimaryPrices = async () => {
+    const prices = await fetchPricesFromPrimaryAPI();
     if (prices && prices.length > 0) {
-      await handleVpsPrices({ prices });
+      await handleVpsPrices({ prices, source: 'primary' });
+    }
+    // Fallback kontrolü
+    await checkFallback();
+  };
+
+  // Yedek API polling
+  const pollBackupPrices = async () => {
+    const prices = await fetchPricesFromBackupAPI();
+    if (prices && prices.length > 0) {
+      await saveBackupSourcePrices(prices);
     }
   };
 
-  // İlk çekim
-  pollPrices();
+  // İlk çekimler
+  pollPrimaryPrices();
+  pollBackupPrices();
 
   // Periyodik polling başlat
-  pollTimer = setInterval(pollPrices, POLL_INTERVAL);
+  pollTimer = setInterval(pollPrimaryPrices, POLL_INTERVAL);
+  pollTimerBackup = setInterval(pollBackupPrices, POLL_INTERVAL * 2); // Yedek için 2x interval
 
-  console.log('🔄 HTTP API polling başlatıldı');
+  console.log('🔄 Dual API polling başlatıldı');
 };
 
 const stopVpsWebSocket = () => {
   if (pollTimer) {
     clearInterval(pollTimer);
     pollTimer = null;
-    isConnected = false;
-    console.log('⏹️ HTTP API polling durduruldu');
   }
+  if (pollTimerBackup) {
+    clearInterval(pollTimerBackup);
+    pollTimerBackup = null;
+  }
+  isConnectedPrimary = false;
+  isConnectedBackup = false;
+  console.log('⏹️ Dual API polling durduruldu');
+};
+
+// ============================================
+// Yedek kaynak fiyatlarını ayrı kaydet
+// ============================================
+const saveBackupSourcePrices = async (apiPrices) => {
+  if (!apiPrices || !Array.isArray(apiPrices) || apiPrices.length === 0) return null;
+
+  try {
+    // Yedek fiyatları ayrı key ile kaydet
+    await SourcePrices.findOneAndUpdate(
+      { key: 'backup_source_prices' },
+      {
+        key: 'backup_source_prices',
+        prices: apiPrices.map(item => ({
+          code: item.code,
+          name: item.name || item.code,
+          rawAlis: parseFloat(item.rawAlis || item.alis || 0),
+          rawSatis: parseFloat(item.rawSatis || item.satis || 0),
+          direction: item.direction || {},
+          tarih: item.tarih || new Date().toISOString()
+        })),
+        updatedAt: new Date()
+      },
+      { upsert: true, new: true }
+    );
+
+    console.log(`💾 Yedek: ${apiPrices.length} fiyat kaydedildi`);
+    return apiPrices;
+  } catch (err) {
+    console.error('❌ Yedek kaynak fiyat kaydetme hatası:', err.message);
+    return null;
+  }
+};
+
+// ============================================
+// Yedek kaynak fiyatlarını getir
+// ============================================
+const getBackupSourcePrices = async () => {
+  try {
+    const source = await SourcePrices.findOne({ key: 'backup_source_prices' });
+    if (source && source.prices) {
+      return source.prices;
+    }
+  } catch (err) {
+    console.error('❌ Yedek kaynak fiyat çekme hatası:', err.message);
+  }
+  return [];
 };
 
 // Eski fonksiyonlar backward compatibility için
@@ -531,9 +907,15 @@ module.exports = {
   getCurrentPrices,
   refreshPrices,
   getSourcePrices,
+  getBackupSourcePrices,
   handleWebhook,
   getWebhookSecret,
-  isConnected: () => isConnected,
+  isConnected,
+  // Yedek kaynak fonksiyonları
+  switchSource,
+  switchAllSources,
+  getApiStatus,
+  setFallbackTimeout,
   // Backward compatibility
   startWebSocket: startVpsWebSocket,
   stopWebSocket: stopVpsWebSocket,

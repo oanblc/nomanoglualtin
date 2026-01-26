@@ -1,6 +1,14 @@
 const express = require('express');
 const router = express.Router();
-const { getCurrentPrices, handleWebhook } = require('../services/priceService');
+const {
+  getCurrentPrices,
+  handleWebhook,
+  switchSource,
+  switchAllSources,
+  getApiStatus,
+  getBackupSourcePrices,
+  setFallbackTimeout
+} = require('../services/priceService');
 const PriceHistory = require('../models/PriceHistory');
 const CachedPrices = require('../models/CachedPrices');
 const SourcePrices = require('../models/SourcePrices');
@@ -195,6 +203,142 @@ router.get('/all', async (req, res) => {
     }
   } catch (error) {
     console.error('Tum fiyatlari getirme hatasi:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Sunucu hatasi',
+      error: error.message
+    });
+  }
+});
+
+// ============================================
+// API DURUMU: Birincil ve Yedek API durumunu getir
+// ============================================
+router.get('/api-status', async (req, res) => {
+  try {
+    const status = getApiStatus();
+    res.json({
+      success: true,
+      data: status
+    });
+  } catch (error) {
+    console.error('API durum hatasi:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Sunucu hatasi',
+      error: error.message
+    });
+  }
+});
+
+// ============================================
+// YEDEK KAYNAKLAR: Yedek kaynak fiyatlarini getir
+// ============================================
+router.get('/backup-sources', async (req, res) => {
+  try {
+    const backupPrices = await getBackupSourcePrices();
+    const cached = await SourcePrices.findOne({ key: 'backup_source_prices' });
+
+    res.json({
+      success: true,
+      data: backupPrices,
+      lastUpdate: cached?.updatedAt,
+      count: backupPrices.length
+    });
+  } catch (error) {
+    console.error('Yedek kaynak fiyat hatasi:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Sunucu hatasi',
+      error: error.message
+    });
+  }
+});
+
+// ============================================
+// KAYNAK DEGISTIR: Tek fiyat icin kaynak degistir
+// ============================================
+router.post('/switch-source', async (req, res) => {
+  try {
+    const { priceCode, newSource } = req.body;
+
+    if (!priceCode || !newSource) {
+      return res.status(400).json({
+        success: false,
+        error: 'priceCode ve newSource gerekli'
+      });
+    }
+
+    if (!['primary', 'backup'].includes(newSource)) {
+      return res.status(400).json({
+        success: false,
+        error: 'newSource "primary" veya "backup" olmali'
+      });
+    }
+
+    const result = await switchSource(priceCode, newSource);
+    res.json(result);
+  } catch (error) {
+    console.error('Kaynak degistirme hatasi:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Sunucu hatasi',
+      error: error.message
+    });
+  }
+});
+
+// ============================================
+// TOPLU KAYNAK DEGISTIR: Tum fiyatlar icin kaynak degistir
+// ============================================
+router.post('/switch-all-sources', async (req, res) => {
+  try {
+    const { newSource } = req.body;
+
+    if (!newSource) {
+      return res.status(400).json({
+        success: false,
+        error: 'newSource gerekli'
+      });
+    }
+
+    if (!['primary', 'backup'].includes(newSource)) {
+      return res.status(400).json({
+        success: false,
+        error: 'newSource "primary" veya "backup" olmali'
+      });
+    }
+
+    const result = await switchAllSources(newSource);
+    res.json(result);
+  } catch (error) {
+    console.error('Toplu kaynak degistirme hatasi:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Sunucu hatasi',
+      error: error.message
+    });
+  }
+});
+
+// ============================================
+// FALLBACK TIMEOUT AYARLA: Otomatik geçiş süresi
+// ============================================
+router.post('/set-fallback-timeout', async (req, res) => {
+  try {
+    const { minutes } = req.body;
+
+    if (!minutes || isNaN(minutes) || minutes < 1) {
+      return res.status(400).json({
+        success: false,
+        error: 'Geçerli bir dakika değeri gerekli (en az 1)'
+      });
+    }
+
+    const result = setFallbackTimeout(parseInt(minutes));
+    res.json(result);
+  } catch (error) {
+    console.error('Fallback timeout ayarlama hatasi:', error);
     res.status(500).json({
       success: false,
       message: 'Sunucu hatasi',

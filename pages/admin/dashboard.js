@@ -117,8 +117,27 @@ export default function AdminDashboard() {
       sourceType: 'satis',
       multiplier: 1,
       addition: 0
-    }
+    },
+    // Yedek kaynak yapılandırması
+    backupAlisConfig: {
+      sourceCode: '',
+      sourceType: 'satis',
+      multiplier: 1,
+      addition: 0
+    },
+    backupSatisConfig: {
+      sourceCode: '',
+      sourceType: 'satis',
+      multiplier: 1,
+      addition: 0
+    },
+    activeSource: 'primary',
+    manualSourceOverride: false
   });
+
+  // Yedek kaynak fiyatları
+  const [backupSourcePrices, setBackupSourcePrices] = useState([]);
+  const [apiStatus, setApiStatus] = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem('adminToken');
@@ -143,9 +162,39 @@ export default function AdminDashboard() {
     }
   };
 
+  // Yedek kaynak fiyatlarını yükle
+  const loadBackupSourcePrices = async () => {
+    try {
+      const response = await axios.get(`${apiUrl}/api/prices/backup-sources`);
+      if (response.data.success && response.data.data.length > 0) {
+        setBackupSourcePrices(response.data.data);
+        console.log(`✅ ${response.data.data.length} yedek kaynak fiyat yüklendi`);
+      }
+    } catch (error) {
+      console.error('Yedek kaynak fiyat yükleme hatası:', error);
+    }
+  };
+
+  // API durumunu yükle
+  const loadApiStatus = async () => {
+    try {
+      const response = await axios.get(`${apiUrl}/api/prices/api-status`);
+      if (response.data.success) {
+        setApiStatus(response.data.data);
+      }
+    } catch (error) {
+      console.error('API durum yükleme hatası:', error);
+    }
+  };
+
   // İlk yüklemede MongoDB'den al
   useEffect(() => {
     loadSourcePricesFromDB();
+    loadBackupSourcePrices();
+    loadApiStatus();
+    // API durumunu periyodik güncelle
+    const interval = setInterval(loadApiStatus, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   // WebSocket'ten gelen fiyatlarla mevcut state'i güncelle (üzerine yaz)
@@ -302,15 +351,71 @@ export default function AdminDashboard() {
         sourceType: 'satis',
         multiplier: 1,
         addition: 0
-      }
+      },
+      backupAlisConfig: {
+        sourceCode: backupSourcePrices[0]?.code || sourcePrices[0]?.code || '',
+        sourceType: 'satis',
+        multiplier: 1,
+        addition: 0
+      },
+      backupSatisConfig: {
+        sourceCode: backupSourcePrices[0]?.code || sourcePrices[0]?.code || '',
+        sourceType: 'satis',
+        multiplier: 1,
+        addition: 0
+      },
+      activeSource: 'primary',
+      manualSourceOverride: false
     });
     setShowModal(true);
   };
 
   const openEditModal = (price) => {
     setEditingPrice(price);
-    setFormData(price);
+    // Eski fiyatlarda yedek config yoksa varsayılan ekle
+    setFormData({
+      ...price,
+      backupAlisConfig: price.backupAlisConfig || {
+        sourceCode: backupSourcePrices[0]?.code || sourcePrices[0]?.code || '',
+        sourceType: 'satis',
+        multiplier: 1,
+        addition: 0
+      },
+      backupSatisConfig: price.backupSatisConfig || {
+        sourceCode: backupSourcePrices[0]?.code || sourcePrices[0]?.code || '',
+        sourceType: 'satis',
+        multiplier: 1,
+        addition: 0
+      },
+      activeSource: price.activeSource || 'primary',
+      manualSourceOverride: price.manualSourceOverride || false
+    });
     setShowModal(true);
+  };
+
+  // Manuel kaynak değiştirme
+  const handleSwitchSource = async (priceCode, newSource) => {
+    try {
+      await authAxios.post(`${apiUrl}/api/prices/switch-source`, { priceCode, newSource });
+      loadData();
+      loadApiStatus();
+    } catch (error) {
+      console.error('Kaynak değiştirme hatası:', error);
+      alert('Kaynak değiştirme başarısız!');
+    }
+  };
+
+  // Tüm kaynakları değiştir
+  const handleSwitchAllSources = async (newSource) => {
+    if (!confirm(`Tüm fiyatlar için kaynak ${newSource === 'primary' ? 'Birincil' : 'Yedek'} olarak değiştirilecek. Devam edilsin mi?`)) return;
+    try {
+      await authAxios.post(`${apiUrl}/api/prices/switch-all-sources`, { newSource });
+      loadData();
+      loadApiStatus();
+    } catch (error) {
+      console.error('Toplu kaynak değiştirme hatası:', error);
+      alert('Toplu kaynak değiştirme başarısız!');
+    }
   };
 
   const handleSave = async () => {
@@ -713,12 +818,14 @@ export default function AdminDashboard() {
     setDraggedOverItem(null);
   };
 
-  const calculatePreview = (config) => {
-    const source = sourcePrices.find(p => p.code === config.sourceCode);
+  const calculatePreview = (config, customSourcePrices = null) => {
+    if (!config || !config.sourceCode) return 0;
+    const prices = customSourcePrices || sourcePrices;
+    const source = prices.find(p => p.code === config.sourceCode);
     if (!source) return 0;
 
     const rawPrice = config.sourceType === 'alis' ? source.rawAlis : source.rawSatis;
-    return (rawPrice * config.multiplier) + config.addition;
+    return (rawPrice * (config.multiplier || 1)) + (config.addition || 0);
   };
 
   const formatPrice = (value, decimals = 0) => {
@@ -1084,19 +1191,97 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Bilgilendirme */}
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-5 mb-6 flex items-start space-x-3 shadow-sm">
-            <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
-              <AlertCircle className="text-white" size={20} />
-            </div>
-            <div className="text-sm">
-              <p className="font-semibold text-gray-900 mb-2">💡 Nasıl Çalışır?</p>
-              <p className="text-gray-700 mb-1">Yeni fiyat oluştur butonuna tıklayarak özel fiyatlar oluşturabilirsiniz.</p>
-              <p className="text-gray-600 mb-1">API'den çekilen fiyatları kaynak olarak kullanarak kendi fiyat yapınızı oluşturun.</p>
-              <p className="text-amber-600 font-semibold flex items-center space-x-1">
-                <GripVertical size={16} />
-                <span>Fiyatları sürükleyerek sıralayabilirsiniz!</span>
-              </p>
+          {/* Fiyat Kaynağı Kontrol Paneli */}
+          <div className="bg-white border border-gray-200 rounded-xl p-5 mb-6 shadow-sm">
+            <div className="flex flex-col gap-4">
+              {/* Üst Satır: Başlık ve Kaynak Seçimi */}
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div className="flex items-center space-x-3">
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${apiStatus?.activeSource === 'backup' ? 'bg-orange-500' : 'bg-amber-500'}`}>
+                    <RefreshCw className="text-white" size={20} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-900">Fiyat Kaynağı Yönetimi</h3>
+                    <div className="flex items-center space-x-3 text-xs mt-1">
+                      <span className={`flex items-center space-x-1 ${apiStatus?.primary?.connected ? 'text-green-600' : 'text-red-500'}`}>
+                        <span className={`w-2 h-2 rounded-full ${apiStatus?.primary?.connected ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                        <span>API 1: {apiStatus?.primary?.connected ? 'Bağlı' : 'Yok'}</span>
+                      </span>
+                      <span className={`flex items-center space-x-1 ${apiStatus?.backup?.connected ? 'text-orange-600' : 'text-red-500'}`}>
+                        <span className={`w-2 h-2 rounded-full ${apiStatus?.backup?.connected ? 'bg-orange-500' : 'bg-red-500'}`}></span>
+                        <span>API 2: {apiStatus?.backup?.connected ? 'Bağlı' : 'Yok'}</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex bg-gray-100 rounded-lg p-1">
+                  <button
+                    onClick={async () => {
+                      try {
+                        await axios.post(`${apiUrl}/api/prices/switch-all-sources`, { newSource: 'primary' });
+                        loadApiStatus();
+                      } catch (err) {
+                        alert('Hata: ' + err.message);
+                      }
+                    }}
+                    className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
+                      apiStatus?.activeSource === 'primary'
+                        ? 'bg-amber-500 text-white shadow-md shadow-amber-500/30'
+                        : 'bg-transparent text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    Birincil (API 1)
+                  </button>
+                  <button
+                    onClick={async () => {
+                      try {
+                        await axios.post(`${apiUrl}/api/prices/switch-all-sources`, { newSource: 'backup' });
+                        loadApiStatus();
+                      } catch (err) {
+                        alert('Hata: ' + err.message);
+                      }
+                    }}
+                    className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
+                      apiStatus?.activeSource === 'backup'
+                        ? 'bg-amber-500 text-white shadow-md shadow-amber-500/30'
+                        : 'bg-transparent text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    Yedek (API 2)
+                  </button>
+                </div>
+              </div>
+              {/* Alt Satır: Timeout Ayarı */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t border-gray-100">
+                <p className="text-sm text-gray-600">Otomatik yedek kaynağa geçiş süresi:</p>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="number"
+                    min="1"
+                    max="1440"
+                    defaultValue={apiStatus?.fallbackTimeoutMinutes || 30}
+                    className="w-20 px-3 py-2 border border-gray-200 rounded-lg text-center text-sm font-medium text-gray-900 bg-white focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none"
+                    id="fallbackMinutesInput"
+                  />
+                  <span className="text-sm text-gray-600">dakika</span>
+                  <button
+                    onClick={async () => {
+                      const input = document.getElementById('fallbackMinutesInput');
+                      const minutes = parseInt(input.value) || 30;
+                      try {
+                        await axios.post(`${apiUrl}/api/prices/set-fallback-timeout`, { minutes });
+                        loadApiStatus();
+                        alert(`Geçiş süresi ${minutes} dakika olarak ayarlandı`);
+                      } catch (err) {
+                        alert('Hata: ' + err.message);
+                      }
+                    }}
+                    className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-semibold transition-colors shadow-sm"
+                  >
+                    Kaydet
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -2049,117 +2234,258 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                {/* Alış Fiyatı Yapılandırması */}
-                <div className="bg-green-50 rounded-xl p-5 space-y-4 border-2 border-green-200">
-                  <h3 className="font-semibold text-gray-900 text-lg flex items-center space-x-2">
-                    <span className="w-8 h-8 bg-green-500 text-white rounded-lg flex items-center justify-center text-sm font-bold">A</span>
-                    <span>Alış Fiyatı Yapılandırması</span>
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Kaynak Fiyat</label>
-                      <select
-                        value={formData.alisConfig.sourceCode}
-                        onChange={(e) => setFormData({...formData, alisConfig: {...formData.alisConfig, sourceCode: e.target.value}})}
-                        className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white text-gray-900 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 focus:outline-none transition-all"
-                      >
-                        {sourcePrices.map(p => (
-                          <option key={p.code} value={p.code}>{p.name} ({p.code})</option>
-                        ))}
-                      </select>
+                {/* İki Sütunlu Kaynak Yapılandırması */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* SOL SÜTUN: Birincil Kaynak */}
+                  <div className="space-y-4">
+                    <div className="bg-blue-100 rounded-lg p-3 border-2 border-blue-300">
+                      <h3 className="font-bold text-blue-800 text-center">🟢 BİRİNCİL KAYNAK (API 1)</h3>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Hangi Fiyat Kullanılsın?</label>
-                      <select
-                        value={formData.alisConfig.sourceType}
-                        onChange={(e) => setFormData({...formData, alisConfig: {...formData.alisConfig, sourceType: e.target.value}})}
-                        className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white text-gray-900 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 focus:outline-none transition-all"
-                      >
-                        <option value="alis">Alış Fiyatı</option>
-                        <option value="satis">Satış Fiyatı</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Katsayı (×)</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={formData.alisConfig.multiplier}
-                        onChange={(e) => setFormData({...formData, alisConfig: {...formData.alisConfig, multiplier: parseFloat(e.target.value) || 1}})}
-                        className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white text-gray-900 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 focus:outline-none transition-all"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Ekleme (+)</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={formData.alisConfig.addition}
-                        onChange={(e) => setFormData({...formData, alisConfig: {...formData.alisConfig, addition: parseFloat(e.target.value) || 0}})}
-                        className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white text-gray-900 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 focus:outline-none transition-all"
-                      />
-                    </div>
-                  </div>
-                  <div className="bg-white rounded-lg p-4 border-2 border-green-300">
-                    <p className="text-sm text-gray-600 mb-1">Önizleme:</p>
-                    <p className="text-3xl font-bold text-green-700">₺{formatPrice(calculatePreview(formData.alisConfig), formData.decimals ?? 0)}</p>
-                  </div>
-                </div>
 
-                {/* Satış Fiyatı Yapılandırması */}
-                <div className="bg-red-50 rounded-xl p-5 space-y-4 border-2 border-red-200">
-                  <h3 className="font-semibold text-gray-900 text-lg flex items-center space-x-2">
-                    <span className="w-8 h-8 bg-red-500 text-white rounded-lg flex items-center justify-center text-sm font-bold">S</span>
-                    <span>Satış Fiyatı Yapılandırması</span>
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Kaynak Fiyat</label>
-                      <select
-                        value={formData.satisConfig.sourceCode}
-                        onChange={(e) => setFormData({...formData, satisConfig: {...formData.satisConfig, sourceCode: e.target.value}})}
-                        className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white text-gray-900 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:outline-none transition-all"
-                      >
-                        {sourcePrices.map(p => (
-                          <option key={p.code} value={p.code}>{p.name} ({p.code})</option>
-                        ))}
-                      </select>
+                    {/* Birincil Alış */}
+                    <div className="bg-green-50 rounded-xl p-4 space-y-3 border-2 border-green-200">
+                      <h4 className="font-semibold text-green-800 flex items-center space-x-2">
+                        <span className="w-6 h-6 bg-green-500 text-white rounded flex items-center justify-center text-xs font-bold">A</span>
+                        <span>Alış Fiyatı</span>
+                      </h4>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">Kaynak Fiyat</label>
+                          <select
+                            value={formData.alisConfig.sourceCode}
+                            onChange={(e) => setFormData({...formData, alisConfig: {...formData.alisConfig, sourceCode: e.target.value}})}
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-gray-900 text-sm focus:border-green-500 focus:outline-none"
+                          >
+                            {sourcePrices.map(p => (
+                              <option key={p.code} value={p.code}>{p.name} ({p.code})</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">Kullanılacak Fiyat</label>
+                          <select
+                            value={formData.alisConfig.sourceType}
+                            onChange={(e) => setFormData({...formData, alisConfig: {...formData.alisConfig, sourceType: e.target.value}})}
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-gray-900 text-sm focus:border-green-500 focus:outline-none"
+                          >
+                            <option value="alis">Alış</option>
+                            <option value="satis">Satış</option>
+                          </select>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Katsayı (×)</label>
+                            <input
+                              type="number"
+                              step="0.0001"
+                              value={formData.alisConfig.multiplier}
+                              onChange={(e) => setFormData({...formData, alisConfig: {...formData.alisConfig, multiplier: parseFloat(e.target.value) || 1}})}
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:border-green-500 focus:outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Ekleme (+)</label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={formData.alisConfig.addition}
+                              onChange={(e) => setFormData({...formData, alisConfig: {...formData.alisConfig, addition: parseFloat(e.target.value) || 0}})}
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:border-green-500 focus:outline-none"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="bg-white rounded-lg p-3 border border-green-300 text-center">
+                        <p className="text-xs text-gray-500 mb-1">Önizleme</p>
+                        <p className="text-2xl font-bold text-green-700">₺{formatPrice(calculatePreview(formData.alisConfig), formData.decimals ?? 0)}</p>
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Hangi Fiyat Kullanılsın?</label>
-                      <select
-                        value={formData.satisConfig.sourceType}
-                        onChange={(e) => setFormData({...formData, satisConfig: {...formData.satisConfig, sourceType: e.target.value}})}
-                        className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white text-gray-900 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:outline-none transition-all"
-                      >
-                        <option value="alis">Alış Fiyatı</option>
-                        <option value="satis">Satış Fiyatı</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Katsayı (×)</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={formData.satisConfig.multiplier}
-                        onChange={(e) => setFormData({...formData, satisConfig: {...formData.satisConfig, multiplier: parseFloat(e.target.value) || 1}})}
-                        className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white text-gray-900 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:outline-none transition-all"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Ekleme (+)</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={formData.satisConfig.addition}
-                        onChange={(e) => setFormData({...formData, satisConfig: {...formData.satisConfig, addition: parseFloat(e.target.value) || 0}})}
-                        className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white text-gray-900 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:outline-none transition-all"
-                      />
+
+                    {/* Birincil Satış */}
+                    <div className="bg-red-50 rounded-xl p-4 space-y-3 border-2 border-red-200">
+                      <h4 className="font-semibold text-red-800 flex items-center space-x-2">
+                        <span className="w-6 h-6 bg-red-500 text-white rounded flex items-center justify-center text-xs font-bold">S</span>
+                        <span>Satış Fiyatı</span>
+                      </h4>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">Kaynak Fiyat</label>
+                          <select
+                            value={formData.satisConfig.sourceCode}
+                            onChange={(e) => setFormData({...formData, satisConfig: {...formData.satisConfig, sourceCode: e.target.value}})}
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-gray-900 text-sm focus:border-red-500 focus:outline-none"
+                          >
+                            {sourcePrices.map(p => (
+                              <option key={p.code} value={p.code}>{p.name} ({p.code})</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">Kullanılacak Fiyat</label>
+                          <select
+                            value={formData.satisConfig.sourceType}
+                            onChange={(e) => setFormData({...formData, satisConfig: {...formData.satisConfig, sourceType: e.target.value}})}
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-gray-900 text-sm focus:border-red-500 focus:outline-none"
+                          >
+                            <option value="alis">Alış</option>
+                            <option value="satis">Satış</option>
+                          </select>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Katsayı (×)</label>
+                            <input
+                              type="number"
+                              step="0.0001"
+                              value={formData.satisConfig.multiplier}
+                              onChange={(e) => setFormData({...formData, satisConfig: {...formData.satisConfig, multiplier: parseFloat(e.target.value) || 1}})}
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:border-red-500 focus:outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Ekleme (+)</label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={formData.satisConfig.addition}
+                              onChange={(e) => setFormData({...formData, satisConfig: {...formData.satisConfig, addition: parseFloat(e.target.value) || 0}})}
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:border-red-500 focus:outline-none"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="bg-white rounded-lg p-3 border border-red-300 text-center">
+                        <p className="text-xs text-gray-500 mb-1">Önizleme</p>
+                        <p className="text-2xl font-bold text-red-700">₺{formatPrice(calculatePreview(formData.satisConfig), formData.decimals ?? 0)}</p>
+                      </div>
                     </div>
                   </div>
-                  <div className="bg-white rounded-lg p-4 border-2 border-red-300">
-                    <p className="text-sm text-gray-600 mb-1">Önizleme:</p>
-                    <p className="text-3xl font-bold text-red-700">₺{formatPrice(calculatePreview(formData.satisConfig), formData.decimals ?? 0)}</p>
+
+                  {/* SAĞ SÜTUN: Yedek Kaynak */}
+                  <div className="space-y-4">
+                    <div className="bg-orange-100 rounded-lg p-3 border-2 border-orange-300">
+                      <h3 className="font-bold text-orange-800 text-center">🟠 YEDEK KAYNAK (API 2 - Saglamoglu)</h3>
+                    </div>
+
+                    {/* Yedek Alış */}
+                    <div className="bg-orange-50 rounded-xl p-4 space-y-3 border-2 border-orange-200">
+                      <h4 className="font-semibold text-orange-800 flex items-center space-x-2">
+                        <span className="w-6 h-6 bg-orange-500 text-white rounded flex items-center justify-center text-xs font-bold">A</span>
+                        <span>Yedek Alış Fiyatı</span>
+                      </h4>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">Kaynak Fiyat</label>
+                          <select
+                            value={formData.backupAlisConfig?.sourceCode || ''}
+                            onChange={(e) => setFormData({...formData, backupAlisConfig: {...(formData.backupAlisConfig || {}), sourceCode: e.target.value}})}
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-gray-900 text-sm focus:border-orange-500 focus:outline-none"
+                          >
+                            <option value="">-- Kaynak Seçin --</option>
+                            {backupSourcePrices.map(p => (
+                              <option key={p.code} value={p.code}>{p.name || p.code} ({p.code})</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">Kullanılacak Fiyat</label>
+                          <select
+                            value={formData.backupAlisConfig?.sourceType || 'satis'}
+                            onChange={(e) => setFormData({...formData, backupAlisConfig: {...(formData.backupAlisConfig || {}), sourceType: e.target.value}})}
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-gray-900 text-sm focus:border-orange-500 focus:outline-none"
+                          >
+                            <option value="alis">Alış</option>
+                            <option value="satis">Satış</option>
+                          </select>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Katsayı (×)</label>
+                            <input
+                              type="number"
+                              step="0.0001"
+                              value={formData.backupAlisConfig?.multiplier || 1}
+                              onChange={(e) => setFormData({...formData, backupAlisConfig: {...(formData.backupAlisConfig || {}), multiplier: parseFloat(e.target.value) || 1}})}
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:border-orange-500 focus:outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Ekleme (+)</label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={formData.backupAlisConfig?.addition || 0}
+                              onChange={(e) => setFormData({...formData, backupAlisConfig: {...(formData.backupAlisConfig || {}), addition: parseFloat(e.target.value) || 0}})}
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:border-orange-500 focus:outline-none"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="bg-white rounded-lg p-3 border border-orange-300 text-center">
+                        <p className="text-xs text-gray-500 mb-1">Önizleme</p>
+                        <p className="text-2xl font-bold text-orange-600">₺{formatPrice(calculatePreview(formData.backupAlisConfig, backupSourcePrices), formData.decimals ?? 0)}</p>
+                      </div>
+                    </div>
+
+                    {/* Yedek Satış */}
+                    <div className="bg-amber-50 rounded-xl p-4 space-y-3 border-2 border-amber-200">
+                      <h4 className="font-semibold text-amber-800 flex items-center space-x-2">
+                        <span className="w-6 h-6 bg-amber-500 text-white rounded flex items-center justify-center text-xs font-bold">S</span>
+                        <span>Yedek Satış Fiyatı</span>
+                      </h4>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">Kaynak Fiyat</label>
+                          <select
+                            value={formData.backupSatisConfig?.sourceCode || ''}
+                            onChange={(e) => setFormData({...formData, backupSatisConfig: {...(formData.backupSatisConfig || {}), sourceCode: e.target.value}})}
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-gray-900 text-sm focus:border-amber-500 focus:outline-none"
+                          >
+                            <option value="">-- Kaynak Seçin --</option>
+                            {backupSourcePrices.map(p => (
+                              <option key={p.code} value={p.code}>{p.name || p.code} ({p.code})</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">Kullanılacak Fiyat</label>
+                          <select
+                            value={formData.backupSatisConfig?.sourceType || 'satis'}
+                            onChange={(e) => setFormData({...formData, backupSatisConfig: {...(formData.backupSatisConfig || {}), sourceType: e.target.value}})}
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-gray-900 text-sm focus:border-amber-500 focus:outline-none"
+                          >
+                            <option value="alis">Alış</option>
+                            <option value="satis">Satış</option>
+                          </select>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Katsayı (×)</label>
+                            <input
+                              type="number"
+                              step="0.0001"
+                              value={formData.backupSatisConfig?.multiplier || 1}
+                              onChange={(e) => setFormData({...formData, backupSatisConfig: {...(formData.backupSatisConfig || {}), multiplier: parseFloat(e.target.value) || 1}})}
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:border-amber-500 focus:outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Ekleme (+)</label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={formData.backupSatisConfig?.addition || 0}
+                              onChange={(e) => setFormData({...formData, backupSatisConfig: {...(formData.backupSatisConfig || {}), addition: parseFloat(e.target.value) || 0}})}
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:border-amber-500 focus:outline-none"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="bg-white rounded-lg p-3 border border-amber-300 text-center">
+                        <p className="text-xs text-gray-500 mb-1">Önizleme</p>
+                        <p className="text-2xl font-bold text-amber-600">₺{formatPrice(calculatePreview(formData.backupSatisConfig, backupSourcePrices), formData.decimals ?? 0)}</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
