@@ -1,9 +1,10 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import io from 'socket.io-client';
 
 const CACHE_KEY = 'cachedPrices';
 const CACHE_TIME_KEY = 'cachedPricesTime';
 const CACHE_DURATION = 60 * 60 * 1000; // 1 saat
+const CACHE_WRITE_INTERVAL = 10000; // 10 saniyede bir localStorage'a yaz
 
 export const useWebSocket = () => {
   const [socket, setSocket] = useState(null);
@@ -12,6 +13,8 @@ export const useWebSocket = () => {
   const [lastUpdate, setLastUpdate] = useState(null);
   const previousPricesRef = useRef([]);
   const initialLoadDone = useRef(false);
+  const lastCacheWrite = useRef(0);
+  const socketRef = useRef(null);
 
   // Sayfa yüklendiğinde önce API'den, sonra localStorage'dan fiyatları yükle
   useEffect(() => {
@@ -70,20 +73,36 @@ export const useWebSocket = () => {
     const newSocket = io(wsUrl, {
       transports: ['websocket', 'polling'],
       reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionAttempts: Infinity, // Sürekli dene
-      reconnectionDelayMax: 5000
+      reconnectionDelay: 500, // Daha hızlı reconnect
+      reconnectionAttempts: Infinity,
+      reconnectionDelayMax: 3000,
+      timeout: 10000,
+      pingTimeout: 5000, // Ping timeout - bağlantı kontrolü
+      pingInterval: 3000 // Daha sık ping
     });
 
+    socketRef.current = newSocket;
+
     newSocket.on('connect', () => {
+      console.log('🔗 Socket.IO bağlandı');
       setIsConnected(true);
     });
 
-    newSocket.on('disconnect', () => {
+    newSocket.on('disconnect', (reason) => {
+      console.log('❌ Socket.IO bağlantı kesildi:', reason);
       setIsConnected(false);
       // Bağlantı kesildiğinde önceki fiyatları koru
       if (previousPricesRef.current.length > 0) {
         setPrices(previousPricesRef.current);
+      }
+      // Transport close durumunda hemen reconnect dene
+      if (reason === 'transport close' || reason === 'transport error') {
+        setTimeout(() => {
+          if (socketRef.current && !socketRef.current.connected) {
+            console.log('🔄 Yeniden bağlanıyor...');
+            socketRef.current.connect();
+          }
+        }, 500);
       }
     });
 
@@ -118,28 +137,47 @@ export const useWebSocket = () => {
       // Ref'i güncelle
       previousPricesRef.current = sortedPrices;
 
-      // Cache'e kaydet
-      try {
-        localStorage.setItem(CACHE_KEY, JSON.stringify(sortedPrices));
-        localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
-      } catch (err) {
-        // Cache yazma hatası
+      // Cache'e throttled yaz - her güncelleme yerine 10 saniyede bir
+      const now = Date.now();
+      if (now - lastCacheWrite.current > CACHE_WRITE_INTERVAL) {
+        lastCacheWrite.current = now;
+        try {
+          localStorage.setItem(CACHE_KEY, JSON.stringify(sortedPrices));
+          localStorage.setItem(CACHE_TIME_KEY, now.toString());
+        } catch (err) {
+          // Cache yazma hatası
+        }
       }
 
       setPrices(sortedPrices);
-      setLastUpdate(data.meta?.time || Date.now());
+      setLastUpdate(data.meta?.time || now);
     });
 
-    newSocket.on('connect_error', () => {
+    newSocket.on('connect_error', (error) => {
+      console.log('⚠️ Socket.IO bağlantı hatası:', error.message);
       // Hata durumunda önceki fiyatları koru
       if (previousPricesRef.current.length > 0) {
         setPrices(previousPricesRef.current);
       }
     });
 
+    // Tab görünürlük değişikliği - tab aktif olunca reconnect
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('👁️ Tab aktif oldu, bağlantı kontrol ediliyor...');
+        if (socketRef.current && !socketRef.current.connected) {
+          console.log('🔄 Yeniden bağlanıyor...');
+          socketRef.current.connect();
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     setSocket(newSocket);
 
     return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       newSocket.close();
     };
   }, []);
