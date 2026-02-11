@@ -8,11 +8,16 @@ const { branchValidation, idParamValidation } = require('../middleware/validatio
 router.get('/', async (req, res) => {
   try {
     const branches = await Branch.find({ isActive: true }).sort({ city: 1, name: 1 });
-    // _id'yi id'ye dönüştür
-    const formattedBranches = branches.map(branch => ({
-      ...branch.toObject(),
-      id: branch._id.toString()
-    }));
+    // _id'yi id'ye dönüştür + şirket bilgilerini public'ten gizle
+    const formattedBranches = branches.map(branch => {
+      const obj = branch.toObject();
+      obj.id = branch._id.toString();
+      delete obj.companyTitle;
+      delete obj.taxOffice;
+      delete obj.taxNumber;
+      delete obj.tradeRegistryNo;
+      return obj;
+    });
     res.json({
       success: true,
       data: formattedBranches
@@ -24,6 +29,21 @@ router.get('/', async (req, res) => {
       message: 'Sunucu hatası',
       error: error.message 
     });
+  }
+});
+
+// Admin: Tüm şubeleri şirket bilgileriyle getir
+router.get('/admin/all', authMiddleware, async (req, res) => {
+  try {
+    const branches = await Branch.find().sort({ city: 1, name: 1 });
+    const formattedBranches = branches.map(branch => ({
+      ...branch.toObject(),
+      id: branch._id.toString()
+    }));
+    res.json({ success: true, data: formattedBranches });
+  } catch (error) {
+    console.error('Admin branch getirme hatası:', error);
+    res.status(500).json({ success: false, message: 'Sunucu hatası', error: error.message });
   }
 });
 

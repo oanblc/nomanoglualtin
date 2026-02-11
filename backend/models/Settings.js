@@ -82,6 +82,11 @@ const settingsSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  // Çalışan Şifresi (mobil KYC formu girişi için)
+  employeePassword: {
+    type: String,
+    default: ''
+  },
   updatedAt: {
     type: Date,
     default: Date.now

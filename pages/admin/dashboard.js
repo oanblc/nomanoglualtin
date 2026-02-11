@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import axios from 'axios';
 import { useWebSocket } from '../../hooks/useWebSocket';
-import { TrendingUp, LogOut, Plus, Edit2, Trash2, X, Save, AlertCircle, RefreshCw, Settings, FileText, Users, GripVertical, Building2, MapPin, Phone, Mail, Clock, ExternalLink, Search } from 'lucide-react';
+import { TrendingUp, LogOut, Plus, Edit2, Trash2, X, Save, AlertCircle, RefreshCw, Settings, FileText, Users, GripVertical, Building2, MapPin, Phone, Mail, Clock, ExternalLink, Search, ClipboardList, Download, Eye, Calendar, Filter } from 'lucide-react';
 import Link from 'next/link';
 
 // Auth header ile axios instance oluştur
@@ -51,9 +51,26 @@ export default function AdminDashboard() {
   const [socialYoutube, setSocialYoutube] = useState('');
   const [socialTiktok, setSocialTiktok] = useState('');
   const [socialWhatsapp, setSocialWhatsapp] = useState('905322904601');
+  const [employeePassword, setEmployeePassword] = useState('');
+
+  // Transactions state
+  const [transactions, setTransactions] = useState([]);
+  const [transactionsLoading, setTransactionsLoading] = useState(false);
+  const [txSearch, setTxSearch] = useState('');
+  const [txBranchFilter, setTxBranchFilter] = useState('all');
+  const [txStatusFilter, setTxStatusFilter] = useState('all');
+  const [txDateFrom, setTxDateFrom] = useState('');
+  const [txDateTo, setTxDateTo] = useState('');
+  const [showTxEditModal, setShowTxEditModal] = useState(false);
+  const [editingTx, setEditingTx] = useState(null);
+  const [txFormData, setTxFormData] = useState({
+    fullName: '', identityNumber: '', phone: '', occupation: '',
+    address: '', date: '', branchId: '', totalAmount: '',
+    details: '', additionalInfo: '', status: 'pending'
+  });
 
   // Tab state
-  const [activeTab, setActiveTab] = useState('prices'); // 'prices' | 'family' | 'articles' | 'branches' | 'settings'
+  const [activeTab, setActiveTab] = useState('prices'); // 'prices' | 'family' | 'articles' | 'branches' | 'transactions' | 'settings'
 
   // Drag & Drop state
   const [draggedItem, setDraggedItem] = useState(null);
@@ -95,7 +112,11 @@ export default function AdminDashboard() {
     phone: '',
     email: '',
     workingHours: '09:00 - 18:00',
-    mapLink: ''
+    mapLink: '',
+    companyTitle: '',
+    taxOffice: '',
+    taxNumber: '',
+    tradeRegistryNo: ''
   });
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
@@ -267,10 +288,10 @@ export default function AdminDashboard() {
       console.log('🔄 Admin Panel - Veri yükleniyor...');
       const [customRes, settingsRes, familyRes, articlesRes, branchesRes] = await Promise.all([
         axios.get(`${apiUrl}/api/custom-prices`),
-        axios.get(`${apiUrl}/api/settings`),
+        authAxios.get(`${apiUrl}/api/settings/admin`),
         axios.get(`${apiUrl}/api/family-cards`),
         axios.get(`${apiUrl}/api/articles`),
-        axios.get(`${apiUrl}/api/branches`)
+        authAxios.get(`${apiUrl}/api/branches/admin/all`)
       ]);
       
       if (customRes.data.success) {
@@ -298,6 +319,7 @@ export default function AdminDashboard() {
         setSocialYoutube(s.socialYoutube || '');
         setSocialTiktok(s.socialTiktok || '');
         setSocialWhatsapp(s.socialWhatsapp || '905322904601');
+        setEmployeePassword(s.employeePassword || '');
         console.log('✅ Ayarlar yüklendi');
       }
 
@@ -595,7 +617,8 @@ export default function AdminDashboard() {
         socialInstagram,
         socialYoutube,
         socialTiktok,
-        socialWhatsapp
+        socialWhatsapp,
+        employeePassword
       });
       alert('Ayarlar kaydedildi!');
       loadData();
@@ -711,7 +734,11 @@ export default function AdminDashboard() {
       phone: '',
       email: '',
       workingHours: '09:00 - 18:00',
-      mapLink: ''
+      mapLink: '',
+      companyTitle: '',
+      taxOffice: '',
+      taxNumber: '',
+      tradeRegistryNo: ''
     });
     setShowBranchModal(true);
   };
@@ -725,7 +752,11 @@ export default function AdminDashboard() {
       phone: branch.phone || '',
       email: branch.email || '',
       workingHours: branch.workingHours || '09:00 - 18:00',
-      mapLink: branch.mapLink || ''
+      mapLink: branch.mapLink || '',
+      companyTitle: branch.companyTitle || '',
+      taxOffice: branch.taxOffice || '',
+      taxNumber: branch.taxNumber || '',
+      tradeRegistryNo: branch.tradeRegistryNo || ''
     });
     setShowBranchModal(true);
   };
@@ -761,6 +792,131 @@ export default function AdminDashboard() {
       alert('Silme başarısız!');
     }
   };
+
+  // ==================== TRANSACTIONS HANDLERS ====================
+
+  const loadTransactions = async () => {
+    try {
+      setTransactionsLoading(true);
+      const res = await authAxios.get(`${apiUrl}/api/transactions`);
+      if (res.data.success) {
+        setTransactions(res.data.data);
+      }
+    } catch (error) {
+      console.error('Transactions yükleme hatası:', error);
+    } finally {
+      setTransactionsLoading(false);
+    }
+  };
+
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter(tx => {
+      // Arama filtresi
+      if (txSearch) {
+        const q = txSearch.toLowerCase();
+        const matchName = tx.fullName?.toLowerCase().includes(q);
+        const matchId = tx.identityNumber?.toLowerCase().includes(q);
+        const matchPhone = tx.phone?.toLowerCase().includes(q);
+        if (!matchName && !matchId && !matchPhone) return false;
+      }
+      // Şube filtresi
+      if (txBranchFilter !== 'all') {
+        if (tx.branchId?._id !== txBranchFilter) return false;
+      }
+      // Durum filtresi
+      if (txStatusFilter !== 'all') {
+        if (tx.status !== txStatusFilter) return false;
+      }
+      // Tarih aralığı filtresi
+      if (txDateFrom) {
+        const txDate = new Date(tx.date).toISOString().split('T')[0];
+        if (txDate < txDateFrom) return false;
+      }
+      if (txDateTo) {
+        const txDate = new Date(tx.date).toISOString().split('T')[0];
+        if (txDate > txDateTo) return false;
+      }
+      return true;
+    });
+  }, [transactions, txSearch, txBranchFilter, txStatusFilter, txDateFrom, txDateTo]);
+
+  const txBranchOptions = useMemo(() => {
+    const map = new Map();
+    transactions.forEach(tx => {
+      if (tx.branchId?._id && tx.branchId?.name) {
+        map.set(tx.branchId._id, tx.branchId.name);
+      }
+    });
+    return Array.from(map, ([id, name]) => ({ id, name }));
+  }, [transactions]);
+
+  const handleDownloadPdf = async (txId) => {
+    try {
+      const response = await authAxios.get(`${apiUrl}/api/transactions/pdf/${txId}`, {
+        responseType: 'blob'
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `musteri-tani-formu-${txId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('PDF indirme hatası:', error);
+      alert('PDF indirilemedi!');
+    }
+  };
+
+  const openTxEditModal = (tx) => {
+    setEditingTx(tx);
+    setTxFormData({
+      fullName: tx.fullName || '',
+      identityNumber: tx.identityNumber || '',
+      phone: tx.phone || '',
+      occupation: tx.occupation || '',
+      address: tx.address || '',
+      date: tx.date ? new Date(tx.date).toISOString().split('T')[0] : '',
+      branchId: tx.branchId?._id || '',
+      totalAmount: tx.totalAmount || '',
+      details: tx.details || '',
+      additionalInfo: tx.additionalInfo || '',
+      status: tx.status || 'pending'
+    });
+    setShowTxEditModal(true);
+  };
+
+  const handleTxUpdate = async () => {
+    if (!editingTx) return;
+    try {
+      const payload = { ...txFormData, totalAmount: Number(txFormData.totalAmount) };
+      await authAxios.put(`${apiUrl}/api/transactions/${editingTx.id}`, payload);
+      setShowTxEditModal(false);
+      setEditingTx(null);
+      loadTransactions();
+    } catch (error) {
+      console.error('Güncelleme hatası:', error);
+      alert('Güncelleme başarısız!');
+    }
+  };
+
+  const handleTxDelete = async (txId, txName) => {
+    if (!confirm(`"${txName}" isimli işlemi silmek istediğinize emin misiniz?`)) return;
+    try {
+      await authAxios.delete(`${apiUrl}/api/transactions/${txId}`);
+      loadTransactions();
+    } catch (error) {
+      console.error('Silme hatası:', error);
+      alert('Silme başarısız!');
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'transactions') {
+      loadTransactions();
+    }
+  }, [activeTab]);
 
   // ==================== DRAG & DROP HANDLERS ====================
   
@@ -1035,6 +1191,19 @@ export default function AdminDashboard() {
                 <div className="flex items-center space-x-2">
                   <Building2 size={18} />
                   <span>Şubeler</span>
+                </div>
+              </button>
+              <button
+                onClick={() => setActiveTab('transactions')}
+                className={`px-6 py-4 font-semibold text-sm border-b-2 transition-colors ${
+                  activeTab === 'transactions'
+                    ? 'border-amber-500 text-amber-600'
+                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                }`}
+              >
+                <div className="flex items-center space-x-2">
+                  <ClipboardList size={18} />
+                  <span>İşlemler</span>
                 </div>
               </button>
               <button
@@ -1702,6 +1871,280 @@ export default function AdminDashboard() {
           </>
           )}
 
+          {/* ==================== İŞLEMLER TAB ==================== */}
+          {activeTab === 'transactions' && (
+          <>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">İşlemler (KYC Formları)</h2>
+                <p className="text-gray-600 mt-1">Mobil uygulamadan gönderilen müşteri tanı formlarını görüntüleyin ve PDF olarak indirin</p>
+              </div>
+              <button
+                onClick={loadTransactions}
+                className="flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors font-medium"
+              >
+                <RefreshCw size={18} />
+                <span>Yenile</span>
+              </button>
+            </div>
+
+            {/* Arama ve Filtreler */}
+            {transactions.length > 0 && (
+              <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4">
+                <div className="flex flex-col lg:flex-row gap-3">
+                  {/* Arama */}
+                  <div className="relative flex-1">
+                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="İsim, T.C. No veya telefon ile ara..."
+                      value={txSearch}
+                      onChange={(e) => setTxSearch(e.target.value)}
+                      className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:border-yellow-500 focus:outline-none"
+                    />
+                  </div>
+                  {/* Şube Filtresi */}
+                  <select
+                    value={txBranchFilter}
+                    onChange={(e) => setTxBranchFilter(e.target.value)}
+                    className="px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:border-yellow-500 focus:outline-none bg-white min-w-[160px]"
+                  >
+                    <option value="all">Tüm Şubeler</option>
+                    {txBranchOptions.map(b => (
+                      <option key={b.id} value={b.id}>{b.name}</option>
+                    ))}
+                  </select>
+                  {/* Durum Filtresi */}
+                  <select
+                    value={txStatusFilter}
+                    onChange={(e) => setTxStatusFilter(e.target.value)}
+                    className="px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:border-yellow-500 focus:outline-none bg-white min-w-[140px]"
+                  >
+                    <option value="all">Tüm Durumlar</option>
+                    <option value="pending">Beklemede</option>
+                    <option value="completed">Tamamlandı</option>
+                  </select>
+                  {/* Tarih Başlangıç */}
+                  <input
+                    type="date"
+                    value={txDateFrom}
+                    onChange={(e) => setTxDateFrom(e.target.value)}
+                    className="px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:border-yellow-500 focus:outline-none bg-white"
+                    title="Başlangıç tarihi"
+                  />
+                  {/* Tarih Bitiş */}
+                  <input
+                    type="date"
+                    value={txDateTo}
+                    onChange={(e) => setTxDateTo(e.target.value)}
+                    className="px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:border-yellow-500 focus:outline-none bg-white"
+                    title="Bitiş tarihi"
+                  />
+                  {/* Filtreleri Temizle */}
+                  {(txSearch || txBranchFilter !== 'all' || txStatusFilter !== 'all' || txDateFrom || txDateTo) && (
+                    <button
+                      onClick={() => { setTxSearch(''); setTxBranchFilter('all'); setTxStatusFilter('all'); setTxDateFrom(''); setTxDateTo(''); }}
+                      className="px-3 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
+                    >
+                      Temizle
+                    </button>
+                  )}
+                </div>
+                {/* Sonuç Sayısı */}
+                {(txSearch || txBranchFilter !== 'all' || txStatusFilter !== 'all' || txDateFrom || txDateTo) && (
+                  <div className="mt-3 text-sm text-gray-500">
+                    {filteredTransactions.length} / {transactions.length} sonuç gösteriliyor
+                  </div>
+                )}
+              </div>
+            )}
+
+            {transactionsLoading ? (
+              <div className="text-center py-12">
+                <RefreshCw size={32} className="mx-auto text-gray-300 animate-spin mb-4" />
+                <p className="text-gray-500">Yükleniyor...</p>
+              </div>
+            ) : transactions.length === 0 ? (
+              <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+                <ClipboardList size={48} className="mx-auto text-gray-300 mb-4" />
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Henüz İşlem Yok</h3>
+                <p className="text-gray-600">Mobil uygulamadan form gönderildiğinde burada görünecek</p>
+              </div>
+            ) : filteredTransactions.length === 0 ? (
+              <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+                <Search size={48} className="mx-auto text-gray-300 mb-4" />
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Sonuç Bulunamadı</h3>
+                <p className="text-gray-600">Arama kriterlerinize uygun işlem bulunamadı</p>
+              </div>
+            ) : (
+              <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
+                      <th className="text-left px-6 py-4 text-sm font-bold text-gray-700">Tarih</th>
+                      <th className="text-left px-6 py-4 text-sm font-bold text-gray-700">Müşteri</th>
+                      <th className="text-left px-6 py-4 text-sm font-bold text-gray-700">Şube</th>
+                      <th className="text-right px-6 py-4 text-sm font-bold text-gray-700">Tutar</th>
+                      <th className="text-center px-6 py-4 text-sm font-bold text-gray-700">Durum</th>
+                      <th className="text-center px-4 py-4 text-sm font-bold text-gray-700">İşlemler</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredTransactions.map((tx, index) => (
+                      <tr
+                        key={tx.id}
+                        className={index % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50/50 hover:bg-gray-50'}
+                      >
+                        <td className="px-6 py-4 text-sm text-gray-700">
+                          {new Date(tx.date).toLocaleDateString('tr-TR')}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="font-semibold text-gray-900">{tx.fullName}</div>
+                          <div className="text-xs text-gray-500">{tx.identityNumber}</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+                            {tx.branchId?.name || '-'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right font-semibold text-gray-900">
+                          {tx.totalAmount?.toLocaleString('tr-TR')} TL
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${
+                            tx.status === 'completed'
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-yellow-100 text-yellow-700'
+                          }`}>
+                            {tx.status === 'completed' ? 'Tamamlandı' : 'Beklemede'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="flex items-center justify-center space-x-2">
+                            <button
+                              onClick={() => openTxEditModal(tx)}
+                              className="p-2 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-lg transition-colors"
+                              title="Düzenle"
+                            >
+                              <Edit2 size={16} />
+                            </button>
+                            <button
+                              onClick={() => handleDownloadPdf(tx.id)}
+                              className="p-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg transition-colors"
+                              title="PDF İndir"
+                            >
+                              <Download size={16} />
+                            </button>
+                            <button
+                              onClick={() => handleTxDelete(tx.id, tx.fullName)}
+                              className="p-2 bg-gray-100 hover:bg-red-100 text-gray-400 hover:text-red-600 rounded-lg transition-colors"
+                              title="Sil"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* İşlem Düzenleme Modalı */}
+            {showTxEditModal && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                    <h3 className="text-xl font-bold text-gray-900">İşlem Düzenle</h3>
+                    <button onClick={() => setShowTxEditModal(false)} className="p-2 hover:bg-gray-100 rounded-lg">
+                      <X size={20} />
+                    </button>
+                  </div>
+                  <div className="p-6 space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">İsim Soyisim / Ünvan</label>
+                        <input type="text" value={txFormData.fullName} onChange={(e) => setTxFormData({...txFormData, fullName: e.target.value})}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:border-yellow-500 focus:outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">T.C. No / Vergi No</label>
+                        <input type="text" value={txFormData.identityNumber} onChange={(e) => setTxFormData({...txFormData, identityNumber: e.target.value})}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:border-yellow-500 focus:outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Telefon</label>
+                        <input type="text" value={txFormData.phone} onChange={(e) => setTxFormData({...txFormData, phone: e.target.value})}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:border-yellow-500 focus:outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Meslek</label>
+                        <input type="text" value={txFormData.occupation} onChange={(e) => setTxFormData({...txFormData, occupation: e.target.value})}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:border-yellow-500 focus:outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Tarih</label>
+                        <input type="date" value={txFormData.date} onChange={(e) => setTxFormData({...txFormData, date: e.target.value})}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:border-yellow-500 focus:outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Toplam Tutar (TL)</label>
+                        <input type="number" value={txFormData.totalAmount} onChange={(e) => setTxFormData({...txFormData, totalAmount: e.target.value})}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:border-yellow-500 focus:outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Şube</label>
+                        <select value={txFormData.branchId} onChange={(e) => setTxFormData({...txFormData, branchId: e.target.value})}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:border-yellow-500 focus:outline-none bg-white">
+                          <option value="">Şube Seçin</option>
+                          {branches.map(b => (
+                            <option key={b._id} value={b._id}>{b.name} - {b.city}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Durum</label>
+                        <select value={txFormData.status} onChange={(e) => setTxFormData({...txFormData, status: e.target.value})}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:border-yellow-500 focus:outline-none bg-white">
+                          <option value="pending">Beklemede</option>
+                          <option value="completed">Tamamlandı</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Adres</label>
+                      <input type="text" value={txFormData.address} onChange={(e) => setTxFormData({...txFormData, address: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:border-yellow-500 focus:outline-none" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Detay</label>
+                      <textarea value={txFormData.details} onChange={(e) => setTxFormData({...txFormData, details: e.target.value})} rows={2}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:border-yellow-500 focus:outline-none resize-none" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Ek Bilgi</label>
+                      <textarea value={txFormData.additionalInfo} onChange={(e) => setTxFormData({...txFormData, additionalInfo: e.target.value})} rows={2}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:border-yellow-500 focus:outline-none resize-none" />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200">
+                    <button onClick={() => setShowTxEditModal(false)}
+                      className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors">
+                      İptal
+                    </button>
+                    <button onClick={handleTxUpdate}
+                      className="flex items-center space-x-2 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg text-sm font-medium transition-colors">
+                      <Save size={16} />
+                      <span>Kaydet</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+          )}
+
           {/* ==================== AYARLAR TAB ==================== */}
           {activeTab === 'settings' && (
           <>
@@ -2072,6 +2515,27 @@ export default function AdminDashboard() {
                     />
                   </div>
                 </div>
+              </div>
+
+              {/* Çalışan Şifresi */}
+              <div className="bg-white rounded-xl border border-gray-200 p-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center space-x-2">
+                  <Users size={20} />
+                  <span>Çalışan Şifresi</span>
+                </h3>
+                <p className="text-sm text-gray-500 mb-4">
+                  Mobil uygulamada çalışanların KYC formuna erişmek için kullanacağı ortak şifre
+                </p>
+                <input
+                  type="text"
+                  value={employeePassword}
+                  onChange={(e) => setEmployeePassword(e.target.value)}
+                  placeholder="Çalışan şifresi belirleyin..."
+                  className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-all"
+                />
+                <p className="text-xs text-gray-500 mt-2">
+                  Bu şifre tüm çalışanlar tarafından paylaşılan tek bir şifredir. Değiştirdiğinizde tüm çalışanların yeniden giriş yapması gerekir.
+                </p>
               </div>
 
               {/* Sosyal Medya */}
@@ -2813,6 +3277,58 @@ export default function AdminDashboard() {
                     className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-all"
                   />
                   <p className="text-xs text-gray-500 mt-1">Google Maps'ten paylaş linkini yapıştırın</p>
+                </div>
+
+                {/* Şirket Bilgileri */}
+                <div className="border-t border-gray-200 pt-4 mt-4">
+                  <h4 className="text-sm font-bold text-gray-700 mb-3">Şirket Bilgileri (PDF İçin)</h4>
+                  <p className="text-xs text-gray-500 mb-3">Bu bilgiler sadece KYC PDF çıktısında kullanılır, halka açık değildir.</p>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Şirket Ünvanı</label>
+                      <input
+                        type="text"
+                        value={branchFormData.companyTitle}
+                        onChange={(e) => setBranchFormData({...branchFormData, companyTitle: e.target.value})}
+                        placeholder="örn: Nomanoğlu Kuyumculuk A.Ş."
+                        className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Vergi Dairesi</label>
+                      <input
+                        type="text"
+                        value={branchFormData.taxOffice}
+                        onChange={(e) => setBranchFormData({...branchFormData, taxOffice: e.target.value})}
+                        placeholder="örn: Kadirli V.D."
+                        className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 mt-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Vergi No</label>
+                      <input
+                        type="text"
+                        value={branchFormData.taxNumber}
+                        onChange={(e) => setBranchFormData({...branchFormData, taxNumber: e.target.value})}
+                        placeholder="örn: 1234567890"
+                        className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Ticaret Sicil No</label>
+                      <input
+                        type="text"
+                        value={branchFormData.tradeRegistryNo}
+                        onChange={(e) => setBranchFormData({...branchFormData, tradeRegistryNo: e.target.value})}
+                        placeholder="örn: 12345"
+                        className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-all"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
 

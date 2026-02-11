@@ -80,6 +80,22 @@ const branchValidation = [
   body('isActive')
     .optional()
     .isBoolean().withMessage('isActive boolean olmalı'),
+  body('companyTitle')
+    .optional()
+    .isLength({ max: 200 }).withMessage('Şirket ünvanı çok uzun')
+    .customSanitizer(sanitizeString),
+  body('taxOffice')
+    .optional()
+    .isLength({ max: 100 }).withMessage('Vergi dairesi çok uzun')
+    .customSanitizer(sanitizeString),
+  body('taxNumber')
+    .optional()
+    .isLength({ max: 20 }).withMessage('Vergi no çok uzun')
+    .customSanitizer(sanitizeString),
+  body('tradeRegistryNo')
+    .optional()
+    .isLength({ max: 50 }).withMessage('Ticaret sicil no çok uzun')
+    .customSanitizer(sanitizeString),
   validate
 ];
 
@@ -134,6 +150,59 @@ const idParamValidation = [
   validate
 ];
 
+// Çalışan giriş validasyonu
+const employeeLoginValidation = [
+  body('password')
+    .notEmpty().withMessage('Şifre gerekli')
+    .isLength({ max: 100 }).withMessage('Şifre çok uzun'),
+  validate
+];
+
+// Transaction (KYC Formu) validasyonu
+const transactionValidation = [
+  body('fullName')
+    .trim()
+    .notEmpty().withMessage('İsim Soyisim gerekli')
+    .isLength({ max: 200 }).withMessage('İsim çok uzun')
+    .customSanitizer(sanitizeString),
+  body('identityNumber')
+    .trim()
+    .notEmpty().withMessage('TC/Vergi No gerekli')
+    .isLength({ min: 11, max: 11 }).withMessage('TC/Vergi No 11 hane olmalı')
+    .isNumeric().withMessage('TC/Vergi No sadece rakam olmalı'),
+  body('phone')
+    .trim()
+    .notEmpty().withMessage('Telefon gerekli')
+    .isLength({ max: 20 }).withMessage('Telefon çok uzun'),
+  body('occupation')
+    .optional()
+    .isLength({ max: 200 }).withMessage('Meslek bilgisi çok uzun')
+    .customSanitizer(sanitizeString),
+  body('address')
+    .trim()
+    .notEmpty().withMessage('Adres gerekli')
+    .isLength({ max: 1000 }).withMessage('Adres çok uzun'),
+  body('date')
+    .notEmpty().withMessage('Tarih gerekli'),
+  body('branchId')
+    .notEmpty().withMessage('Şube gerekli')
+    .isMongoId().withMessage('Geçersiz şube ID'),
+  body('totalAmount')
+    .notEmpty().withMessage('Toplam tutar gerekli')
+    .isFloat({ min: 0 }).withMessage('Geçersiz tutar'),
+  body('details')
+    .optional()
+    .isLength({ max: 2000 }).withMessage('Detay çok uzun'),
+  body('additionalInfo')
+    .optional()
+    .isLength({ max: 1000 }).withMessage('Ek bilgi çok uzun'),
+  body('kvkkConsent')
+    .notEmpty().withMessage('KVKK onayı gerekli'),
+  body('signature')
+    .notEmpty().withMessage('İmza gerekli'),
+  validate
+];
+
 module.exports = {
   validate,
   sanitizeString,
@@ -142,5 +211,7 @@ module.exports = {
   branchValidation,
   customPriceValidation,
   familyCardValidation,
-  idParamValidation
+  idParamValidation,
+  employeeLoginValidation,
+  transactionValidation
 };

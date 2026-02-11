@@ -29,6 +29,23 @@ const branchSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  // Şirket bilgileri (sadece admin & PDF için, halka açık değil)
+  companyTitle: {
+    type: String,
+    default: ''
+  },
+  taxOffice: {
+    type: String,
+    default: ''
+  },
+  taxNumber: {
+    type: String,
+    default: ''
+  },
+  tradeRegistryNo: {
+    type: String,
+    default: ''
+  },
   isActive: {
     type: Boolean,
     default: true

@@ -88,10 +88,11 @@ const loginLimiter = rateLimit({
 // Rate limiting uygula
 app.use('/api/', generalLimiter);
 app.use('/api/auth/login', loginLimiter);
+app.use('/api/auth/employee-login', loginLimiter);
 
 // Body parser - Görsel yüklemeleri için limit artırıldı
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ limit: '10mb', extended: true }));
+app.use(express.json({ limit: '20mb' }));
+app.use(express.urlencoded({ limit: '20mb', extended: true }));
 
 // MongoDB bağlantısı (opsiyonel)
 mongoose.connect(process.env.MONGODB_URI, {
@@ -114,6 +115,7 @@ const branchesRoutes = require('./routes/branches');
 const settingsRoutes = require('./routes/settings');
 const seoRoutes = require('./routes/seo');
 const legalRoutes = require('./routes/legal');
+const transactionRoutes = require('./routes/transactions');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/prices', priceRoutes);
@@ -126,6 +128,7 @@ app.use('/api/branches', branchesRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/seo', seoRoutes);
 app.use('/api/legal', legalRoutes);
+app.use('/api/transactions', transactionRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

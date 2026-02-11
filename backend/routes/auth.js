@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { loginValidation } = require('../middleware/validation');
+const { loginValidation, employeeLoginValidation } = require('../middleware/validation');
+const Settings = require('../models/Settings');
 
 // Admin login (validation ile korumalı)
 router.post('/login', loginValidation, async (req, res) => {
@@ -52,6 +53,44 @@ router.get('/verify', (req, res) => {
     res.json({ success: true, message: 'Token geçerli' });
   } catch (error) {
     res.status(401).json({ message: 'Geçersiz token' });
+  }
+});
+
+// Çalışan girişi (ortak şifre ile)
+router.post('/employee-login', employeeLoginValidation, async (req, res) => {
+  try {
+    const { password } = req.body;
+
+    const settings = await Settings.findOne({ key: 'app_settings' });
+
+    if (!settings || !settings.employeePassword) {
+      return res.status(503).json({
+        success: false,
+        message: 'Çalışan girişi henüz ayarlanmamış'
+      });
+    }
+
+    if (password !== settings.employeePassword) {
+      return res.status(401).json({
+        success: false,
+        message: 'Geçersiz şifre'
+      });
+    }
+
+    const token = jwt.sign(
+      { role: 'employee' },
+      process.env.JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+
+    res.json({
+      success: true,
+      token,
+      message: 'Giriş başarılı'
+    });
+  } catch (error) {
+    console.error('Employee login hatası:', error);
+    res.status(500).json({ success: false, message: 'Sunucu hatası' });
   }
 });
 

@@ -15,9 +15,13 @@ router.get('/', async (req, res) => {
       console.log('✅ Varsayılan settings oluşturuldu');
     }
     
+    // Public endpoint'ten employeePassword'ü çıkar
+    const settingsObj = settings.toObject();
+    delete settingsObj.employeePassword;
+
     res.json({
       success: true,
-      data: settings
+      data: settingsObj
     });
   } catch (error) {
     console.error('Settings getirme hatası:', error);
@@ -26,6 +30,21 @@ router.get('/', async (req, res) => {
       message: 'Sunucu hatası',
       error: error.message 
     });
+  }
+});
+
+// Admin için tam settings (employeePassword dahil)
+router.get('/admin', authMiddleware, async (req, res) => {
+  try {
+    let settings = await Settings.findOne({ key: 'app_settings' });
+    if (!settings) {
+      settings = new Settings({ key: 'app_settings' });
+      await settings.save();
+    }
+    res.json({ success: true, data: settings });
+  } catch (error) {
+    console.error('Admin settings getirme hatası:', error);
+    res.status(500).json({ success: false, message: 'Sunucu hatası', error: error.message });
   }
 });
 
