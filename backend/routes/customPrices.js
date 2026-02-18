@@ -130,6 +130,66 @@ router.put('/reorder', authMiddleware, async (req, res) => {
   }
 });
 
+// Toplu ekleme/çıkarma güncelleme (Admin korumalı) - /:id'den ÖNCE olmalı!
+router.put('/bulk-addition', authMiddleware, async (req, res) => {
+  try {
+    const { updates } = req.body;
+    // updates: [{ id, alisAddition, satisAddition, backupAlisAddition, backupSatisAddition }]
+
+    if (!updates || !Array.isArray(updates) || updates.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Geçersiz güncelleme verisi'
+      });
+    }
+
+    console.log('📝 Toplu ekleme güncelleniyor:', updates.length, 'fiyat');
+
+    const updatePromises = updates.map(item => {
+      const updateFields = { updatedAt: new Date() };
+
+      if (item.alisAddition !== undefined) {
+        updateFields['alisConfig.addition'] = parseFloat(item.alisAddition) || 0;
+      }
+      if (item.satisAddition !== undefined) {
+        updateFields['satisConfig.addition'] = parseFloat(item.satisAddition) || 0;
+      }
+      if (item.backupAlisAddition !== undefined) {
+        updateFields['backupAlisConfig.addition'] = parseFloat(item.backupAlisAddition) || 0;
+      }
+      if (item.backupSatisAddition !== undefined) {
+        updateFields['backupSatisConfig.addition'] = parseFloat(item.backupSatisAddition) || 0;
+      }
+
+      return CustomPrice.findByIdAndUpdate(
+        item.id,
+        { $set: updateFields },
+        { new: true }
+      );
+    });
+
+    const updatedDocs = await Promise.all(updatePromises);
+    const successCount = updatedDocs.filter(doc => doc !== null).length;
+    console.log(`✅ ${successCount}/${updates.length} fiyat ekleme değeri güncellendi`);
+
+    // Fiyatları yeniden hesapla ve broadcast et
+    await priceService.refreshPrices();
+
+    res.json({
+      success: true,
+      message: `${successCount} fiyat başarıyla güncellendi`,
+      updated: successCount
+    });
+  } catch (error) {
+    console.error('Toplu ekleme güncelleme hatası:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Toplu güncelleme başarısız',
+      error: error.message
+    });
+  }
+});
+
 // Custom fiyat güncelle (Admin korumalı + validation)
 router.put('/:id', authMiddleware, idParamValidation, customPriceValidation, async (req, res) => {
   try {

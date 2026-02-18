@@ -72,6 +72,12 @@ export default function AdminDashboard() {
   // Tab state
   const [activeTab, setActiveTab] = useState('prices'); // 'prices' | 'family' | 'articles' | 'branches' | 'transactions' | 'settings'
 
+  // Toplu Güncelleme state
+  const [showBulkUpdate, setShowBulkUpdate] = useState(false);
+  const [bulkAdditions, setBulkAdditions] = useState({});
+  const [bulkSaving, setBulkSaving] = useState(false);
+  const [bulkSourceView, setBulkSourceView] = useState('primary'); // 'primary' | 'backup' | 'all'
+
   // Drag & Drop state
   const [draggedItem, setDraggedItem] = useState(null);
   const [draggedOverItem, setDraggedOverItem] = useState(null);
@@ -457,6 +463,44 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error('Kaydetme hatası:', error);
       alert('Kaydetme başarısız!');
+    }
+  };
+
+  // Toplu güncelleme panelini aç - mevcut addition değerlerini yükle
+  const openBulkUpdate = () => {
+    const additions = {};
+    customPrices.forEach(price => {
+      additions[price.id] = {
+        alisAddition: price.alisConfig?.addition || 0,
+        satisAddition: price.satisConfig?.addition || 0,
+        backupAlisAddition: price.backupAlisConfig?.addition || 0,
+        backupSatisAddition: price.backupSatisConfig?.addition || 0
+      };
+    });
+    setBulkAdditions(additions);
+    setShowBulkUpdate(true);
+  };
+
+  // Toplu güncelleme kaydet
+  const handleBulkSave = async () => {
+    setBulkSaving(true);
+    try {
+      const updates = Object.entries(bulkAdditions).map(([id, values]) => ({
+        id,
+        alisAddition: values.alisAddition,
+        satisAddition: values.satisAddition,
+        backupAlisAddition: values.backupAlisAddition,
+        backupSatisAddition: values.backupSatisAddition
+      }));
+
+      await authAxios.put(`${apiUrl}/api/custom-prices/bulk-addition`, { updates });
+      setShowBulkUpdate(false);
+      loadData();
+    } catch (error) {
+      console.error('Toplu güncelleme hatası:', error);
+      alert('Toplu güncelleme başarısız!');
+    } finally {
+      setBulkSaving(false);
     }
   };
 
@@ -1350,13 +1394,22 @@ export default function AdminDashboard() {
                 </button>
               </div>
 
-              <button
-                onClick={openCreateModal}
-                className="flex items-center space-x-2 px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-semibold shadow-sm whitespace-nowrap"
-              >
-                <Plus size={18} />
-                <span>Yeni Fiyat Oluştur</span>
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={openBulkUpdate}
+                  className="flex items-center space-x-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-semibold shadow-sm whitespace-nowrap"
+                >
+                  <Edit2 size={18} />
+                  <span>Toplu Güncelleme</span>
+                </button>
+                <button
+                  onClick={openCreateModal}
+                  className="flex items-center space-x-2 px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-semibold shadow-sm whitespace-nowrap"
+                >
+                  <Plus size={18} />
+                  <span>Yeni Fiyat Oluştur</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -1453,6 +1506,244 @@ export default function AdminDashboard() {
               </div>
             </div>
           </div>
+
+          {/* Toplu Güncelleme Paneli */}
+          {showBulkUpdate && (
+            <div className="bg-white rounded-xl border-2 border-blue-300 overflow-hidden shadow-sm mb-6">
+              {/* Header */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200 px-6 py-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
+                      <Edit2 className="text-white" size={20} />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-gray-900">Toplu Ekleme / Çıkarma</h3>
+                      <p className="text-xs text-gray-500 mt-0.5">Fiyatlara toplu olarak TL ekleme veya çıkarma yapın</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={handleBulkSave}
+                      disabled={bulkSaving}
+                      className="flex items-center space-x-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg transition-colors font-semibold text-sm shadow-sm"
+                    >
+                      <Save size={16} />
+                      <span>{bulkSaving ? 'Kaydediliyor...' : 'Tümünü Kaydet'}</span>
+                    </button>
+                    <button
+                      onClick={() => setShowBulkUpdate(false)}
+                      className="p-2.5 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      <X size={18} className="text-gray-500" />
+                    </button>
+                  </div>
+                </div>
+                {/* Kaynak Seçici */}
+                <div className="flex items-center space-x-2">
+                  <span className="text-xs font-semibold text-gray-600 mr-1">Düzenlenecek Kaynak:</span>
+                  <div className="flex bg-white rounded-lg p-1 border border-gray-200 shadow-sm">
+                    <button
+                      onClick={() => setBulkSourceView('primary')}
+                      className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${
+                        bulkSourceView === 'primary'
+                          ? 'bg-green-500 text-white shadow-sm'
+                          : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      API 1 (Birincil)
+                    </button>
+                    <button
+                      onClick={() => setBulkSourceView('backup')}
+                      className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${
+                        bulkSourceView === 'backup'
+                          ? 'bg-orange-500 text-white shadow-sm'
+                          : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      API 2 (Yedek)
+                    </button>
+                    <button
+                      onClick={() => setBulkSourceView('all')}
+                      className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${
+                        bulkSourceView === 'all'
+                          ? 'bg-blue-500 text-white shadow-sm'
+                          : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      Tümü
+                    </button>
+                  </div>
+                </div>
+              </div>
+              {/* Tablo */}
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200">
+                      <th className="text-left px-4 py-3 text-xs font-bold text-gray-600 uppercase">Fiyat</th>
+                      <th className="text-center px-2 py-3 text-xs font-bold text-gray-600 uppercase">Aktif</th>
+                      {(bulkSourceView === 'primary' || bulkSourceView === 'all') && (
+                        <>
+                          <th className="text-center px-2 py-3 text-xs font-bold text-green-700 uppercase">
+                            {bulkSourceView === 'all' ? 'API1 Alış (+)' : 'Alış Ekleme (TL)'}
+                          </th>
+                          <th className="text-center px-2 py-3 text-xs font-bold text-green-700 uppercase">
+                            {bulkSourceView === 'all' ? 'API1 Satış (+)' : 'Satış Ekleme (TL)'}
+                          </th>
+                        </>
+                      )}
+                      {(bulkSourceView === 'backup' || bulkSourceView === 'all') && (
+                        <>
+                          <th className="text-center px-2 py-3 text-xs font-bold text-orange-700 uppercase">
+                            {bulkSourceView === 'all' ? 'API2 Alış (+)' : 'Alış Ekleme (TL)'}
+                          </th>
+                          <th className="text-center px-2 py-3 text-xs font-bold text-orange-700 uppercase">
+                            {bulkSourceView === 'all' ? 'API2 Satış (+)' : 'Satış Ekleme (TL)'}
+                          </th>
+                        </>
+                      )}
+                      <th className="text-right px-4 py-3 text-xs font-bold text-green-700 uppercase">Sonuç Alış</th>
+                      <th className="text-right px-4 py-3 text-xs font-bold text-red-700 uppercase">Sonuç Satış</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {customPrices
+                      .sort((a, b) => (a.order || 0) - (b.order || 0))
+                      .map((price, index) => {
+                        const currentAdditions = bulkAdditions[price.id] || {
+                          alisAddition: price.alisConfig?.addition || 0,
+                          satisAddition: price.satisConfig?.addition || 0,
+                          backupAlisAddition: price.backupAlisConfig?.addition || 0,
+                          backupSatisAddition: price.backupSatisConfig?.addition || 0
+                        };
+                        const isBackup = price.activeSource === 'backup';
+
+                        // Aktif kaynağa göre sonuç önizleme hesapla
+                        const activeAlisConfig = isBackup ? price.backupAlisConfig : price.alisConfig;
+                        const activeSatisConfig = isBackup ? price.backupSatisConfig : price.satisConfig;
+                        const activeAlisAddKey = isBackup ? 'backupAlisAddition' : 'alisAddition';
+                        const activeSatisAddKey = isBackup ? 'backupSatisAddition' : 'satisAddition';
+
+                        const pricesSrcActive = isBackup ? backupSourcePrices : sourcePrices;
+                        const alisSourceActive = pricesSrcActive.find(p => p.code === activeAlisConfig?.sourceCode);
+                        const satisSourceActive = pricesSrcActive.find(p => p.code === activeSatisConfig?.sourceCode);
+                        const alisRawActive = activeAlisConfig?.sourceType === 'alis' ? (alisSourceActive?.rawAlis || 0) : (alisSourceActive?.rawSatis || 0);
+                        const satisRawActive = activeSatisConfig?.sourceType === 'alis' ? (satisSourceActive?.rawAlis || 0) : (satisSourceActive?.rawSatis || 0);
+                        const previewAlis = (alisRawActive * (activeAlisConfig?.multiplier || 1)) + (currentAdditions[activeAlisAddKey] || 0);
+                        const previewSatis = (satisRawActive * (activeSatisConfig?.multiplier || 1)) + (currentAdditions[activeSatisAddKey] || 0);
+
+                        const additionInput = (value, onChange, colorClass) => (
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={value}
+                            onChange={onChange}
+                            className={`w-full px-3 py-2 border-2 rounded-lg text-center text-sm font-bold focus:outline-none transition-all ${
+                              value > 0
+                                ? `border-green-300 bg-green-50 text-green-700 focus:border-green-500`
+                                : value < 0
+                                  ? `border-red-300 bg-red-50 text-red-700 focus:border-red-500`
+                                  : `border-gray-200 bg-white text-gray-700 focus:border-${colorClass}-500`
+                            }`}
+                          />
+                        );
+
+                        return (
+                          <tr
+                            key={price.id}
+                            className={`border-b border-gray-100 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'} hover:bg-blue-50/50`}
+                          >
+                            <td className="px-4 py-3">
+                              <div className="font-semibold text-gray-900 text-sm">{price.name}</div>
+                              <div className="text-xs text-gray-400">{price.code}</div>
+                            </td>
+                            <td className="px-2 py-3 text-center">
+                              <span className={`inline-block px-2 py-1 rounded text-xs font-bold ${
+                                isBackup ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'
+                              }`}>
+                                {isBackup ? 'API 2' : 'API 1'}
+                              </span>
+                            </td>
+                            {/* API 1 Alış/Satış */}
+                            {(bulkSourceView === 'primary' || bulkSourceView === 'all') && (
+                              <>
+                                <td className="px-2 py-3">
+                                  {additionInput(
+                                    currentAdditions.alisAddition,
+                                    (e) => setBulkAdditions(prev => ({
+                                      ...prev,
+                                      [price.id]: { ...prev[price.id], alisAddition: parseFloat(e.target.value) || 0 }
+                                    })),
+                                    'green'
+                                  )}
+                                </td>
+                                <td className="px-2 py-3">
+                                  {additionInput(
+                                    currentAdditions.satisAddition,
+                                    (e) => setBulkAdditions(prev => ({
+                                      ...prev,
+                                      [price.id]: { ...prev[price.id], satisAddition: parseFloat(e.target.value) || 0 }
+                                    })),
+                                    'green'
+                                  )}
+                                </td>
+                              </>
+                            )}
+                            {/* API 2 Alış/Satış */}
+                            {(bulkSourceView === 'backup' || bulkSourceView === 'all') && (
+                              <>
+                                <td className="px-2 py-3">
+                                  {additionInput(
+                                    currentAdditions.backupAlisAddition,
+                                    (e) => setBulkAdditions(prev => ({
+                                      ...prev,
+                                      [price.id]: { ...prev[price.id], backupAlisAddition: parseFloat(e.target.value) || 0 }
+                                    })),
+                                    'orange'
+                                  )}
+                                </td>
+                                <td className="px-2 py-3">
+                                  {additionInput(
+                                    currentAdditions.backupSatisAddition,
+                                    (e) => setBulkAdditions(prev => ({
+                                      ...prev,
+                                      [price.id]: { ...prev[price.id], backupSatisAddition: parseFloat(e.target.value) || 0 }
+                                    })),
+                                    'orange'
+                                  )}
+                                </td>
+                              </>
+                            )}
+                            {/* Sonuç Önizleme (aktif kaynağa göre) */}
+                            <td className="px-4 py-3 text-right">
+                              <span className="text-green-700 font-mono font-bold">{formatPrice(previewAlis, price.decimals ?? 0)} TL</span>
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <span className="text-red-700 font-mono font-bold">{formatPrice(previewSatis, price.decimals ?? 0)} TL</span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+                </table>
+              </div>
+              {/* Footer */}
+              <div className="bg-gray-50 border-t border-gray-200 px-6 py-3 flex items-center justify-between">
+                <p className="text-xs text-gray-500">
+                  Pozitif (+) değerler fiyatı artırır, negatif (-) değerler düşürür. Sonuç sütunları aktif kaynağa göre hesaplanır.
+                </p>
+                <button
+                  onClick={handleBulkSave}
+                  disabled={bulkSaving}
+                  className="flex items-center space-x-2 px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg transition-colors font-semibold text-sm"
+                >
+                  <Save size={14} />
+                  <span>{bulkSaving ? 'Kaydediliyor...' : 'Tümünü Kaydet'}</span>
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Fiyat Listesi */}
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
