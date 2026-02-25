@@ -50,7 +50,7 @@ const transactionSchema = new mongoose.Schema({
   },
   signature: {
     type: String,
-    required: true
+    default: ''
   },
   idCardFront: {
     type: String,

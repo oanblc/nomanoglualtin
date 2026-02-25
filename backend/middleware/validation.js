@@ -199,7 +199,7 @@ const transactionValidation = [
   body('kvkkConsent')
     .notEmpty().withMessage('KVKK onayı gerekli'),
   body('signature')
-    .notEmpty().withMessage('İmza gerekli'),
+    .optional(),
   validate
 ];
 
