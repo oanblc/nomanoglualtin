@@ -18,6 +18,7 @@ const server = http.createServer(app);
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:3001',
+  'http://localhost:3002',
   'https://nomanoglualtin.up.railway.app',
   'https://nomanoglualtin-production.up.railway.app',
   'https://powerful-liberation-production.up.railway.app',

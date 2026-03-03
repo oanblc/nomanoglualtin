@@ -79,6 +79,46 @@ router.post('/', authMiddleware, customPriceValidation, async (req, res) => {
   }
 });
 
+// Toplu addition güncelleme (Admin korumalı) - /:id'den ÖNCE olmalı!
+router.put('/bulk-update', authMiddleware, async (req, res) => {
+  try {
+    const { updates } = req.body;
+    // updates: [{ id, alisAddition, satisAddition }]
+
+    if (!updates || !Array.isArray(updates) || updates.length === 0) {
+      return res.status(400).json({ success: false, message: 'Geçersiz güncelleme verisi' });
+    }
+
+    const { target } = req.body; // 'primary' | 'backup' | 'all'
+
+    const updatePromises = updates.map(item => {
+      const updateFields = { updatedAt: new Date() };
+
+      if (target === 'primary' || target === 'all') {
+        if (item.alisAddition !== undefined) updateFields['alisConfig.addition'] = parseFloat(item.alisAddition);
+        if (item.satisAddition !== undefined) updateFields['satisConfig.addition'] = parseFloat(item.satisAddition);
+      }
+      if (target === 'backup' || target === 'all') {
+        if (item.alisAddition !== undefined) updateFields['backupAlisConfig.addition'] = parseFloat(item.alisAddition);
+        if (item.satisAddition !== undefined) updateFields['backupSatisConfig.addition'] = parseFloat(item.satisAddition);
+      }
+
+      return CustomPrice.findByIdAndUpdate(item.id, updateFields, { new: true });
+    });
+
+    const results = await Promise.all(updatePromises);
+    const successCount = results.filter(r => r !== null).length;
+    console.log(`✅ Toplu güncelleme: ${successCount}/${updates.length} fiyat güncellendi (hedef: ${target})`);
+
+    await priceService.refreshPrices();
+
+    res.json({ success: true, message: `${successCount} fiyat güncellendi` });
+  } catch (error) {
+    console.error('Toplu güncelleme hatası:', error);
+    res.status(500).json({ success: false, message: 'Toplu güncelleme başarısız', error: error.message });
+  }
+});
+
 // Fiyat sıralamasını güncelle (Admin korumalı) - /:id'den ÖNCE olmalı!
 router.put('/reorder', authMiddleware, async (req, res) => {
   try {

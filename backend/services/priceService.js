@@ -6,7 +6,7 @@ const SourcePrices = require('../models/SourcePrices');
 
 // HTTP API URLs (Birincil ve Yedek kaynak)
 const API_URL_PRIMARY = process.env.PRICE_API_URL || 'http://37.148.208.13/api.php';
-const API_URL_BACKUP = process.env.PRICE_API_URL_BACKUP || 'https://saglamoglualtin.com/component/tab-group/1';
+const API_URL_BACKUP = process.env.PRICE_API_URL_BACKUP || 'https://prdprc.saglamoglu.app';
 const POLL_INTERVAL = parseInt(process.env.POLL_INTERVAL) || 2000; // 2 saniye
 let fallbackTimeoutMs = parseInt(process.env.FALLBACK_TIMEOUT) || 30 * 60 * 1000; // 30 dakika (ms) - değiştirilebilir
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || 'nomanoglu_webhook_2024_gizli';
@@ -28,58 +28,48 @@ let activeGlobalSource = 'primary';
 // Manuel olarak değiştirildi mi? (otomatik geri dönüşü engeller)
 let manualGlobalOverride = false;
 
-// Saglamoglu API kod eşleştirmesi (API2 name -> API1 code)
-const api2CodeMapping = {
-  // Altın ürünleri
-  'HAS ALTIN': 'ALTIN',
-  'Has Altın': 'ALTIN',
-  'Gram Altın': 'KULCEALTIN',
-  'Altın/ONS': 'ONS',
-  'Ons Altın': 'ONS',
-  'USD/Ons': 'ONS',
-  'USD/KG': 'USDKG',
-  'EUR/KG': 'EURKG',
-  '22 Ayar': 'AYAR22',
-  '14 Ayar': 'AYAR14',
-  'Çeyrek Eski': 'CEYREK_ESKI',
-  'Çeyrek Yeni': 'CEYREK_YENI',
-  'Yarım Eski': 'YARIM_ESKI',
-  'Yarım Yeni': 'YARIM_YENI',
-  'Tam Eski': 'TEK_ESKI',
-  'Tam Yeni': 'TEK_YENI',
-  'Ata Eski': 'ATA_ESKI',
-  'Ata Yeni': 'ATA_YENI',
-  'Ata 5\'li Eski': 'ATA5_ESKI',
-  'Ata 5\'li Yeni': 'ATA5_YENI',
-  'Gremse Eski': 'GREMESE_ESKI',
-  'Gremse Yeni': 'GREMESE_YENI',
-  // Gümüş ürünleri
-  'GÜM/TL': 'GUMUSTRY',
-  'Gümüş TL/Gr': 'GUMUSTRY',
-  'Gümüş': 'GUMUSTRY',
-  'GÜM/ONS': 'XAGUSD',
-  'GÜM/USD': 'GUMUSUSD',
-  'GÜM/EUR': 'GUMUSEUR',
-  // Döviz kurları
-  'USD/TL': 'USDTRY',
-  'EUR/TL': 'EURTRY',
-  'GBP/TRY': 'GBPTRY',
-  'GBP/TL': 'GBPTRY',
-  'CHF/TRY': 'CHFTRY',
-  'CHF/TL': 'CHFTRY',
-  'JPY/TRY': 'JPYTRY',
-  'CAD/TRY': 'CADTRY',
-  'AUD/TRY': 'AUDTRY',
-  'SAR/TRY': 'SARTRY',
-  // Çapraz kurlar
-  'EUR/USD': 'EURUSD',
-  'EUR/GBP': 'EURGBP',
-  'GBP/USD': 'GBPUSD',
-  'USD/CHF': 'USDCHF',
-  'USD/JPY': 'USDJPY',
-  'USD/CAD': 'USDCAD',
-  'AUD/USD': 'AUDUSD',
-  'USD/SAR': 'USDSAR'
+// Saglamoglu yeni API kod eşleştirmesi (marketProductId -> API1 code)
+const api2IdMapping = {
+  // Altın & Emtia (SPG)
+  1: 'ALTIN',         // HAS ALTIN
+  2: 'ONS',           // ALTIN/ONS
+  3: 'USDKG',         // USD/KG
+  4: 'EURKG',         // EUR/KG
+  5: 'XAGUSD',        // GÜM/ONS
+  6: 'GUMUSTRY',      // GÜM/TL
+  7: 'GUMUSUSD',      // GÜM/USD
+  8: 'GUMUSEUR',      // GÜM/EUR
+  // Döviz kurları (SPD)
+  9: 'USDTRY',        // USD/TL
+  10: 'EURTRY',       // EUR/TL
+  11: 'GBPTRY',       // GBP/TRY
+  12: 'CHFTRY',       // CHF/TRY
+  13: 'JPYTRY',       // JPY/TRY
+  14: 'CADTRY',       // CAD/TRY
+  15: 'AUDTRY',       // AUD/TRY
+  16: 'SARTRY',       // SAR/TRY
+  // Çapraz kurlar (SPP)
+  20: 'EURGBP',       // EUR/GBP
+  21: 'EURUSD',       // EUR/USD
+  22: 'GBPUSD',       // GBP/USD
+  23: 'USDCHF',       // USD/CHF
+  24: 'USDJPY',       // USD/JPY
+  25: 'USDCAD',       // USD/CAD
+  26: 'AUDUSD',       // AUD/USD
+  27: 'USDSAR',       // USD/SAR
+  // Sarrafiye (SAR)
+  35: 'CEYREK_YENI',  // Y. Çeyrek
+  36: 'CEYREK_ESKI',  // Çeyrek
+  37: 'YARIM_YENI',   // Y. Yarım
+  38: 'YARIM_ESKI',   // Yarım
+  39: 'TEK_YENI',     // Y. Tam
+  40: 'TEK_ESKI',     // Tam
+  41: 'GREMESE_YENI', // Y. Gremse
+  42: 'GREMESE_ESKI', // Gremse
+  43: 'ATA5_YENI',    // Y. Ziynet 5
+  44: 'ATA5_ESKI',    // Ziynet 5
+  49: 'ATA_YENI',     // Y. Ata Lira
+  50: 'ATA_ESKI',     // Ata Lira
 };
 
 // Backward compatibility için alias
@@ -488,43 +478,33 @@ const fetchPricesFromAPI = fetchPricesFromPrimaryAPI;
 // ============================================
 const fetchPricesFromBackupAPI = async () => {
   try {
-    const response = await axios.get(API_URL_BACKUP, { timeout: 10000 });
+    const response = await axios.get(`${API_URL_BACKUP}/api/v1/prices/currentmarketproductprices`, { timeout: 10000 });
 
-    // Saglamoglu API yapısı: { status: true, tabGroup: { tabs: [...] } }
-    if (response.data && response.data.status && response.data.tabGroup && response.data.tabGroup.tabs) {
+    if (response.data && response.data.data && Array.isArray(response.data.data)) {
       const prices = [];
 
-      // Tüm tab'ları dolaş
-      for (const tab of response.data.tabGroup.tabs) {
-        if (!tab.products) continue;
+      for (const item of response.data.data) {
+        const mappedCode = api2IdMapping[item.marketProductId];
+        if (!mappedCode) continue; // Eşleşme yoksa atla
 
-        for (const product of tab.products) {
-          const name = product.name || product.slug || '';
-          const mappedCode = api2CodeMapping[name];
+        const alis = parseFloat(item.customerBuysAt) || 0;
+        const satis = parseFloat(item.customerSellsAt) || 0;
 
-          // Forex verisini al
-          const forex = product.forex || {};
-          // Saglamoglu'nda groups array içinde bid/ask var
-          const group = forex.groups && forex.groups[0] ? forex.groups[0] : forex;
-          const bid = parseFloat(group.bid) || 0; // Satış (alıcının teklifi = sizin satış fiyatınız)
-          const ask = parseFloat(group.ask) || 0; // Alış (satıcının istediği = sizin alış fiyatınız)
-
-          if (bid > 0 && ask > 0) {
-            prices.push({
-              code: mappedCode || name, // Eşleşme yoksa orijinal adı kullan
-              name: name,
-              alis: ask,
-              satis: bid,
-              rawAlis: ask,
-              rawSatis: bid,
-              direction: {},
-              dusuk: parseFloat(forex.lastLow) || 0,
-              yuksek: parseFloat(forex.lastHigh) || 0,
-              kapanis: parseFloat(forex.lastClose) || 0,
-              tarih: new Date().toISOString(),
-              source: 'backup'
-            });
-          }
+        if (alis > 0 && satis > 0) {
+          prices.push({
+            code: mappedCode,
+            name: productNames[mappedCode] || mappedCode,
+            alis,
+            satis,
+            rawAlis: alis,
+            rawSatis: satis,
+            direction: {},
+            dusuk: 0,
+            yuksek: 0,
+            kapanis: 0,
+            tarih: item.updatedAt || new Date().toISOString(),
+            source: 'backup'
+          });
         }
       }
 
