@@ -1061,7 +1061,18 @@ export default function AdminDashboard() {
   const calculatePreview = (config, customSourcePrices = null) => {
     if (!config || !config.sourceCode) return 0;
     const prices = customSourcePrices || sourcePrices;
-    const source = prices.find(p => p.code === config.sourceCode);
+    let source = prices.find(p => p.code === config.sourceCode);
+
+    // API kaynağında bulunamadıysa custom fiyatlarda ara (zincirleme fiyat desteği)
+    if (!source && websocketPrices) {
+      const customSource = websocketPrices.find(p => p.isCustom && p.code === config.sourceCode);
+      if (customSource) {
+        source = {
+          rawAlis: customSource.calculatedAlis || 0,
+          rawSatis: customSource.calculatedSatis || 0
+        };
+      }
+    }
     if (!source) return 0;
 
     const rawPrice = config.sourceType === 'alis' ? source.rawAlis : source.rawSatis;
@@ -1072,7 +1083,18 @@ export default function AdminDashboard() {
   const calculateBulkPreview = (config, overrideAddition, customSourcePrices = null) => {
     if (!config || !config.sourceCode) return 0;
     const prices = customSourcePrices || sourcePrices;
-    const source = prices.find(p => p.code === config.sourceCode);
+    let source = prices.find(p => p.code === config.sourceCode);
+
+    // API kaynağında bulunamadıysa custom fiyatlarda ara (zincirleme fiyat desteği)
+    if (!source && websocketPrices) {
+      const customSource = websocketPrices.find(p => p.isCustom && p.code === config.sourceCode);
+      if (customSource) {
+        source = {
+          rawAlis: customSource.calculatedAlis || 0,
+          rawSatis: customSource.calculatedSatis || 0
+        };
+      }
+    }
     if (!source) return 0;
     const rawPrice = config.sourceType === 'alis' ? source.rawAlis : source.rawSatis;
     return (rawPrice * (config.multiplier || 1)) + (overrideAddition || 0);
@@ -3086,9 +3108,18 @@ export default function AdminDashboard() {
                             onChange={(e) => setFormData({...formData, alisConfig: {...formData.alisConfig, sourceCode: e.target.value}})}
                             className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-gray-900 text-sm focus:border-green-500 focus:outline-none"
                           >
-                            {sourcePrices.map(p => (
-                              <option key={p.code} value={p.code}>{p.name} ({p.code})</option>
-                            ))}
+                            <optgroup label="API Kaynak Fiyatları">
+                              {sourcePrices.map(p => (
+                                <option key={p.code} value={p.code}>{p.name} ({p.code})</option>
+                              ))}
+                            </optgroup>
+                            {customPrices.filter(cp => cp.code !== formData.code).length > 0 && (
+                              <optgroup label="Oluşturduğum Fiyatlar">
+                                {customPrices.filter(cp => cp.code !== formData.code).map(cp => (
+                                  <option key={`custom-${cp.code}`} value={cp.code}>{cp.name} ({cp.code})</option>
+                                ))}
+                              </optgroup>
+                            )}
                           </select>
                         </div>
                         <div>
@@ -3145,9 +3176,18 @@ export default function AdminDashboard() {
                             onChange={(e) => setFormData({...formData, satisConfig: {...formData.satisConfig, sourceCode: e.target.value}})}
                             className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-gray-900 text-sm focus:border-red-500 focus:outline-none"
                           >
-                            {sourcePrices.map(p => (
-                              <option key={p.code} value={p.code}>{p.name} ({p.code})</option>
-                            ))}
+                            <optgroup label="API Kaynak Fiyatları">
+                              {sourcePrices.map(p => (
+                                <option key={p.code} value={p.code}>{p.name} ({p.code})</option>
+                              ))}
+                            </optgroup>
+                            {customPrices.filter(cp => cp.code !== formData.code).length > 0 && (
+                              <optgroup label="Oluşturduğum Fiyatlar">
+                                {customPrices.filter(cp => cp.code !== formData.code).map(cp => (
+                                  <option key={`custom-${cp.code}`} value={cp.code}>{cp.name} ({cp.code})</option>
+                                ))}
+                              </optgroup>
+                            )}
                           </select>
                         </div>
                         <div>
@@ -3212,9 +3252,18 @@ export default function AdminDashboard() {
                             className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-gray-900 text-sm focus:border-orange-500 focus:outline-none"
                           >
                             <option value="">-- Kaynak Seçin --</option>
-                            {backupSourcePrices.map(p => (
-                              <option key={p.code} value={p.code}>{p.name || p.code} ({p.code})</option>
-                            ))}
+                            <optgroup label="API Kaynak Fiyatları">
+                              {backupSourcePrices.map(p => (
+                                <option key={p.code} value={p.code}>{p.name || p.code} ({p.code})</option>
+                              ))}
+                            </optgroup>
+                            {customPrices.filter(cp => cp.code !== formData.code).length > 0 && (
+                              <optgroup label="Oluşturduğum Fiyatlar">
+                                {customPrices.filter(cp => cp.code !== formData.code).map(cp => (
+                                  <option key={`custom-${cp.code}`} value={cp.code}>{cp.name} ({cp.code})</option>
+                                ))}
+                              </optgroup>
+                            )}
                           </select>
                         </div>
                         <div>
@@ -3272,9 +3321,18 @@ export default function AdminDashboard() {
                             className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-gray-900 text-sm focus:border-amber-500 focus:outline-none"
                           >
                             <option value="">-- Kaynak Seçin --</option>
-                            {backupSourcePrices.map(p => (
-                              <option key={p.code} value={p.code}>{p.name || p.code} ({p.code})</option>
-                            ))}
+                            <optgroup label="API Kaynak Fiyatları">
+                              {backupSourcePrices.map(p => (
+                                <option key={p.code} value={p.code}>{p.name || p.code} ({p.code})</option>
+                              ))}
+                            </optgroup>
+                            {customPrices.filter(cp => cp.code !== formData.code).length > 0 && (
+                              <optgroup label="Oluşturduğum Fiyatlar">
+                                {customPrices.filter(cp => cp.code !== formData.code).map(cp => (
+                                  <option key={`custom-${cp.code}`} value={cp.code}>{cp.name} ({cp.code})</option>
+                                ))}
+                              </optgroup>
+                            )}
                           </select>
                         </div>
                         <div>

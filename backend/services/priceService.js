@@ -301,80 +301,103 @@ const calculateCustomPrices = async (sourcePrices) => {
   }
 
   const calculatedPrices = [];
+  // Hesaplanan custom fiyatları tutan map (zincirleme bağımlılık için)
+  const calculatedCustomMap = {};
 
-  for (const config of customPriceConfigs) {
-    // Hangi kaynağı kullanacağını belirle
-    const useBackup = config.activeSource === 'backup';
-    const sourceMap = useBackup ? backupSourceMap : primarySourceMap;
+  // Multi-pass: Custom fiyatlar birbirine bağımlı olabilir, her geçişte çözümlenebilenleri hesapla
+  let remaining = [...customPriceConfigs];
+  let maxPasses = remaining.length + 1; // Sonsuz döngü koruması
 
-    // Kullanılacak config'i seç
-    // Yedek kaynak seçiliyse VE yedek config tanımlıysa yedek config kullan
-    // Yedek kaynak seçiliyse AMA yedek config tanımlı değilse fiyatı gösterme (fallback yapma)
-    let alisConfig, satisConfig;
+  while (remaining.length > 0 && maxPasses-- > 0) {
+    const stillRemaining = [];
 
-    if (useBackup) {
-      // Yedek kaynak seçili - sadece yedek config kullan
-      if (!config.backupAlisConfig?.sourceCode || !config.backupSatisConfig?.sourceCode) {
-        // Yedek config tanımlı değil, bu fiyatı atla
-        console.log(`⚠️ ${config.code}: Yedek kaynak config tanımlı değil, atlanıyor`);
+    for (const config of remaining) {
+      // Hangi kaynağı kullanacağını belirle
+      const useBackup = config.activeSource === 'backup';
+      const sourceMap = useBackup ? backupSourceMap : primarySourceMap;
+
+      // Kullanılacak config'i seç
+      let alisConfig, satisConfig;
+
+      if (useBackup) {
+        if (!config.backupAlisConfig?.sourceCode || !config.backupSatisConfig?.sourceCode) {
+          console.log(`⚠️ ${config.code}: Yedek kaynak config tanımlı değil, atlanıyor`);
+          continue;
+        }
+        alisConfig = config.backupAlisConfig;
+        satisConfig = config.backupSatisConfig;
+      } else {
+        alisConfig = config.alisConfig;
+        satisConfig = config.satisConfig;
+      }
+
+      // Kaynak arama: önce API kaynakları, sonra hesaplanmış custom fiyatlar
+      const alisSource = sourceMap[alisConfig?.sourceCode] || calculatedCustomMap[alisConfig?.sourceCode];
+      const satisSource = sourceMap[satisConfig?.sourceCode] || calculatedCustomMap[satisConfig?.sourceCode];
+
+      if (!alisSource || !satisSource) {
+        // Kaynak henüz hesaplanmamış olabilir, sonraki geçişe bırak
+        stillRemaining.push(config);
         continue;
       }
-      alisConfig = config.backupAlisConfig;
-      satisConfig = config.backupSatisConfig;
-    } else {
-      // Birincil kaynak seçili
-      alisConfig = config.alisConfig;
-      satisConfig = config.satisConfig;
+
+      const finalAlisConfig = alisConfig;
+      const finalSatisConfig = satisConfig;
+
+      // Alış hesapla (custom kaynak için rawAlis = calculatedAlis)
+      const alisRaw = finalAlisConfig.sourceType === 'alis' ? alisSource.rawAlis : alisSource.rawSatis;
+      const calculatedAlis = (alisRaw * finalAlisConfig.multiplier) + finalAlisConfig.addition;
+
+      // Satış hesapla (custom kaynak için rawSatis = calculatedSatis)
+      const satisRaw = finalSatisConfig.sourceType === 'alis' ? satisSource.rawAlis : satisSource.rawSatis;
+      const calculatedSatis = (satisRaw * finalSatisConfig.multiplier) + finalSatisConfig.addition;
+
+      // Geçerli fiyat kontrolü
+      if (calculatedAlis <= 0 || calculatedSatis <= 0 || isNaN(calculatedAlis) || isNaN(calculatedSatis)) {
+        continue;
+      }
+
+      // Debug: decimals değerini kontrol et
+      if (config.code === 'HAS ALTIN') {
+        console.log(`🔍 HAS ALTIN decimals: config.decimals=${config.decimals}, type=${typeof config.decimals}`);
+      }
+
+      const priceResult = {
+        id: config._id.toString(),
+        code: config.code,
+        name: config.name,
+        category: config.category || categorizeProduct(config.code),
+        rawAlis: alisRaw,
+        rawSatis: satisRaw,
+        calculatedAlis,
+        calculatedSatis,
+        direction: alisSource.direction || satisSource.direction || {},
+        isCustom: true,
+        isVisible: config.isVisible,
+        order: config.order ?? 999,
+        decimals: config.decimals ?? 0,
+        tarih: new Date().toISOString(),
+        activeSource: config.activeSource || 'primary'
+      };
+
+      calculatedPrices.push(priceResult);
+
+      // Bu fiyatı diğer custom fiyatların kaynak olarak kullanabilmesi için map'e ekle
+      calculatedCustomMap[config.code] = {
+        code: config.code,
+        name: config.name,
+        rawAlis: calculatedAlis,
+        rawSatis: calculatedSatis,
+        direction: priceResult.direction
+      };
     }
 
-    const alisSource = sourceMap[alisConfig?.sourceCode];
-    const satisSource = sourceMap[satisConfig?.sourceCode];
-
-    if (!alisSource || !satisSource) {
-      console.log(`⚠️ ${config.code}: Kaynak bulunamadı (aktif: ${config.activeSource || 'primary'})`);
-      continue;
+    // İlerleme kontrolü: bu geçişte hiçbir fiyat hesaplanamadıysa döngüsel bağımlılık var
+    if (stillRemaining.length === remaining.length) {
+      console.log(`⚠️ Döngüsel bağımlılık veya çözümlenemeyen kaynak tespit edildi: ${stillRemaining.map(c => c.code).join(', ')}`);
+      break;
     }
-
-    const finalAlisSource = alisSource;
-    const finalSatisSource = satisSource;
-    const finalAlisConfig = alisConfig;
-    const finalSatisConfig = satisConfig;
-
-    // Alış hesapla
-    const alisRaw = finalAlisConfig.sourceType === 'alis' ? finalAlisSource.rawAlis : finalAlisSource.rawSatis;
-    const calculatedAlis = (alisRaw * finalAlisConfig.multiplier) + finalAlisConfig.addition;
-
-    // Satış hesapla
-    const satisRaw = finalSatisConfig.sourceType === 'alis' ? finalSatisSource.rawAlis : finalSatisSource.rawSatis;
-    const calculatedSatis = (satisRaw * finalSatisConfig.multiplier) + finalSatisConfig.addition;
-
-    // Geçerli fiyat kontrolü
-    if (calculatedAlis <= 0 || calculatedSatis <= 0 || isNaN(calculatedAlis) || isNaN(calculatedSatis)) {
-      continue;
-    }
-
-    // Debug: decimals değerini kontrol et
-    if (config.code === 'HAS ALTIN') {
-      console.log(`🔍 HAS ALTIN decimals: config.decimals=${config.decimals}, type=${typeof config.decimals}`);
-    }
-
-    calculatedPrices.push({
-      id: config._id.toString(),
-      code: config.code,
-      name: config.name,
-      category: config.category || categorizeProduct(config.code),
-      rawAlis: alisRaw,
-      rawSatis: satisRaw,
-      calculatedAlis,
-      calculatedSatis,
-      direction: finalAlisSource.direction || finalSatisSource.direction || {},
-      isCustom: true,
-      isVisible: config.isVisible,
-      order: config.order ?? 999,
-      decimals: config.decimals ?? 0,
-      tarih: new Date().toISOString(),
-      activeSource: config.activeSource || 'primary'
-    });
+    remaining = stillRemaining;
   }
 
   // Order'a göre sırala (0 geçerli bir değer olduğu için ?? kullan)
