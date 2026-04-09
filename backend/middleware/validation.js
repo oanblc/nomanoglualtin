@@ -182,6 +182,9 @@ const transactionValidation = [
     .trim()
     .notEmpty().withMessage('Adres gerekli')
     .isLength({ max: 1000 }).withMessage('Adres çok uzun'),
+  body('transactionType')
+    .optional()
+    .isIn(['alis', 'satis']).withMessage('Geçersiz işlem türü'),
   body('date')
     .notEmpty().withMessage('Tarih gerekli'),
   body('branchId')

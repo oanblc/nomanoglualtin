@@ -31,6 +31,11 @@ const transactionSchema = new mongoose.Schema({
     ref: 'Branch',
     required: true
   },
+  transactionType: {
+    type: String,
+    enum: ['alis', 'satis'],
+    default: 'alis'
+  },
   totalAmount: {
     type: Number,
     required: true
