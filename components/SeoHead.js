@@ -59,10 +59,8 @@ export default function SeoHead({
           <meta name="msvalidate.01" content={seo.bingSiteVerification} />
         )}
 
-        {/* Custom Head Scripts - bunlar her zaman yüklenebilir (SEO amaçlı) */}
-        {seo.headScripts && (
-          <script dangerouslySetInnerHTML={{ __html: seo.headScripts }} />
-        )}
+        {/* Custom head script enjeksiyonu kaldırıldı (XSS koruması).
+            3. parti araçlar için: googleAnalyticsId, googleTagManagerId, metaPixelId alanlarını kullanın. */}
       </Head>
 
       {/* Google Analytics - sadece çerez onayı varsa */}
@@ -138,10 +136,7 @@ export function BodyScripts() {
         </noscript>
       )}
 
-      {/* Body Start Scripts */}
-      {seo.bodyStartScripts && (
-        <div dangerouslySetInnerHTML={{ __html: seo.bodyStartScripts }} />
-      )}
+      {/* Body start script enjeksiyonu kaldırıldı (XSS koruması) */}
 
       {/* Meta Pixel Noscript - sadece çerez onayı varsa */}
       {canLoadAnalytics && seo.metaPixelId && (
@@ -159,11 +154,8 @@ export function BodyScripts() {
   );
 }
 
-// Body End Scripts
+// Body end script enjeksiyonu kaldırıldı (XSS koruması).
+// Backward-compat için boş bileşen.
 export function BodyEndScripts() {
-  const { seo } = useSettings();
-
-  if (!seo.bodyEndScripts) return null;
-
-  return <div dangerouslySetInnerHTML={{ __html: seo.bodyEndScripts }} />;
+  return null;
 }

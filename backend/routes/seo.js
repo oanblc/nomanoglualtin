@@ -3,6 +3,15 @@ const router = express.Router();
 const Seo = require('../models/Seo');
 const { authMiddleware } = require('../middleware/auth');
 
+// Whitelist: 3. parti analytics ID format doğrulaması
+const idValidators = {
+  googleAnalyticsId: /^(G-[A-Z0-9]{6,16}|UA-\d+-\d+|AW-\d+)?$/,
+  googleTagManagerId: /^(GTM-[A-Z0-9]+)?$/,
+  metaPixelId: /^\d{8,20}?$/,
+  googleSiteVerification: /^[A-Za-z0-9_-]{0,100}$/,
+  bingSiteVerification: /^[A-Za-z0-9_-]{0,100}$/
+};
+
 // SEO ayarlarını getir (public)
 router.get('/', async (req, res) => {
   try {
@@ -33,23 +42,43 @@ router.post('/', authMiddleware, async (req, res) => {
   try {
     let seo = await Seo.findOne({ key: 'seo_settings' });
 
-    if (!seo) {
-      seo = new Seo({ key: 'seo_settings', ...req.body });
-    } else {
-      // Sadece gönderilen alanları güncelle
-      const allowedFields = [
-        'siteTitle', 'siteDescription', 'siteKeywords', 'ogImage', 'ogType',
-        'twitterCard', 'canonicalUrl', 'robotsContent',
-        'googleAnalyticsId', 'googleTagManagerId', 'metaPixelId',
-        'headScripts', 'bodyStartScripts', 'bodyEndScripts',
-        'googleSiteVerification', 'bingSiteVerification'
-      ];
+    // XSS açığı önlemek için custom script alanları (headScripts/bodyStart/bodyEnd)
+    // API üzerinden artık kabul edilmiyor — sadece whitelist'teki 3. parti servisler.
+    const allowedFields = [
+      'siteTitle', 'siteDescription', 'siteKeywords', 'ogImage', 'ogType',
+      'twitterCard', 'canonicalUrl', 'robotsContent',
+      'googleAnalyticsId', 'googleTagManagerId', 'metaPixelId',
+      'googleSiteVerification', 'bingSiteVerification'
+    ];
 
+    // ID formatlarını doğrula
+    for (const [field, regex] of Object.entries(idValidators)) {
+      if (req.body[field] !== undefined && req.body[field] !== '') {
+        if (!regex.test(String(req.body[field]))) {
+          return res.status(400).json({
+            success: false,
+            message: `${field} geçersiz formatta`
+          });
+        }
+      }
+    }
+
+    if (!seo) {
+      const initial = { key: 'seo_settings' };
+      allowedFields.forEach(f => {
+        if (req.body[f] !== undefined) initial[f] = req.body[f];
+      });
+      seo = new Seo(initial);
+    } else {
       allowedFields.forEach(field => {
         if (req.body[field] !== undefined) {
           seo[field] = req.body[field];
         }
       });
+      // Eski script alanlarını temizle (backward cleanup)
+      seo.headScripts = '';
+      seo.bodyStartScripts = '';
+      seo.bodyEndScripts = '';
     }
 
     await seo.save();

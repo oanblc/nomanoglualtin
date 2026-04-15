@@ -27,11 +27,7 @@ export default function AdminSeo() {
     // Analytics
     googleAnalyticsId: '',
     googleTagManagerId: '',
-    metaPixelId: '',
-    // Custom Scripts
-    headScripts: '',
-    bodyStartScripts: '',
-    bodyEndScripts: ''
+    metaPixelId: ''
   });
 
   useEffect(() => {
@@ -425,71 +421,18 @@ export default function AdminSeo() {
                 </div>
               )}
 
-              {/* Scripts Tab */}
+              {/* Scripts Tab — güvenlik gereği özel script enjeksiyonu kapatıldı.
+                  Analytics/Tag Manager/Pixel için Analytics sekmesindeki ID alanlarını kullanın. */}
               {activeTab === 'scripts' && (
-                <div className="space-y-6">
-                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                    <div className="flex items-start space-x-2">
-                      <AlertCircle size={20} className="text-amber-600 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-amber-800 text-sm font-medium">Dikkat!</p>
-                        <p className="text-amber-700 text-sm">
-                          Buraya eklenen kodlar doğrudan sayfaya enjekte edilir. Sadece güvendiğiniz kaynaklardan kod ekleyin.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Head Scripts */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Head Script'leri (&lt;head&gt; içine)
-                    </label>
-                    <textarea
-                      value={seoData.headScripts}
-                      onChange={(e) => handleChange('headScripts', e.target.value)}
-                      placeholder="<!-- Örnek: Tawk.to, Hotjar, vb. -->"
-                      rows={6}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm text-gray-900 bg-white"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Chat widget'ları, heatmap araçları vb. için script'ler
-                    </p>
-                  </div>
-
-                  {/* Body Start Scripts */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Body Başlangıç Script'leri (&lt;body&gt; açılışında)
-                    </label>
-                    <textarea
-                      value={seoData.bodyStartScripts}
-                      onChange={(e) => handleChange('bodyStartScripts', e.target.value)}
-                      placeholder="<!-- Örnek: Google Tag Manager noscript -->"
-                      rows={4}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm text-gray-900 bg-white"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      GTM noscript veya benzeri kodlar için
-                    </p>
-                  </div>
-
-                  {/* Body End Scripts */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Body Bitiş Script'leri (&lt;/body&gt; öncesinde)
-                    </label>
-                    <textarea
-                      value={seoData.bodyEndScripts}
-                      onChange={(e) => handleChange('bodyEndScripts', e.target.value)}
-                      placeholder="<!-- Örnek: Custom tracking scripts -->"
-                      rows={4}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm text-gray-900 bg-white"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Sayfa yüklendikten sonra çalışacak script'ler
-                    </p>
-                  </div>
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
+                  <AlertCircle size={32} className="mx-auto text-gray-400 mb-3" />
+                  <h3 className="text-base font-semibold text-gray-800 mb-1">Özel Script Enjeksiyonu Devre Dışı</h3>
+                  <p className="text-sm text-gray-600">
+                    Güvenlik nedeniyle (XSS koruması) özel HTML/JS script alanları kaldırılmıştır.
+                    Google Analytics, Tag Manager ve Meta Pixel gibi araçlar için
+                    <strong> Analytics</strong> sekmesindeki ID alanlarını kullanın — bunlar
+                    sadece bilinen güvenli sağlayıcıların kodunu yükler.
+                  </p>
                 </div>
               )}
             </div>
