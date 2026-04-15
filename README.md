@@ -6,6 +6,7 @@ Anlık altın, döviz ve gümüş fiyatlarını takip eden web uygulaması.
 
 - Node.js 18+
 - npm veya yarn
+- MongoDB erişimi
 
 ## Kurulum
 
@@ -25,16 +26,25 @@ npm install
 
 **Backend `.env` dosyası oluştur:**
 
+`backend/.env.example` dosyasını kopyala ve değerleri doldur:
+
 ```bash
-# backend/.env
-PORT=5001
-MONGODB_URI=mongodb://mongo:FDaHhHFYvQKRWtdzWSeKnFKWrARXamHe@shuttle.proxy.rlwy.net:16685/nomanoglu?authSource=admin
-JWT_SECRET=8ed7817332a87d696eb479a04ce0849301a181bb6a3608463465029a15e02d6045ded06472ca9b77c518107a94e6ea43f7bc66ce15956dcdecfadb0e57826ff0
-ADMIN_USERNAME=admin
-ADMIN_PASSWORD=Nomanoglu2024!
-VPS_WS_URL=http://37.148.208.13:3000
-WEBHOOK_SECRET=nomanoglu_webhook_2024_gizli
+cp .env.example .env
+# .env dosyasını editörde açıp gerçek değerleri gir
 ```
+
+Gerekli değişkenler (detay `.env.example`'da):
+
+| Değişken | Açıklama |
+|----------|----------|
+| `PORT` | Backend port (varsayılan 5001) |
+| `MONGODB_URI` | MongoDB bağlantı string'i (Railway dashboard veya MongoDB provider'ından) |
+| `JWT_SECRET` | JWT imzalama anahtarı — `openssl rand -hex 64` ile üret |
+| `ADMIN_USERNAME` | Admin kullanıcı adı |
+| `ADMIN_PASSWORD` | Admin şifresi (üretimde bcrypt hash olarak saklanması önerilir) |
+| `WEBHOOK_SECRET` | Webhook doğrulama anahtarı — `openssl rand -hex 32` |
+| `PRICE_API_URL` | Birincil fiyat kaynağı API'si |
+| `PRICE_API_URL_BACKUP` | Yedek fiyat kaynağı |
 
 **Backend'i başlat:**
 
@@ -49,7 +59,7 @@ npm run dev
 Yeni terminal aç ve ana klasöre git:
 
 ```bash
-cd ..  # veya projenin ana klasörüne git
+cd ..
 npm install
 ```
 
@@ -74,24 +84,8 @@ npm run dev
 | Frontend | http://localhost:3000 |
 | Backend API | http://localhost:5001 |
 | Admin Panel | http://localhost:3000/admin/login |
+| İşletme Sayfası | http://localhost:3000/isletme-fiyatlari |
 | Health Check | http://localhost:5001/health |
-
-## Admin Giriş Bilgileri
-
-- **Kullanıcı:** admin
-- **Şifre:** Nomanoglu2024!
-
-## Hızlı Başlatma (Tek Komutla)
-
-Windows PowerShell'de:
-
-```powershell
-# Backend başlat (Terminal 1)
-cd backend; npm install; npm start
-
-# Frontend başlat (Terminal 2 - yeni pencere)
-npm install; npm run dev
-```
 
 ## Proje Yapısı
 
@@ -112,11 +106,20 @@ nomanoglualtin/
 
 ## Özellikler
 
-- Anlık altın/döviz fiyat takibi (WebSocket)
+- Anlık altın/döviz fiyat takibi (Socket.IO WebSocket)
 - Admin paneli ile fiyat yönetimi
+- **İşletme Fiyatları:** şube içi özel fiyatlandırma (şifre korumalı)
+- KYC işlem yönetimi ve PDF export
 - Responsive tasarım
 - SEO optimizasyonu
 - KVKK uyumlu çerez yönetimi
+
+## Deploy
+
+Railway GitHub entegrasyonu ile otomatik deploy:
+- `main` branch'ine push → Railway otomatik build + deploy
+- Env vars Railway dashboard → Variables altında yönetilir
+- Build log: Railway dashboard → Deployments
 
 ## Sorun Giderme
 
@@ -128,3 +131,10 @@ Backend'in çalıştığından emin olun: `curl http://localhost:5001/health`
 
 ### Port Kullanımda Hatası
 Başka bir uygulama portu kullanıyor olabilir. Port'u değiştirin veya mevcut uygulamayı kapatın.
+
+## Güvenlik
+
+- `.env` ve `backend/.env` dosyalarını **asla** commit etmeyin (`.gitignore`'da mevcut)
+- Admin/employee/business şifrelerini düzenli rotate edin
+- `JWT_SECRET` ve `WEBHOOK_SECRET` yeterince uzun random olmalı
+- Prod'da `ADMIN_PASSWORD`'ü bcrypt hash olarak saklamak güvenlik artışı sağlar
