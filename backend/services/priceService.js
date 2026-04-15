@@ -194,6 +194,7 @@ const handleVpsPrices = async (data) => {
         prices: calculatedPrices
       });
       console.log(`📤 ${calculatedPrices.length} fiyat frontend'e gönderildi`);
+      emitBusinessPrices(calculatedPrices, { source: 'http-api' });
     }
 
   } catch (error) {
@@ -371,6 +372,14 @@ const calculateCustomPrices = async (sourcePrices) => {
         rawSatis: satisRaw,
         calculatedAlis,
         calculatedSatis,
+        alisMultiplier: finalAlisConfig.multiplier,
+        alisAddition: finalAlisConfig.addition,
+        alisSourceCode: finalAlisConfig.sourceCode,
+        alisSourceType: finalAlisConfig.sourceType,
+        satisMultiplier: finalSatisConfig.multiplier,
+        satisAddition: finalSatisConfig.addition,
+        satisSourceCode: finalSatisConfig.sourceCode,
+        satisSourceType: finalSatisConfig.sourceType,
         direction: alisSource.direction || satisSource.direction || {},
         isCustom: true,
         isVisible: config.isVisible,
@@ -798,6 +807,64 @@ const startPolling = startVpsWebSocket;
 const stopPolling = stopVpsWebSocket;
 
 // ============================================
+// İşletme (şube) fiyatları: normal hesaplanmış fiyatlar üzerine
+// BusinessCoefficient override'larını uygular.
+// ============================================
+const calculateBusinessPrices = async (normalPrices) => {
+  if (!normalPrices || normalPrices.length === 0) return [];
+
+  let overridesMap = {};
+  try {
+    const BusinessCoefficient = require('../models/BusinessCoefficient');
+    const overrides = await BusinessCoefficient.find().lean();
+    overrides.forEach(o => { overridesMap[o.code] = o; });
+  } catch (err) {
+    console.error('❌ Business override çekme hatası:', err.message);
+  }
+
+  return normalPrices.map(p => {
+    const override = overridesMap[p.code];
+    const hasOverride = override && (
+      override.alisMultiplier != null || override.alisAddition != null ||
+      override.satisMultiplier != null || override.satisAddition != null
+    );
+
+    const am = override?.alisMultiplier ?? p.alisMultiplier;
+    const aa = override?.alisAddition ?? p.alisAddition;
+    const sm = override?.satisMultiplier ?? p.satisMultiplier;
+    const sa = override?.satisAddition ?? p.satisAddition;
+
+    const businessAlis = (p.rawAlis * am) + aa;
+    const businessSatis = (p.rawSatis * sm) + sa;
+
+    return {
+      ...p,
+      businessAlis,
+      businessSatis,
+      businessAlisMultiplier: override?.alisMultiplier ?? null,
+      businessAlisAddition: override?.alisAddition ?? null,
+      businessSatisMultiplier: override?.satisMultiplier ?? null,
+      businessSatisAddition: override?.satisAddition ?? null,
+      hasBusinessOverride: !!hasOverride
+    };
+  });
+};
+
+// İşletme odasına (business-room) fiyat yayını yap
+const emitBusinessPrices = async (calculatedPrices, meta = {}) => {
+  if (!serverIO) return;
+  try {
+    const businessPrices = await calculateBusinessPrices(calculatedPrices);
+    serverIO.to('business-room').emit('businessPriceUpdate', {
+      meta: { time: new Date().toISOString(), ...meta },
+      prices: businessPrices
+    });
+  } catch (err) {
+    console.error('❌ İşletme fiyat yayın hatası:', err.message);
+  }
+};
+
+// ============================================
 // Custom fiyat değiştiğinde yeniden hesapla
 // ============================================
 const refreshPrices = async () => {
@@ -833,6 +900,7 @@ const refreshPrices = async () => {
       prices: calculatedPrices
     });
     console.log(`📡 ${calculatedPrices.length} fiyat refresh sonrası gönderildi`);
+    emitBusinessPrices(calculatedPrices, { source: 'refresh' });
   }
 
   return true;
@@ -890,6 +958,7 @@ const handleWebhook = async (prices, secret) => {
         prices: calculatedPrices
       });
       console.log(`📡 Webhook: ${calculatedPrices.length} fiyat frontend'e gönderildi`);
+      emitBusinessPrices(calculatedPrices, { source: 'webhook' });
     }
 
     return { success: true, processed: calculatedPrices.length };
@@ -913,6 +982,8 @@ module.exports = {
   getBackupSourcePrices,
   handleWebhook,
   getWebhookSecret,
+  calculateBusinessPrices,
+  emitBusinessPrices,
   isConnected,
   // Yedek kaynak fonksiyonları
   switchSource,

@@ -52,6 +52,12 @@ export default function AdminDashboard() {
   const [socialTiktok, setSocialTiktok] = useState('');
   const [socialWhatsapp, setSocialWhatsapp] = useState('905322904601');
   const [employeePassword, setEmployeePassword] = useState('');
+  const [businessPassword, setBusinessPassword] = useState('');
+
+  // İşletme Fiyatları state
+  const [businessPrices, setBusinessPrices] = useState([]);
+  const [businessEdits, setBusinessEdits] = useState({});
+  const [businessSavingCode, setBusinessSavingCode] = useState(null);
 
   // Transactions state
   const [transactions, setTransactions] = useState([]);
@@ -326,6 +332,7 @@ export default function AdminDashboard() {
         setSocialTiktok(s.socialTiktok || '');
         setSocialWhatsapp(s.socialWhatsapp || '905322904601');
         setEmployeePassword(s.employeePassword || '');
+        setBusinessPassword(s.businessPassword || '');
         console.log('✅ Ayarlar yüklendi');
       }
 
@@ -624,7 +631,8 @@ export default function AdminDashboard() {
         socialYoutube,
         socialTiktok,
         socialWhatsapp,
-        employeePassword
+        employeePassword,
+        businessPassword
       });
       alert('Ayarlar kaydedildi!');
       loadData();
@@ -924,6 +932,82 @@ export default function AdminDashboard() {
       loadTransactions();
     }
   }, [activeTab]);
+
+  // ==================== İŞLETME FİYATLARI HANDLERS ====================
+
+  const loadBusinessPrices = async () => {
+    try {
+      const res = await authAxios.get(`${apiUrl}/api/business/prices`);
+      if (res.data.success) setBusinessPrices(res.data.data || []);
+    } catch (error) {
+      console.error('İşletme fiyatları yükleme hatası:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab !== 'businessPrices') return;
+    loadBusinessPrices();
+    const interval = setInterval(loadBusinessPrices, 5000);
+    return () => clearInterval(interval);
+  }, [activeTab]);
+
+  const handleBusinessEditChange = (code, field, value) => {
+    setBusinessEdits(prev => ({
+      ...prev,
+      [code]: { ...(prev[code] || {}), [field]: value }
+    }));
+  };
+
+  const getBusinessEditValue = (price, field) => {
+    const edited = businessEdits[price.code]?.[field];
+    if (edited !== undefined) return edited;
+    const overrideField = {
+      alisMultiplier: 'businessAlisMultiplier',
+      alisAddition: 'businessAlisAddition',
+      satisMultiplier: 'businessSatisMultiplier',
+      satisAddition: 'businessSatisAddition'
+    }[field];
+    const v = price[overrideField];
+    return v === null || v === undefined ? '' : String(v);
+  };
+
+  const saveBusinessRow = async (price) => {
+    setBusinessSavingCode(price.code);
+    try {
+      await authAxios.put(`${apiUrl}/api/business/coefficients`, {
+        code: price.code,
+        alisMultiplier: getBusinessEditValue(price, 'alisMultiplier'),
+        alisAddition: getBusinessEditValue(price, 'alisAddition'),
+        satisMultiplier: getBusinessEditValue(price, 'satisMultiplier'),
+        satisAddition: getBusinessEditValue(price, 'satisAddition')
+      });
+      setBusinessEdits(prev => { const n = { ...prev }; delete n[price.code]; return n; });
+      await loadBusinessPrices();
+    } catch (error) {
+      console.error('İşletme katsayı kaydetme hatası:', error);
+      alert('Kayıt başarısız: ' + (error.response?.data?.message || error.message));
+    } finally {
+      setBusinessSavingCode(null);
+    }
+  };
+
+  const resetBusinessRow = async (price) => {
+    setBusinessSavingCode(price.code);
+    try {
+      await authAxios.delete(`${apiUrl}/api/business/coefficients/${encodeURIComponent(price.code)}`);
+      setBusinessEdits(prev => { const n = { ...prev }; delete n[price.code]; return n; });
+      await loadBusinessPrices();
+    } catch (error) {
+      console.error('Sıfırlama hatası:', error);
+    } finally {
+      setBusinessSavingCode(null);
+    }
+  };
+
+  const fmtNum = (v, decimals = 2) => {
+    if (v === null || v === undefined || isNaN(v)) return '-';
+    return Number(v).toLocaleString('tr-TR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+  };
 
   // ==================== DRAG & DROP HANDLERS ====================
   
@@ -1269,6 +1353,19 @@ export default function AdminDashboard() {
                 <div className="flex items-center space-x-2">
                   <TrendingUp size={18} />
                   <span>Fiyat Yönetimi</span>
+                </div>
+              </button>
+              <button
+                onClick={() => setActiveTab('businessPrices')}
+                className={`px-6 py-4 font-semibold text-sm border-b-2 transition-colors ${
+                  activeTab === 'businessPrices'
+                    ? 'border-amber-500 text-amber-600'
+                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                }`}
+              >
+                <div className="flex items-center space-x-2">
+                  <Building2 size={18} />
+                  <span>İşletme Fiyatları</span>
                 </div>
               </button>
               <button
@@ -1963,6 +2060,201 @@ export default function AdminDashboard() {
               </div>
             )}
           </div>
+          </>
+          )}
+
+          {/* ==================== İŞLETME FİYATLARI TAB ==================== */}
+          {activeTab === 'businessPrices' && (
+          <>
+            {/* Başlık kartı (sitenin altın header dili) */}
+            <div className="bg-[#F3BA1C] rounded-[10px] px-6 py-5 mb-5 shadow-[0_10px_30px_rgba(16,24,40,0.08)]">
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-white/30 backdrop-blur flex items-center justify-center">
+                    <Building2 size={20} className="text-gray-900" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-900 tracking-tight">İŞLETME FİYATLARI</h2>
+                    <p className="text-xs text-gray-800/80 uppercase tracking-wider">Şube içi özel fiyatlandırma yönetimi</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="px-3 py-1.5 bg-white/30 backdrop-blur rounded-lg">
+                    <div className="text-[10px] text-gray-900/80 uppercase tracking-wider leading-tight">Toplam</div>
+                    <div className="text-lg font-bold text-gray-900 leading-tight">{businessPrices.length}</div>
+                  </div>
+                  <div className="px-3 py-1.5 bg-white/50 backdrop-blur rounded-lg">
+                    <div className="text-[10px] text-gray-900/80 uppercase tracking-wider leading-tight">Özel</div>
+                    <div className="text-lg font-bold text-gray-900 leading-tight">
+                      {businessPrices.filter(p => p.hasBusinessOverride).length}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Bilgi kutusu */}
+            <div className="bg-white rounded-[10px] shadow-[0_10px_30px_rgba(16,24,40,0.08)] p-4 mb-5 border-l-4 border-[#F3BA1C]">
+              <p className="text-sm text-[#111827]">
+                <strong>Nasıl çalışır?</strong> Soldaki <span className="text-[#9aa0a6]">müşteri katsayıları</span> (Fiyat Yönetimi'nde belirlediğin) salt okunurdur. Sağdaki <span className="font-semibold text-[#b88a2b]">İşletme Katsayısı</span> kutularına değer yazarsan, çalışanlar <code className="bg-gray-100 px-1.5 py-0.5 rounded text-xs">/isletme-fiyatlari</code> sayfasında o değeri görür. Boş bıraktığın alan normal değeri kullanır.
+              </p>
+              <p className="text-xs text-[#9aa0a6] mt-1">
+                Formül: <code className="bg-gray-100 px-1.5 py-0.5 rounded">ham fiyat × çarpan + ekleme</code>
+              </p>
+            </div>
+
+            {/* Fiyat tablosu — anasayfa tablosu ile aynı estetikte */}
+            <section className="bg-white rounded-[10px] shadow-[0_10px_30px_rgba(16,24,40,0.08)] p-6 pb-4 overflow-hidden">
+              <h3 className="text-center text-[18px] tracking-[0.08em] text-[#111827] font-normal mb-3">
+                FİYAT LİSTESİ VE İŞLETME KATSAYILARI
+              </h3>
+              <div className="h-px bg-[#e9ecef] mb-3"></div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr>
+                      <th className="py-3 px-3 text-left text-[#b0b7c3] font-normal text-sm border-b border-[#e9ecef]">
+                        Ürün
+                      </th>
+                      <th className="py-3 px-3 text-center text-[#b0b7c3] font-normal text-sm border-b border-[#e9ecef]">
+                        Müşteri Alış Katsayısı
+                      </th>
+                      <th className="py-3 px-3 text-center text-[#b0b7c3] font-normal text-sm border-b border-[#e9ecef]">
+                        Müşteri Satış Katsayısı
+                      </th>
+                      <th className="py-3 px-3 text-center text-[#b88a2b] font-normal text-sm border-b border-[#e9ecef] bg-[#F3BA1C]/10">
+                        İşletme Alış (çarpan + ekleme)
+                      </th>
+                      <th className="py-3 px-3 text-center text-[#b88a2b] font-normal text-sm border-b border-[#e9ecef] bg-[#F3BA1C]/10">
+                        İşletme Satış (çarpan + ekleme)
+                      </th>
+                      <th className="py-3 px-3 text-right text-[#b0b7c3] font-normal text-sm border-b border-[#e9ecef]">
+                        Alış / Satış
+                      </th>
+                      <th className="py-3 px-3 text-center text-[#b0b7c3] font-normal text-sm border-b border-[#e9ecef]">
+                        İşlem
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {businessPrices.length === 0 && (
+                      <tr><td colSpan={7} className="py-16 text-center text-[#9aa0a6]">Fiyat bekleniyor...</td></tr>
+                    )}
+                    {[...businessPrices].sort((a, b) => (a.order ?? 999) - (b.order ?? 999)).map(p => {
+                      const isDirty = !!businessEdits[p.code];
+                      return (
+                        <tr
+                          key={p.code}
+                          className={`hover:bg-[#F3BA1C]/5 transition-colors ${p.hasBusinessOverride ? 'bg-[#F3BA1C]/5' : ''}`}
+                        >
+                          {/* Ürün */}
+                          <td className="py-3 px-3 border-b border-[#e9ecef] align-middle">
+                            <div className="flex items-center gap-2">
+                              <div>
+                                <div className="font-bold text-base text-[#111827] tracking-wide uppercase">{p.name}</div>
+                                <div className="text-xs text-[#9aa0a6] uppercase">{p.code}</div>
+                              </div>
+                              {p.hasBusinessOverride && (
+                                <span className="inline-block px-1.5 py-0.5 text-[9px] font-semibold rounded bg-[#F3BA1C] text-gray-900 uppercase tracking-wider">Özel</span>
+                              )}
+                            </div>
+                          </td>
+
+                          {/* Müşteri Alış Katsayısı */}
+                          <td className="py-3 px-3 border-b border-[#e9ecef] align-middle text-center">
+                            <div className="text-sm text-[#111827]">{p.alisSourceCode || '-'}</div>
+                            <div className="text-xs text-[#9aa0a6]">
+                              {p.alisSourceType === 'alis' ? 'Alış' : 'Satış'} × {p.alisMultiplier} + {p.alisAddition}
+                            </div>
+                          </td>
+
+                          {/* Müşteri Satış Katsayısı */}
+                          <td className="py-3 px-3 border-b border-[#e9ecef] align-middle text-center">
+                            <div className="text-sm text-[#111827]">{p.satisSourceCode || '-'}</div>
+                            <div className="text-xs text-[#9aa0a6]">
+                              {p.satisSourceType === 'alis' ? 'Alış' : 'Satış'} × {p.satisMultiplier} + {p.satisAddition}
+                            </div>
+                          </td>
+
+                          {/* İşletme Alış inputları */}
+                          <td className="py-3 px-3 border-b border-[#e9ecef] align-middle bg-[#F3BA1C]/5">
+                            <div className="flex gap-1 justify-center">
+                              <input
+                                type="number" step="any"
+                                value={getBusinessEditValue(p, 'alisMultiplier')}
+                                onChange={(e) => handleBusinessEditChange(p.code, 'alisMultiplier', e.target.value)}
+                                placeholder="çarpan"
+                                className="w-24 px-2 py-1.5 text-sm bg-white border border-[#e9ecef] rounded-lg text-right tabular-nums text-[#111827] focus:border-[#F3BA1C] focus:ring-1 focus:ring-[#F3BA1C] focus:outline-none"
+                              />
+                              <input
+                                type="number" step="any"
+                                value={getBusinessEditValue(p, 'alisAddition')}
+                                onChange={(e) => handleBusinessEditChange(p.code, 'alisAddition', e.target.value)}
+                                placeholder="ekleme"
+                                className="w-24 px-2 py-1.5 text-sm bg-white border border-[#e9ecef] rounded-lg text-right tabular-nums text-[#111827] focus:border-[#F3BA1C] focus:ring-1 focus:ring-[#F3BA1C] focus:outline-none"
+                              />
+                            </div>
+                          </td>
+
+                          {/* İşletme Satış inputları */}
+                          <td className="py-3 px-3 border-b border-[#e9ecef] align-middle bg-[#F3BA1C]/5">
+                            <div className="flex gap-1 justify-center">
+                              <input
+                                type="number" step="any"
+                                value={getBusinessEditValue(p, 'satisMultiplier')}
+                                onChange={(e) => handleBusinessEditChange(p.code, 'satisMultiplier', e.target.value)}
+                                placeholder="çarpan"
+                                className="w-24 px-2 py-1.5 text-sm bg-white border border-[#e9ecef] rounded-lg text-right tabular-nums text-[#111827] focus:border-[#F3BA1C] focus:ring-1 focus:ring-[#F3BA1C] focus:outline-none"
+                              />
+                              <input
+                                type="number" step="any"
+                                value={getBusinessEditValue(p, 'satisAddition')}
+                                onChange={(e) => handleBusinessEditChange(p.code, 'satisAddition', e.target.value)}
+                                placeholder="ekleme"
+                                className="w-24 px-2 py-1.5 text-sm bg-white border border-[#e9ecef] rounded-lg text-right tabular-nums text-[#111827] focus:border-[#F3BA1C] focus:ring-1 focus:ring-[#F3BA1C] focus:outline-none"
+                              />
+                            </div>
+                          </td>
+
+                          {/* Fiyatlar: Müşteri (üst) / İşletme (alt) */}
+                          <td className="py-3 px-3 border-b border-[#e9ecef] align-middle text-right whitespace-nowrap">
+                            <div className="text-xs text-[#9aa0a6] tabular-nums">
+                              ₺{fmtNum(p.calculatedAlis, p.decimals ?? 2)} / ₺{fmtNum(p.calculatedSatis, p.decimals ?? 2)}
+                            </div>
+                            <div className={`text-base font-semibold tabular-nums ${p.hasBusinessOverride ? 'text-[#b88a2b]' : 'text-[#111827]'}`}>
+                              ₺{fmtNum(p.businessAlis, p.decimals ?? 2)} / ₺{fmtNum(p.businessSatis, p.decimals ?? 2)}
+                            </div>
+                          </td>
+
+                          {/* Aksiyonlar */}
+                          <td className="py-3 px-3 border-b border-[#e9ecef] align-middle">
+                            <div className="flex gap-1.5 justify-center">
+                              <button
+                                onClick={() => saveBusinessRow(p)}
+                                disabled={businessSavingCode === p.code || !isDirty}
+                                className="p-2 bg-[#F3BA1C] hover:bg-[#d9a418] disabled:bg-gray-100 disabled:text-gray-300 disabled:cursor-not-allowed text-gray-900 rounded-lg transition-colors"
+                                title="Kaydet"
+                              >
+                                <Save size={14} />
+                              </button>
+                              <button
+                                onClick={() => resetBusinessRow(p)}
+                                disabled={businessSavingCode === p.code || !p.hasBusinessOverride}
+                                className="p-2 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-300 disabled:cursor-not-allowed text-[#111827] rounded-lg transition-colors border border-[#e9ecef]"
+                                title="Normale döndür"
+                              >
+                                <RefreshCw size={14} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </section>
           </>
           )}
 
@@ -2939,6 +3231,27 @@ export default function AdminDashboard() {
                 />
                 <p className="text-xs text-gray-500 mt-2">
                   Bu şifre tüm çalışanlar tarafından paylaşılan tek bir şifredir. Değiştirdiğinizde tüm çalışanların yeniden giriş yapması gerekir.
+                </p>
+              </div>
+
+              {/* İşletme Şifresi (şube içi fiyat sayfası) */}
+              <div className="bg-white rounded-xl border border-gray-200 p-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center space-x-2">
+                  <Building2 size={20} />
+                  <span>İşletme Fiyatları Şifresi</span>
+                </h3>
+                <p className="text-sm text-gray-500 mb-4">
+                  Şubelerin <code className="bg-gray-100 px-1 rounded">/isletme</code> sayfasından erişeceği özel fiyat yönetimi şifresi. Bu sayfa herkese açık değildir, sadece şube içi kullanım içindir.
+                </p>
+                <input
+                  type="text"
+                  value={businessPassword}
+                  onChange={(e) => setBusinessPassword(e.target.value)}
+                  placeholder="İşletme şifresi belirleyin..."
+                  className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-all"
+                />
+                <p className="text-xs text-gray-500 mt-2">
+                  Boş bırakırsanız işletme sayfası girişi kapatılır. Şifreyi değiştirdiğinizde oturum açık olan şubelerin tekrar giriş yapması gerekir.
                 </p>
               </div>
 

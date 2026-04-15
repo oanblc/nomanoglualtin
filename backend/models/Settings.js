@@ -87,6 +87,11 @@ const settingsSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  // İşletme Fiyatları sayfası şifresi (şube içi fiyatlama)
+  businessPassword: {
+    type: String,
+    default: ''
+  },
   updatedAt: {
     type: Date,
     default: Date.now

@@ -15,9 +15,10 @@ router.get('/', async (req, res) => {
       console.log('✅ Varsayılan settings oluşturuldu');
     }
     
-    // Public endpoint'ten employeePassword'ü çıkar
+    // Public endpoint'ten hassas alanları çıkar
     const settingsObj = settings.toObject();
     delete settingsObj.employeePassword;
+    delete settingsObj.businessPassword;
 
     res.json({
       success: true,

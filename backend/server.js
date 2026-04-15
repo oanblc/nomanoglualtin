@@ -90,6 +90,7 @@ const loginLimiter = rateLimit({
 app.use('/api/', generalLimiter);
 app.use('/api/auth/login', loginLimiter);
 app.use('/api/auth/employee-login', loginLimiter);
+app.use('/api/business/login', loginLimiter);
 
 // Body parser - Görsel yüklemeleri için limit artırıldı
 app.use(express.json({ limit: '20mb' }));
@@ -117,6 +118,7 @@ const settingsRoutes = require('./routes/settings');
 const seoRoutes = require('./routes/seo');
 const legalRoutes = require('./routes/legal');
 const transactionRoutes = require('./routes/transactions');
+const businessRoutes = require('./routes/business');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/prices', priceRoutes);
@@ -130,6 +132,7 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/seo', seoRoutes);
 app.use('/api/legal', legalRoutes);
 app.use('/api/transactions', transactionRoutes);
+app.use('/api/business', businessRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -137,9 +140,26 @@ app.get('/health', (req, res) => {
 });
 
 // Socket.io bağlantı yönetimi
+const jwt = require('jsonwebtoken');
 io.on('connection', (socket) => {
   console.log('👤 Yeni kullanıcı bağlandı:', socket.id);
-  
+
+  // İşletme odasına katılma — JWT doğrulaması
+  socket.on('joinBusinessRoom', (token, ack) => {
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      if (decoded.role !== 'business' && decoded.role !== 'admin') {
+        if (typeof ack === 'function') ack({ success: false, message: 'Yetkisiz' });
+        return;
+      }
+      socket.join('business-room');
+      console.log('🏢 Business-room\'a katıldı:', socket.id);
+      if (typeof ack === 'function') ack({ success: true });
+    } catch (err) {
+      if (typeof ack === 'function') ack({ success: false, message: 'Geçersiz token' });
+    }
+  });
+
   socket.on('disconnect', () => {
     console.log('👋 Kullanıcı ayrıldı:', socket.id);
   });
