@@ -1,4 +1,5 @@
 const axios = require('axios');
+const crypto = require('crypto');
 const Coefficient = require('../models/Coefficient');
 const PriceHistory = require('../models/PriceHistory');
 const CachedPrices = require('../models/CachedPrices');
@@ -915,8 +916,11 @@ const getCurrentPrices = () => {
 // WEBHOOK: PHP'den anlık fiyat bildirimi al
 // ============================================
 const handleWebhook = async (prices, secret) => {
-  // Secret kontrolü
-  if (secret !== WEBHOOK_SECRET) {
+  // Secret kontrolü (timing-safe)
+  const valid = typeof secret === 'string' &&
+    secret.length === WEBHOOK_SECRET.length &&
+    crypto.timingSafeEqual(Buffer.from(secret), Buffer.from(WEBHOOK_SECRET));
+  if (!valid) {
     console.log('❌ Webhook: Geçersiz secret key');
     return { success: false, error: 'Geçersiz secret key' };
   }
