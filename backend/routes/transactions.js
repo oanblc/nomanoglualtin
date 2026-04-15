@@ -10,18 +10,18 @@ router.post('/', employeeAuthMiddleware, transactionValidation, async (req, res)
   try {
     const transaction = new Transaction(req.body);
     await transaction.save();
-    console.log('✅ Yeni işlem oluşturuldu:', transaction.fullName);
+    // PII log'lamıyoruz — yalnızca işlem ID ve şube
+    console.log(`✅ Yeni işlem oluşturuldu: id=${transaction._id} branch=${transaction.branchId}`);
     res.status(201).json({
       success: true,
       data: transaction,
       message: 'İşlem başarıyla oluşturuldu'
     });
   } catch (error) {
-    console.error('Transaction oluşturma hatası:', error);
+    console.error('Transaction oluşturma hatası:', error.message);
     res.status(400).json({
       success: false,
-      message: 'Oluşturma başarısız',
-      error: error.message
+      message: 'Oluşturma başarısız'
     });
   }
 });
@@ -45,8 +45,8 @@ router.get('/', authMiddleware, async (req, res) => {
 
     res.json({ success: true, data: formatted });
   } catch (error) {
-    console.error('Transaction listeleme hatası:', error);
-    res.status(500).json({ success: false, message: 'Sunucu hatası', error: error.message });
+    console.error('Transaction listeleme hatası:', error.message);
+    res.status(500).json({ success: false, message: 'Sunucu hatası' });
   }
 });
 
@@ -231,8 +231,8 @@ router.get('/pdf/:id', authMiddleware, async (req, res) => {
 
     doc.end();
   } catch (error) {
-    console.error('PDF oluşturma hatası:', error);
-    res.status(500).json({ success: false, message: 'PDF oluşturulamadı', error: error.message });
+    console.error('PDF oluşturma hatası:', error.message);
+    res.status(500).json({ success: false, message: 'PDF oluşturulamadı' });
   }
 });
 
@@ -256,11 +256,11 @@ router.put('/:id', authMiddleware, idParamValidation, async (req, res) => {
       return res.status(404).json({ success: false, message: 'İşlem bulunamadı' });
     }
 
-    console.log('✅ İşlem güncellendi:', transaction.fullName);
+    console.log(`✅ İşlem güncellendi: id=${transaction._id}`);
     res.json({ success: true, data: transaction, message: 'İşlem güncellendi' });
   } catch (error) {
-    console.error('Transaction güncelleme hatası:', error);
-    res.status(400).json({ success: false, message: 'Güncelleme başarısız', error: error.message });
+    console.error('Transaction güncelleme hatası:', error.message);
+    res.status(400).json({ success: false, message: 'Güncelleme başarısız' });
   }
 });
 
@@ -271,11 +271,11 @@ router.delete('/:id', authMiddleware, idParamValidation, async (req, res) => {
     if (!transaction) {
       return res.status(404).json({ success: false, message: 'İşlem bulunamadı' });
     }
-    console.log('🗑️ İşlem silindi:', transaction.fullName);
+    console.log(`🗑️ İşlem silindi: id=${transaction._id}`);
     res.json({ success: true, message: 'İşlem silindi' });
   } catch (error) {
-    console.error('Transaction silme hatası:', error);
-    res.status(500).json({ success: false, message: 'Silme başarısız', error: error.message });
+    console.error('Transaction silme hatası:', error.message);
+    res.status(500).json({ success: false, message: 'Silme başarısız' });
   }
 });
 
@@ -294,8 +294,8 @@ router.get('/:id', authMiddleware, idParamValidation, async (req, res) => {
       data: { ...transaction.toObject(), id: transaction._id.toString() }
     });
   } catch (error) {
-    console.error('Transaction getirme hatası:', error);
-    res.status(500).json({ success: false, message: 'Sunucu hatası', error: error.message });
+    console.error('Transaction getirme hatası:', error.message);
+    res.status(500).json({ success: false, message: 'Sunucu hatası' });
   }
 });
 

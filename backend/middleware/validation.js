@@ -13,6 +13,28 @@ const validate = (req, res, next) => {
   next();
 };
 
+// Base64 görsel data-URI doğrulama
+// Sadece image/jpeg|png|webp|gif kabul eder, maxBytes decoded boyut sınırı.
+const base64ImageValidator = (maxBytes) => (value) => {
+  if (value === undefined || value === null || value === '') return true; // opsiyonel
+  if (typeof value !== 'string') throw new Error('Geçersiz veri tipi');
+
+  const match = /^data:image\/(jpeg|jpg|png|webp|gif);base64,([A-Za-z0-9+/=]+)$/.exec(value);
+  if (!match) {
+    throw new Error('Yalnızca data:image/(jpeg|png|webp|gif);base64,... formatı kabul edilir');
+  }
+
+  // Decoded byte boyutu: base64 uzunluğu * 3/4 - padding
+  const b64 = match[2];
+  const padding = (b64.endsWith('==') ? 2 : b64.endsWith('=') ? 1 : 0);
+  const decodedBytes = Math.floor((b64.length * 3) / 4) - padding;
+
+  if (decodedBytes > maxBytes) {
+    throw new Error(`Görsel boyutu ${(maxBytes / 1024 / 1024).toFixed(1)}MB sınırını aştı`);
+  }
+  return true;
+};
+
 // HTML ve zararlı karakterleri temizle (XSS koruması)
 const sanitizeString = (value) => {
   if (typeof value !== 'string') return value;
@@ -202,7 +224,14 @@ const transactionValidation = [
   body('kvkkConsent')
     .notEmpty().withMessage('KVKK onayı gerekli'),
   body('signature')
-    .optional(),
+    .optional()
+    .custom(base64ImageValidator(1024 * 1024)), // 1MB
+  body('idCardFront')
+    .optional()
+    .custom(base64ImageValidator(3 * 1024 * 1024)), // 3MB
+  body('idCardBack')
+    .optional()
+    .custom(base64ImageValidator(3 * 1024 * 1024)), // 3MB
   validate
 ];
 
