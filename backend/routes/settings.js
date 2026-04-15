@@ -1,7 +1,16 @@
 const express = require('express');
 const router = express.Router();
+const bcrypt = require('bcryptjs');
 const Settings = require('../models/Settings');
 const { authMiddleware } = require('../middleware/auth');
+
+// Şifre alanını hashle (zaten bcrypt formatındaysa dokunma; boşsa temizle)
+const normalizePasswordField = async (value) => {
+  if (value === undefined) return undefined; // alan body'de yok → değişmez
+  if (value === '' || value === null) return ''; // şifreyi kapatma
+  if (typeof value === 'string' && value.startsWith('$2')) return value; // zaten hash
+  return await bcrypt.hash(String(value), 10);
+};
 
 // Settings getir (singleton)
 router.get('/', async (req, res) => {
@@ -52,14 +61,24 @@ router.get('/admin', authMiddleware, async (req, res) => {
 // Settings güncelle (singleton) - Admin korumalı
 router.post('/', authMiddleware, async (req, res) => {
   try {
-    let settings = await Settings.findOne({ key: 'app_settings' });
-    
-    if (!settings) {
-      settings = new Settings({ key: 'app_settings', ...req.body });
-    } else {
-      Object.assign(settings, req.body);
+    const payload = { ...req.body };
+
+    // Şifre alanlarını hashle (düz metin geldiyse)
+    if ('employeePassword' in payload) {
+      payload.employeePassword = await normalizePasswordField(payload.employeePassword);
     }
-    
+    if ('businessPassword' in payload) {
+      payload.businessPassword = await normalizePasswordField(payload.businessPassword);
+    }
+
+    let settings = await Settings.findOne({ key: 'app_settings' });
+
+    if (!settings) {
+      settings = new Settings({ key: 'app_settings', ...payload });
+    } else {
+      Object.assign(settings, payload);
+    }
+
     await settings.save();
     console.log('✅ Settings güncellendi');
     

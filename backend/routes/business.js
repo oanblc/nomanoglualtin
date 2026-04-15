@@ -1,5 +1,6 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 const BusinessCoefficient = require('../models/BusinessCoefficient');
 const Settings = require('../models/Settings');
 const priceService = require('../services/priceService');
@@ -23,7 +24,22 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    if (password !== settings.businessPassword) {
+    const stored = settings.businessPassword;
+    let passwordOk = false;
+
+    if (stored.startsWith('$2')) {
+      passwordOk = await bcrypt.compare(password, stored);
+    } else {
+      // Eski düz metin kayıt — kontrol et, başarılıysa arka planda hash'e çevir
+      passwordOk = (password === stored);
+      if (passwordOk) {
+        settings.businessPassword = await bcrypt.hash(password, 10);
+        await settings.save();
+        console.log('✓ businessPassword otomatik olarak bcrypt\'e çevrildi');
+      }
+    }
+
+    if (!passwordOk) {
       return res.status(401).json({ success: false, message: 'Geçersiz şifre' });
     }
 

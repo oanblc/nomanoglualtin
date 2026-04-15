@@ -14,15 +14,34 @@ router.post('/login', loginValidation, async (req, res) => {
       return res.status(400).json({ message: 'Kullanıcı adı ve şifre gerekli' });
     }
 
-    // Kullanıcı adı ve şifreyi environment variable ile karşılaştır
-    const adminUsername = process.env.ADMIN_USERNAME || 'admin';
-    const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+    const adminUsername = process.env.ADMIN_USERNAME;
+    const adminHash = process.env.ADMIN_PASSWORD_HASH;
+    const adminPasswordPlain = process.env.ADMIN_PASSWORD;
 
-    if (username !== adminUsername || password !== adminPassword) {
+    if (!adminUsername || (!adminHash && !adminPasswordPlain)) {
+      console.error('Admin kimliği yapılandırılmamış (ADMIN_USERNAME + ADMIN_PASSWORD_HASH veya ADMIN_PASSWORD gerekli)');
+      return res.status(500).json({ message: 'Sunucu yapılandırma hatası' });
+    }
+
+    if (username !== adminUsername) {
       return res.status(401).json({ message: 'Geçersiz kullanıcı adı veya şifre' });
     }
 
-    // JWT token oluştur
+    let passwordOk = false;
+    if (adminHash) {
+      passwordOk = await bcrypt.compare(password, adminHash);
+    } else {
+      // Geçiş dönemi: henüz ADMIN_PASSWORD_HASH tanımlı değil
+      passwordOk = (password === adminPasswordPlain);
+      if (passwordOk) {
+        console.warn('⚠️ ADMIN_PASSWORD_HASH tanımlı değil — plain fallback kullanıldı. Railway env\'e hash ekleyip ADMIN_PASSWORD\'ü silin.');
+      }
+    }
+
+    if (!passwordOk) {
+      return res.status(401).json({ message: 'Geçersiz kullanıcı adı veya şifre' });
+    }
+
     const token = jwt.sign(
       { role: 'admin' },
       process.env.JWT_SECRET,
@@ -70,7 +89,22 @@ router.post('/employee-login', employeeLoginValidation, async (req, res) => {
       });
     }
 
-    if (password !== settings.employeePassword) {
+    const stored = settings.employeePassword;
+    let passwordOk = false;
+
+    if (stored.startsWith('$2')) {
+      passwordOk = await bcrypt.compare(password, stored);
+    } else {
+      // Eski düz metin kayıt — kontrol et, başarılıysa arka planda hash'e çevir
+      passwordOk = (password === stored);
+      if (passwordOk) {
+        settings.employeePassword = await bcrypt.hash(password, 10);
+        await settings.save();
+        console.log('✓ employeePassword otomatik olarak bcrypt\'e çevrildi');
+      }
+    }
+
+    if (!passwordOk) {
       return res.status(401).json({
         success: false,
         message: 'Geçersiz şifre'
