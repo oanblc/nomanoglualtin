@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
+import DOMPurify from 'isomorphic-dompurify';
 import { useSettings } from '../contexts/SettingsContext';
 import { Menu, ArrowLeft, Coins, FileText } from 'lucide-react';
 
@@ -145,7 +146,7 @@ export default function TermsOfService() {
                   div :global(em) { font-style: italic; }
                   div :global(a) { color: #d97706; text-decoration: underline; }
                 `}</style>
-                <div dangerouslySetInnerHTML={{ __html: pageData.content }} />
+                <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(pageData.content) }} />
               </div>
             </div>
           ) : (

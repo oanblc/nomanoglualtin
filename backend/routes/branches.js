@@ -46,7 +46,7 @@ router.get('/admin/all', authMiddleware, async (req, res) => {
 });
 
 // ID ile şube getir
-router.get('/:id', async (req, res) => {
+router.get('/:id', idParamValidation, async (req, res) => {
   try {
     const branch = await Branch.findById(req.params.id);
     if (!branch) {

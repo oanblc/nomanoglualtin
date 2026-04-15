@@ -27,7 +27,7 @@ router.get('/', async (req, res) => {
 });
 
 // ID ile family card getir
-router.get('/:id', async (req, res) => {
+router.get('/:id', idParamValidation, async (req, res) => {
   try {
     const card = await FamilyCard.findById(req.params.id);
     if (!card) {

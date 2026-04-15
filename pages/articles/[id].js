@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
+import DOMPurify from 'isomorphic-dompurify';
 import { useSettings } from '../../contexts/SettingsContext';
 import SeoHead from '../../components/SeoHead';
 import { ArrowLeft, Calendar, Tag, Share2, TrendingUp, Coins, Gem, CheckCircle, Star, DollarSign, Facebook, Twitter, Instagram, Youtube } from 'lucide-react';
@@ -212,7 +213,7 @@ export default function ArticleDetail() {
           <article className="prose prose-lg max-w-none">
             <div
               className="article-content"
-              dangerouslySetInnerHTML={{ __html: formatContent(article.content) }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(formatContent(article.content)) }}
             />
           </article>
 

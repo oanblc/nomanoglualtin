@@ -30,7 +30,7 @@ router.get('/', async (req, res) => {
 });
 
 // ID ile custom fiyat getir
-router.get('/:id', async (req, res) => {
+router.get('/:id', idParamValidation, async (req, res) => {
   try {
     const price = await CustomPrice.findById(req.params.id);
     if (!price) {

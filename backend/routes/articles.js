@@ -27,7 +27,7 @@ router.get('/', async (req, res) => {
 });
 
 // ID ile makale getir
-router.get('/:id', async (req, res) => {
+router.get('/:id', idParamValidation, async (req, res) => {
   try {
     const article = await Article.findById(req.params.id);
     if (!article) {

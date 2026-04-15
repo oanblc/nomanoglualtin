@@ -9,7 +9,8 @@ const settingsSchema = new mongoose.Schema({
   },
   logoBase64: {
     type: String,
-    default: ''
+    default: '',
+    maxlength: [2 * 1024 * 1024, 'Logo boyutu 2MB\'ı aşamaz']
   },
   logoHeight: {
     type: Number,
@@ -21,7 +22,8 @@ const settingsSchema = new mongoose.Schema({
   },
   faviconBase64: {
     type: String,
-    default: ''
+    default: '',
+    maxlength: [512 * 1024, 'Favicon boyutu 512KB\'ı aşamaz']
   },
   maxDisplayItems: {
     type: Number,
@@ -80,7 +82,8 @@ const settingsSchema = new mongoose.Schema({
   // Fiyat tablosu yanındaki görsel
   priceTableImage: {
     type: String,
-    default: ''
+    default: '',
+    maxlength: [3 * 1024 * 1024, 'Görsel boyutu 3MB\'ı aşamaz']
   },
   // Çalışan Şifresi (mobil KYC formu girişi için)
   employeePassword: {

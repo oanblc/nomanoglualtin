@@ -46,7 +46,7 @@ router.post('/login', async (req, res) => {
     const token = jwt.sign(
       { role: 'business' },
       process.env.JWT_SECRET,
-      { expiresIn: '30d' }
+      { expiresIn: '7d' }
     );
 
     res.json({ success: true, token, message: 'Giriş başarılı' });
