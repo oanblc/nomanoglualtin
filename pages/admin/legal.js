@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import axios from 'axios';
 import Link from 'next/link';
-import DOMPurify from 'isomorphic-dompurify';
+import { sanitize } from '../../lib/sanitize';
 import { FileText, ArrowLeft, Save, Edit2, Eye, EyeOff, AlertCircle, CheckCircle, RotateCcw } from 'lucide-react';
 
 // Auth header ile axios instance oluştur
@@ -320,7 +320,7 @@ export default function LegalAdmin() {
                     div :global(em) { font-style: italic; }
                     div :global(a) { color: #d97706; text-decoration: underline; }
                   `}</style>
-                  <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(currentData.content) }} />
+                  <div dangerouslySetInnerHTML={{ __html: sanitize(currentData.content) }} />
                 </div>
               </div>
             </div>
