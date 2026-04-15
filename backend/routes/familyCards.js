@@ -18,11 +18,10 @@ router.get('/', async (req, res) => {
       data: formattedCards
     });
   } catch (error) {
-    console.error('Family card getirme hatası:', error);
+    console.error('Family card getirme hatası:', error.message);
     res.status(500).json({ 
       success: false, 
       message: 'Sunucu hatası',
-      error: error.message 
     });
   }
 });
@@ -42,11 +41,10 @@ router.get('/:id', async (req, res) => {
       data: card
     });
   } catch (error) {
-    console.error('Family card getirme hatası:', error);
+    console.error('Family card getirme hatası:', error.message);
     res.status(500).json({ 
       success: false, 
       message: 'Sunucu hatası',
-      error: error.message 
     });
   }
 });
@@ -63,11 +61,10 @@ router.post('/', authMiddleware, familyCardValidation, async (req, res) => {
       message: 'Kart başarıyla oluşturuldu'
     });
   } catch (error) {
-    console.error('Family card oluşturma hatası:', error);
+    console.error('Family card oluşturma hatası:', error.message);
     res.status(400).json({ 
       success: false, 
       message: 'Oluşturma başarısız',
-      error: error.message 
     });
   }
 });
@@ -95,11 +92,10 @@ router.put('/:id', authMiddleware, idParamValidation, familyCardValidation, asyn
       message: 'Kart başarıyla güncellendi'
     });
   } catch (error) {
-    console.error('Family card güncelleme hatası:', error);
+    console.error('Family card güncelleme hatası:', error.message);
     res.status(400).json({ 
       success: false, 
       message: 'Güncelleme başarısız',
-      error: error.message 
     });
   }
 });
@@ -122,11 +118,10 @@ router.delete('/:id', authMiddleware, idParamValidation, async (req, res) => {
       message: 'Kart başarıyla silindi'
     });
   } catch (error) {
-    console.error('Family card silme hatası:', error);
+    console.error('Family card silme hatası:', error.message);
     res.status(500).json({ 
       success: false, 
       message: 'Silme başarısız',
-      error: error.message 
     });
   }
 });

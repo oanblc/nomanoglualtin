@@ -48,10 +48,9 @@ router.post('/webhook', async (req, res) => {
       res.status(400).json(result);
     }
   } catch (error) {
-    console.error('Webhook hatasi:', error);
+    console.error('Webhook hatasi:', error.message);
     res.status(500).json({
       success: false,
-      error: error.message
     });
   }
 });
@@ -65,7 +64,7 @@ router.get('/current', (req, res) => {
       data: prices
     });
   } catch (error) {
-    console.error('Fiyat getirme hatasi:', error);
+    console.error('Fiyat getirme hatasi:', error.message);
     res.status(500).json({ message: 'Sunucu hatasi' });
   }
 });
@@ -99,11 +98,10 @@ router.get('/sources', async (req, res) => {
       });
     }
   } catch (error) {
-    console.error('Kaynak fiyat getirme hatasi:', error);
+    console.error('Kaynak fiyat getirme hatasi:', error.message);
     res.status(500).json({
       success: false,
       message: 'Sunucu hatasi',
-      error: error.message
     });
   }
 });
@@ -127,7 +125,7 @@ router.get('/history/:code', async (req, res) => {
       data: history
     });
   } catch (error) {
-    console.error('Fiyat gecmisi hatasi:', error);
+    console.error('Fiyat gecmisi hatasi:', error.message);
     res.status(500).json({ message: 'Sunucu hatasi' });
   }
 });
@@ -163,11 +161,10 @@ router.get('/cached', async (req, res) => {
       });
     }
   } catch (error) {
-    console.error('Cache fiyat getirme hatasi:', error);
+    console.error('Cache fiyat getirme hatasi:', error.message);
     res.status(500).json({
       success: false,
       message: 'Sunucu hatasi',
-      error: error.message
     });
   }
 });
@@ -202,11 +199,10 @@ router.get('/all', async (req, res) => {
       });
     }
   } catch (error) {
-    console.error('Tum fiyatlari getirme hatasi:', error);
+    console.error('Tum fiyatlari getirme hatasi:', error.message);
     res.status(500).json({
       success: false,
       message: 'Sunucu hatasi',
-      error: error.message
     });
   }
 });
@@ -222,11 +218,10 @@ router.get('/api-status', async (req, res) => {
       data: status
     });
   } catch (error) {
-    console.error('API durum hatasi:', error);
+    console.error('API durum hatasi:', error.message);
     res.status(500).json({
       success: false,
       message: 'Sunucu hatasi',
-      error: error.message
     });
   }
 });
@@ -246,11 +241,10 @@ router.get('/backup-sources', async (req, res) => {
       count: backupPrices.length
     });
   } catch (error) {
-    console.error('Yedek kaynak fiyat hatasi:', error);
+    console.error('Yedek kaynak fiyat hatasi:', error.message);
     res.status(500).json({
       success: false,
       message: 'Sunucu hatasi',
-      error: error.message
     });
   }
 });
@@ -279,11 +273,10 @@ router.post('/switch-source', async (req, res) => {
     const result = await switchSource(priceCode, newSource);
     res.json(result);
   } catch (error) {
-    console.error('Kaynak degistirme hatasi:', error);
+    console.error('Kaynak degistirme hatasi:', error.message);
     res.status(500).json({
       success: false,
       message: 'Sunucu hatasi',
-      error: error.message
     });
   }
 });
@@ -312,11 +305,10 @@ router.post('/switch-all-sources', async (req, res) => {
     const result = await switchAllSources(newSource);
     res.json(result);
   } catch (error) {
-    console.error('Toplu kaynak degistirme hatasi:', error);
+    console.error('Toplu kaynak degistirme hatasi:', error.message);
     res.status(500).json({
       success: false,
       message: 'Sunucu hatasi',
-      error: error.message
     });
   }
 });
@@ -338,11 +330,10 @@ router.post('/set-fallback-timeout', async (req, res) => {
     const result = setFallbackTimeout(parseInt(minutes));
     res.json(result);
   } catch (error) {
-    console.error('Fallback timeout ayarlama hatasi:', error);
+    console.error('Fallback timeout ayarlama hatasi:', error.message);
     res.status(500).json({
       success: false,
       message: 'Sunucu hatasi',
-      error: error.message
     });
   }
 });

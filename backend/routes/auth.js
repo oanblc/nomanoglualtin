@@ -54,7 +54,7 @@ router.post('/login', loginValidation, async (req, res) => {
       message: 'Giriş başarılı'
     });
   } catch (error) {
-    console.error('Login hatası:', error);
+    console.error('Login hatası:', error.message);
     res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
@@ -123,7 +123,7 @@ router.post('/employee-login', employeeLoginValidation, async (req, res) => {
       message: 'Giriş başarılı'
     });
   } catch (error) {
-    console.error('Employee login hatası:', error);
+    console.error('Employee login hatası:', error.message);
     res.status(500).json({ success: false, message: 'Sunucu hatası' });
   }
 });

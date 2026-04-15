@@ -23,11 +23,10 @@ router.get('/', async (req, res) => {
       data: formattedBranches
     });
   } catch (error) {
-    console.error('Branch getirme hatası:', error);
+    console.error('Branch getirme hatası:', error.message);
     res.status(500).json({ 
       success: false, 
       message: 'Sunucu hatası',
-      error: error.message 
     });
   }
 });
@@ -42,8 +41,7 @@ router.get('/admin/all', authMiddleware, async (req, res) => {
     }));
     res.json({ success: true, data: formattedBranches });
   } catch (error) {
-    console.error('Admin branch getirme hatası:', error);
-    res.status(500).json({ success: false, message: 'Sunucu hatası', error: error.message });
+    console.error('Admin branch getirme hatası:', error.message);
   }
 });
 
@@ -62,11 +60,10 @@ router.get('/:id', async (req, res) => {
       data: branch
     });
   } catch (error) {
-    console.error('Branch getirme hatası:', error);
+    console.error('Branch getirme hatası:', error.message);
     res.status(500).json({ 
       success: false, 
       message: 'Sunucu hatası',
-      error: error.message 
     });
   }
 });
@@ -83,11 +80,10 @@ router.post('/', authMiddleware, branchValidation, async (req, res) => {
       message: 'Şube başarıyla oluşturuldu'
     });
   } catch (error) {
-    console.error('Branch oluşturma hatası:', error);
+    console.error('Branch oluşturma hatası:', error.message);
     res.status(400).json({ 
       success: false, 
       message: 'Oluşturma başarısız',
-      error: error.message 
     });
   }
 });
@@ -115,11 +111,10 @@ router.put('/:id', authMiddleware, idParamValidation, branchValidation, async (r
       message: 'Şube başarıyla güncellendi'
     });
   } catch (error) {
-    console.error('Branch güncelleme hatası:', error);
+    console.error('Branch güncelleme hatası:', error.message);
     res.status(400).json({ 
       success: false, 
       message: 'Güncelleme başarısız',
-      error: error.message 
     });
   }
 });
@@ -142,11 +137,10 @@ router.delete('/:id', authMiddleware, idParamValidation, async (req, res) => {
       message: 'Şube başarıyla silindi'
     });
   } catch (error) {
-    console.error('Branch silme hatası:', error);
+    console.error('Branch silme hatası:', error.message);
     res.status(500).json({ 
       success: false, 
       message: 'Silme başarısız',
-      error: error.message 
     });
   }
 });

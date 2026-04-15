@@ -18,11 +18,10 @@ router.get('/', async (req, res) => {
       data: formattedArticles
     });
   } catch (error) {
-    console.error('Article getirme hatası:', error);
+    console.error('Article getirme hatası:', error.message);
     res.status(500).json({ 
       success: false, 
       message: 'Sunucu hatası',
-      error: error.message 
     });
   }
 });
@@ -42,11 +41,10 @@ router.get('/:id', async (req, res) => {
       data: article
     });
   } catch (error) {
-    console.error('Article getirme hatası:', error);
+    console.error('Article getirme hatası:', error.message);
     res.status(500).json({ 
       success: false, 
       message: 'Sunucu hatası',
-      error: error.message 
     });
   }
 });
@@ -63,11 +61,10 @@ router.post('/', authMiddleware, articleValidation, async (req, res) => {
       message: 'Makale başarıyla oluşturuldu'
     });
   } catch (error) {
-    console.error('Article oluşturma hatası:', error);
+    console.error('Article oluşturma hatası:', error.message);
     res.status(400).json({ 
       success: false, 
       message: 'Oluşturma başarısız',
-      error: error.message 
     });
   }
 });
@@ -95,11 +92,10 @@ router.put('/:id', authMiddleware, idParamValidation, articleValidation, async (
       message: 'Makale başarıyla güncellendi'
     });
   } catch (error) {
-    console.error('Article güncelleme hatası:', error);
+    console.error('Article güncelleme hatası:', error.message);
     res.status(400).json({ 
       success: false, 
       message: 'Güncelleme başarısız',
-      error: error.message 
     });
   }
 });
@@ -122,11 +118,10 @@ router.delete('/:id', authMiddleware, idParamValidation, async (req, res) => {
       message: 'Makale başarıyla silindi'
     });
   } catch (error) {
-    console.error('Article silme hatası:', error);
+    console.error('Article silme hatası:', error.message);
     res.status(500).json({ 
       success: false, 
       message: 'Silme başarısız',
-      error: error.message 
     });
   }
 });

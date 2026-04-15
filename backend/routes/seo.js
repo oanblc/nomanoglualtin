@@ -28,11 +28,10 @@ router.get('/', async (req, res) => {
       data: seo
     });
   } catch (error) {
-    console.error('SEO getirme hatası:', error);
+    console.error('SEO getirme hatası:', error.message);
     res.status(500).json({
       success: false,
       message: 'Sunucu hatası',
-      error: error.message
     });
   }
 });
@@ -90,11 +89,10 @@ router.post('/', authMiddleware, async (req, res) => {
       message: 'SEO ayarları başarıyla güncellendi'
     });
   } catch (error) {
-    console.error('SEO güncelleme hatası:', error);
+    console.error('SEO güncelleme hatası:', error.message);
     res.status(400).json({
       success: false,
       message: 'Güncelleme başarısız',
-      error: error.message
     });
   }
 });

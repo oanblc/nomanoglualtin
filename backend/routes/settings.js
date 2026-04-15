@@ -34,11 +34,10 @@ router.get('/', async (req, res) => {
       data: settingsObj
     });
   } catch (error) {
-    console.error('Settings getirme hatası:', error);
+    console.error('Settings getirme hatası:', error.message);
     res.status(500).json({ 
       success: false, 
       message: 'Sunucu hatası',
-      error: error.message 
     });
   }
 });
@@ -53,8 +52,7 @@ router.get('/admin', authMiddleware, async (req, res) => {
     }
     res.json({ success: true, data: settings });
   } catch (error) {
-    console.error('Admin settings getirme hatası:', error);
-    res.status(500).json({ success: false, message: 'Sunucu hatası', error: error.message });
+    console.error('Admin settings getirme hatası:', error.message);
   }
 });
 
@@ -88,11 +86,10 @@ router.post('/', authMiddleware, async (req, res) => {
       message: 'Ayarlar başarıyla güncellendi'
     });
   } catch (error) {
-    console.error('Settings güncelleme hatası:', error);
+    console.error('Settings güncelleme hatası:', error.message);
     res.status(400).json({ 
       success: false, 
       message: 'Güncelleme başarısız',
-      error: error.message 
     });
   }
 });

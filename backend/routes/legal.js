@@ -259,11 +259,10 @@ router.get('/', async (req, res) => {
       data: pages
     });
   } catch (error) {
-    console.error('Legal sayfalar getirme hatası:', error);
+    console.error('Legal sayfalar getirme hatası:', error.message);
     res.status(500).json({
       success: false,
       message: 'Sunucu hatası',
-      error: error.message
     });
   }
 });
@@ -297,11 +296,10 @@ router.get('/:type', async (req, res) => {
       data: page
     });
   } catch (error) {
-    console.error('Legal sayfa getirme hatası:', error);
+    console.error('Legal sayfa getirme hatası:', error.message);
     res.status(500).json({
       success: false,
       message: 'Sunucu hatası',
-      error: error.message
     });
   }
 });
@@ -330,11 +328,10 @@ router.post('/reset-to-defaults', authMiddleware, async (req, res) => {
       message: 'Tüm sayfalar varsayılan içeriklere sıfırlandı'
     });
   } catch (error) {
-    console.error('Sıfırlama hatası:', error);
+    console.error('Sıfırlama hatası:', error.message);
     res.status(500).json({
       success: false,
       message: 'Sıfırlama başarısız',
-      error: error.message
     });
   }
 });
@@ -372,11 +369,10 @@ router.put('/:type', authMiddleware, async (req, res) => {
       message: 'Sayfa başarıyla güncellendi'
     });
   } catch (error) {
-    console.error('Legal sayfa güncelleme hatası:', error);
+    console.error('Legal sayfa güncelleme hatası:', error.message);
     res.status(400).json({
       success: false,
       message: 'Güncelleme başarısız',
-      error: error.message
     });
   }
 });

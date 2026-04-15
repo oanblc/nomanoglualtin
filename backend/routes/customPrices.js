@@ -21,11 +21,10 @@ router.get('/', async (req, res) => {
       data: formattedPrices
     });
   } catch (error) {
-    console.error('Custom price getirme hatası:', error);
+    console.error('Custom price getirme hatası:', error.message);
     res.status(500).json({ 
       success: false, 
       message: 'Sunucu hatası',
-      error: error.message 
     });
   }
 });
@@ -45,11 +44,10 @@ router.get('/:id', async (req, res) => {
       data: price
     });
   } catch (error) {
-    console.error('Custom price getirme hatası:', error);
+    console.error('Custom price getirme hatası:', error.message);
     res.status(500).json({ 
       success: false, 
       message: 'Sunucu hatası',
-      error: error.message 
     });
   }
 });
@@ -70,11 +68,10 @@ router.post('/', authMiddleware, customPriceValidation, async (req, res) => {
       message: 'Fiyat başarıyla oluşturuldu'
     });
   } catch (error) {
-    console.error('Custom price oluşturma hatası:', error);
+    console.error('Custom price oluşturma hatası:', error.message);
     res.status(400).json({
       success: false,
       message: error.code === 11000 ? 'Bu kod zaten kullanılıyor' : 'Oluşturma başarısız',
-      error: error.message
     });
   }
 });
@@ -114,8 +111,7 @@ router.put('/bulk-update', authMiddleware, async (req, res) => {
 
     res.json({ success: true, message: `${successCount} fiyat güncellendi` });
   } catch (error) {
-    console.error('Toplu güncelleme hatası:', error);
-    res.status(500).json({ success: false, message: 'Toplu güncelleme başarısız', error: error.message });
+    console.error('Toplu güncelleme hatası:', error.message);
   }
 });
 
@@ -161,11 +157,10 @@ router.put('/reorder', authMiddleware, async (req, res) => {
       message: 'Sıralama başarıyla güncellendi'
     });
   } catch (error) {
-    console.error('Sıralama güncelleme hatası:', error);
+    console.error('Sıralama güncelleme hatası:', error.message);
     res.status(500).json({
       success: false,
       message: 'Sıralama güncellenemedi',
-      error: error.message
     });
   }
 });
@@ -221,11 +216,10 @@ router.put('/bulk-addition', authMiddleware, async (req, res) => {
       updated: successCount
     });
   } catch (error) {
-    console.error('Toplu ekleme güncelleme hatası:', error);
+    console.error('Toplu ekleme güncelleme hatası:', error.message);
     res.status(500).json({
       success: false,
       message: 'Toplu güncelleme başarısız',
-      error: error.message
     });
   }
 });
@@ -257,11 +251,10 @@ router.put('/:id', authMiddleware, idParamValidation, customPriceValidation, asy
       message: 'Fiyat başarıyla güncellendi'
     });
   } catch (error) {
-    console.error('Custom price güncelleme hatası:', error);
+    console.error('Custom price güncelleme hatası:', error.message);
     res.status(400).json({ 
       success: false, 
       message: 'Güncelleme başarısız',
-      error: error.message 
     });
   }
 });
@@ -288,11 +281,10 @@ router.delete('/:id', authMiddleware, idParamValidation, async (req, res) => {
       message: 'Fiyat başarıyla silindi'
     });
   } catch (error) {
-    console.error('Custom price silme hatası:', error);
+    console.error('Custom price silme hatası:', error.message);
     res.status(500).json({ 
       success: false, 
       message: 'Silme başarısız',
-      error: error.message 
     });
   }
 });

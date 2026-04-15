@@ -51,7 +51,7 @@ router.post('/login', async (req, res) => {
 
     res.json({ success: true, token, message: 'Giriş başarılı' });
   } catch (error) {
-    console.error('Business login hatası:', error);
+    console.error('Business login hatası:', error.message);
     res.status(500).json({ success: false, message: 'Sunucu hatası' });
   }
 });
@@ -68,7 +68,7 @@ router.get('/prices', businessAuthMiddleware, async (req, res) => {
     const businessPrices = await priceService.calculateBusinessPrices(normalPrices);
     res.json({ success: true, data: businessPrices });
   } catch (error) {
-    console.error('Business prices hatası:', error);
+    console.error('Business prices hatası:', error.message);
     res.status(500).json({ success: false, message: 'Sunucu hatası' });
   }
 });
@@ -79,7 +79,7 @@ router.get('/coefficients', businessAuthMiddleware, async (req, res) => {
     const overrides = await BusinessCoefficient.find().lean();
     res.json({ success: true, data: overrides });
   } catch (error) {
-    console.error('Business coefficients hatası:', error);
+    console.error('Business coefficients hatası:', error.message);
     res.status(500).json({ success: false, message: 'Sunucu hatası' });
   }
 });
@@ -119,7 +119,7 @@ router.put('/coefficients', businessAuthMiddleware, async (req, res) => {
 
     res.json({ success: true, data: doc });
   } catch (error) {
-    console.error('Business override güncelleme hatası:', error);
+    console.error('Business override güncelleme hatası:', error.message);
     res.status(500).json({ success: false, message: 'Sunucu hatası' });
   }
 });
@@ -132,7 +132,7 @@ router.delete('/coefficients/:code', businessAuthMiddleware, async (req, res) =>
     priceService.emitBusinessPrices(normalPrices, { source: 'override-delete' });
     res.json({ success: true });
   } catch (error) {
-    console.error('Business override silme hatası:', error);
+    console.error('Business override silme hatası:', error.message);
     res.status(500).json({ success: false, message: 'Sunucu hatası' });
   }
 });

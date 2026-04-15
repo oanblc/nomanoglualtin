@@ -12,7 +12,7 @@ router.get('/', async (req, res) => {
       data: coefficients
     });
   } catch (error) {
-    console.error('Katsayı getirme hatası:', error);
+    console.error('Katsayı getirme hatası:', error.message);
     // MongoDB yoksa boş array döndür
     res.json({
       success: true,
@@ -62,7 +62,7 @@ router.post('/', authMiddleware, async (req, res) => {
       message: 'Katsayı kaydedildi'
     });
   } catch (error) {
-    console.error('Katsayı kaydetme hatası:', error);
+    console.error('Katsayı kaydetme hatası:', error.message);
     res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
@@ -115,7 +115,7 @@ router.post('/bulk', authMiddleware, async (req, res) => {
       message: `${results.length} katsayı güncellendi`
     });
   } catch (error) {
-    console.error('Toplu katsayı güncelleme hatası:', error);
+    console.error('Toplu katsayı güncelleme hatası:', error.message);
     res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
@@ -131,7 +131,7 @@ router.delete('/:id', authMiddleware, async (req, res) => {
       message: 'Katsayı silindi'
     });
   } catch (error) {
-    console.error('Katsayı silme hatası:', error);
+    console.error('Katsayı silme hatası:', error.message);
     res.status(500).json({ message: 'Sunucu hatası' });
   }
 });
