@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import axios from 'axios';
 import { useWebSocket } from '../../hooks/useWebSocket';
-import { TrendingUp, LogOut, Plus, Edit2, Trash2, X, Save, AlertCircle, RefreshCw, Settings, FileText, Users, GripVertical, Building2, MapPin, Phone, Mail, Clock, ExternalLink, Search, ClipboardList, Download, Eye, Calendar, Filter } from 'lucide-react';
+import { TrendingUp, LogOut, Plus, Edit2, Trash2, X, Save, AlertCircle, RefreshCw, Settings, FileText, Users, GripVertical, Building2, MapPin, Phone, Mail, Clock, ExternalLink, Search, ClipboardList, Download, Eye, EyeOff, Calendar, Filter } from 'lucide-react';
 import Link from 'next/link';
 
 // Auth header ile axios instance oluştur
@@ -53,6 +53,10 @@ export default function AdminDashboard() {
   const [socialWhatsapp, setSocialWhatsapp] = useState('905322904601');
   const [employeePassword, setEmployeePassword] = useState('');
   const [businessPassword, setBusinessPassword] = useState('');
+  const [hasEmployeePassword, setHasEmployeePassword] = useState(false);
+  const [hasBusinessPassword, setHasBusinessPassword] = useState(false);
+  const [showEmployeePassword, setShowEmployeePassword] = useState(false);
+  const [showBusinessPassword, setShowBusinessPassword] = useState(false);
 
   // İşletme Fiyatları state
   const [businessPrices, setBusinessPrices] = useState([]);
@@ -331,8 +335,10 @@ export default function AdminDashboard() {
         setSocialYoutube(s.socialYoutube || '');
         setSocialTiktok(s.socialTiktok || '');
         setSocialWhatsapp(s.socialWhatsapp || '905322904601');
-        setEmployeePassword(s.employeePassword || '');
-        setBusinessPassword(s.businessPassword || '');
+        setHasEmployeePassword(Boolean(s.employeePassword));
+        setHasBusinessPassword(Boolean(s.businessPassword));
+        setEmployeePassword('');
+        setBusinessPassword('');
         console.log('✅ Ayarlar yüklendi');
       }
 
@@ -613,7 +619,7 @@ export default function AdminDashboard() {
 
   const saveSettings = async () => {
     try {
-      await authAxios.post(`${apiUrl}/api/settings`, {
+      const payload = {
         maxDisplayItems,
         logoBase64,
         logoHeight,
@@ -631,10 +637,13 @@ export default function AdminDashboard() {
         socialYoutube,
         socialTiktok,
         socialWhatsapp,
-        employeePassword,
-        businessPassword
-      });
+        ...(employeePassword && { employeePassword }),
+        ...(businessPassword && { businessPassword }),
+      };
+      await authAxios.post(`${apiUrl}/api/settings`, payload);
       alert('Ayarlar kaydedildi!');
+      setEmployeePassword('');
+      setBusinessPassword('');
       loadData();
     } catch (error) {
       console.error('Ayar kaydetme hatası:', error);
@@ -3222,15 +3231,49 @@ export default function AdminDashboard() {
                 <p className="text-sm text-gray-500 mb-4">
                   Mobil uygulamada çalışanların KYC formuna erişmek için kullanacağı ortak şifre
                 </p>
-                <input
-                  type="text"
-                  value={employeePassword}
-                  onChange={(e) => setEmployeePassword(e.target.value)}
-                  placeholder="Çalışan şifresi belirleyin..."
-                  className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-all"
-                />
+                <div className="mb-3">
+                  {hasEmployeePassword ? (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-50 text-green-700 text-xs font-medium border border-green-200">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                      Şifre ayarlanmış
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-50 text-gray-600 text-xs font-medium border border-gray-200">
+                      <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
+                      Şifre ayarlanmamış
+                    </span>
+                  )}
+                </div>
+                <div className="relative">
+                  <input
+                    type={showEmployeePassword ? 'text' : 'password'}
+                    value={employeePassword}
+                    onChange={(e) => setEmployeePassword(e.target.value)}
+                    placeholder={hasEmployeePassword ? 'Yeni şifre girin (değiştirmeyecekseniz boş bırakın)' : 'Çalışan şifresi belirleyin...'}
+                    className="w-full px-4 py-2.5 pr-12 border-2 border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowEmployeePassword((v) => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 transition-colors"
+                    aria-label={showEmployeePassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
+                  >
+                    {showEmployeePassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+                <div className="mt-3 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={saveSettings}
+                    disabled={!employeePassword}
+                    className="flex items-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg transition-colors text-sm font-semibold shadow-sm"
+                  >
+                    <Save size={16} />
+                    <span>Kaydet</span>
+                  </button>
+                </div>
                 <p className="text-xs text-gray-500 mt-2">
-                  Bu şifre tüm çalışanlar tarafından paylaşılan tek bir şifredir. Değiştirdiğinizde tüm çalışanların yeniden giriş yapması gerekir.
+                  Bu şifre tüm çalışanlar tarafından paylaşılan tek bir şifredir. Yeni bir şifre girip kaydederseniz tüm çalışanların yeniden giriş yapması gerekir.
                 </p>
               </div>
 
@@ -3243,15 +3286,49 @@ export default function AdminDashboard() {
                 <p className="text-sm text-gray-500 mb-4">
                   Şubelerin <code className="bg-gray-100 px-1 rounded">/isletme</code> sayfasından erişeceği özel fiyat yönetimi şifresi. Bu sayfa herkese açık değildir, sadece şube içi kullanım içindir.
                 </p>
-                <input
-                  type="text"
-                  value={businessPassword}
-                  onChange={(e) => setBusinessPassword(e.target.value)}
-                  placeholder="İşletme şifresi belirleyin..."
-                  className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-all"
-                />
+                <div className="mb-3">
+                  {hasBusinessPassword ? (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-50 text-green-700 text-xs font-medium border border-green-200">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                      Şifre ayarlanmış
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-50 text-gray-600 text-xs font-medium border border-gray-200">
+                      <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
+                      Şifre ayarlanmamış
+                    </span>
+                  )}
+                </div>
+                <div className="relative">
+                  <input
+                    type={showBusinessPassword ? 'text' : 'password'}
+                    value={businessPassword}
+                    onChange={(e) => setBusinessPassword(e.target.value)}
+                    placeholder={hasBusinessPassword ? 'Yeni şifre girin (değiştirmeyecekseniz boş bırakın)' : 'İşletme şifresi belirleyin...'}
+                    className="w-full px-4 py-2.5 pr-12 border-2 border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowBusinessPassword((v) => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 transition-colors"
+                    aria-label={showBusinessPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
+                  >
+                    {showBusinessPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+                <div className="mt-3 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={saveSettings}
+                    disabled={!businessPassword}
+                    className="flex items-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg transition-colors text-sm font-semibold shadow-sm"
+                  >
+                    <Save size={16} />
+                    <span>Kaydet</span>
+                  </button>
+                </div>
                 <p className="text-xs text-gray-500 mt-2">
-                  Boş bırakırsanız işletme sayfası girişi kapatılır. Şifreyi değiştirdiğinizde oturum açık olan şubelerin tekrar giriş yapması gerekir.
+                  Yeni bir şifre girip kaydederseniz oturum açık olan şubelerin tekrar giriş yapması gerekir.
                 </p>
               </div>
 
