@@ -213,8 +213,8 @@ export default function AdminDashboard() {
     const allowed = adminTabs
       .filter((t) => (t.adminOnly ? auth.isAdmin : hasPermission(auth, t.id)))
       .map((t) => t.id);
-    if (allowed.length && !allowed.includes(activeTab)) {
-      setActiveTab(allowed[0]);
+    if (!allowed.includes(activeTab)) {
+      setActiveTab(allowed[0] || ''); // izin yoksa '' → hiçbir bölüm render edilmez
     }
   }, [auth]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -1586,6 +1586,15 @@ export default function AdminDashboard() {
 
         {/* Main Content */}
         <main className="flex-1 min-w-0 px-6 py-8">
+          {/* Yetkili bölümü olmayan kullanıcı */}
+          {auth && visibleTabs.length === 0 && (
+            <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+              <ShieldCheck size={48} className="mx-auto text-gray-300 mb-4" />
+              <h3 className="text-xl font-bold text-gray-900">Erişim yetkiniz yok</h3>
+              <p className="text-gray-500 mt-1">Henüz hiçbir bölüme yetkiniz tanımlanmamış. Lütfen yöneticinizle iletişime geçin.</p>
+            </div>
+          )}
+
           {/* ==================== FIYAT YÖNETİMİ TAB ==================== */}
           {activeTab === 'prices' && (
           <>
