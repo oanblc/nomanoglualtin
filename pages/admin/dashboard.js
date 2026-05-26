@@ -439,6 +439,7 @@ export default function AdminDashboard() {
   const handleSaveUser = async () => {
     if (!userFormData.username.trim()) { alert('Kullanıcı adı gerekli'); return; }
     if (!editingUser && !userFormData.password) { alert('Yeni kullanıcı için şifre gerekli'); return; }
+    if (userFormData.password && userFormData.password.length < 6) { alert('Şifre en az 6 karakter olmalı'); return; }
     setUserSaving(true);
     try {
       const payload = {
@@ -458,7 +459,9 @@ export default function AdminDashboard() {
       const r = await authAxios.get(`${apiUrl}/api/users`);
       if (r.data.success) setUsers(r.data.data);
     } catch (error) {
-      alert('Hata: ' + (error.response?.data?.message || error.message));
+      const data = error.response?.data;
+      const detail = data?.errors?.[0]?.message || data?.message || error.message;
+      alert('Hata: ' + detail);
     } finally {
       setUserSaving(false);
     }
