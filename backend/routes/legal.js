@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const LegalPage = require('../models/LegalPage');
-const { authMiddleware } = require('../middleware/auth');
+const { requirePermission } = require('../middleware/auth');
 
 // Varsayılan içerikler - App Store ve Google Play uyumlu
 const defaultContent = {
@@ -305,7 +305,7 @@ router.get('/:type', async (req, res) => {
 });
 
 // Varsayılan içeriklere sıfırla - Admin korumalı
-router.post('/reset-to-defaults', authMiddleware, async (req, res) => {
+router.post('/reset-to-defaults', requirePermission('legal'), async (req, res) => {
   try {
     // Privacy sayfasını güncelle
     await LegalPage.findOneAndUpdate(
@@ -337,7 +337,7 @@ router.post('/reset-to-defaults', authMiddleware, async (req, res) => {
 });
 
 // Legal sayfa güncelle - Admin korumalı
-router.put('/:type', authMiddleware, async (req, res) => {
+router.put('/:type', requirePermission('legal'), async (req, res) => {
   try {
     const { type } = req.params;
     const { title, content, lastUpdated, isActive } = req.body;

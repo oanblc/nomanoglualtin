@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Transaction = require('../models/Transaction');
 const Branch = require('../models/Branch');
-const { authMiddleware, employeeAuthMiddleware } = require('../middleware/auth');
+const { employeeAuthMiddleware, requirePermission } = require('../middleware/auth');
 const { transactionValidation, idParamValidation } = require('../middleware/validation');
 
 // İşlem oluştur (çalışan veya admin)
@@ -27,7 +27,7 @@ router.post('/', employeeAuthMiddleware, transactionValidation, async (req, res)
 });
 
 // Tüm işlemleri listele (sadece admin)
-router.get('/', authMiddleware, async (req, res) => {
+router.get('/', requirePermission('transactions'), async (req, res) => {
   try {
     const transactions = await Transaction.find()
       .populate('branchId', 'name city')
@@ -51,7 +51,7 @@ router.get('/', authMiddleware, async (req, res) => {
 });
 
 // PDF oluştur (sadece admin)
-router.get('/pdf/:id', authMiddleware, async (req, res) => {
+router.get('/pdf/:id', requirePermission('transactions'), async (req, res) => {
   try {
     const PDFDocument = require('pdfkit');
     const path = require('path');
@@ -237,7 +237,7 @@ router.get('/pdf/:id', authMiddleware, async (req, res) => {
 });
 
 // İşlem güncelle (sadece admin)
-router.put('/:id', authMiddleware, idParamValidation, async (req, res) => {
+router.put('/:id', requirePermission('transactions'), idParamValidation, async (req, res) => {
   try {
     const allowedFields = ['fullName', 'identityNumber', 'phone', 'occupation', 'address', 'date', 'branchId', 'transactionType', 'totalAmount', 'details', 'additionalInfo', 'status'];
     const updates = {};
@@ -265,7 +265,7 @@ router.put('/:id', authMiddleware, idParamValidation, async (req, res) => {
 });
 
 // İşlem sil (sadece admin)
-router.delete('/:id', authMiddleware, idParamValidation, async (req, res) => {
+router.delete('/:id', requirePermission('transactions'), idParamValidation, async (req, res) => {
   try {
     const transaction = await Transaction.findByIdAndDelete(req.params.id);
     if (!transaction) {
@@ -280,7 +280,7 @@ router.delete('/:id', authMiddleware, idParamValidation, async (req, res) => {
 });
 
 // Tek işlem detayı (sadece admin)
-router.get('/:id', authMiddleware, idParamValidation, async (req, res) => {
+router.get('/:id', requirePermission('transactions'), idParamValidation, async (req, res) => {
   try {
     const transaction = await Transaction.findById(req.params.id)
       .populate('branchId', 'name city companyTitle taxOffice taxNumber tradeRegistryNo');

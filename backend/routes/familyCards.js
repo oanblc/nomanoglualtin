@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const FamilyCard = require('../models/FamilyCard');
-const { authMiddleware } = require('../middleware/auth');
+const { requirePermission } = require('../middleware/auth');
 const { familyCardValidation, idParamValidation } = require('../middleware/validation');
 
 // Tüm family cards getir
@@ -50,7 +50,7 @@ router.get('/:id', idParamValidation, async (req, res) => {
 });
 
 // Yeni family card oluştur (Admin korumalı + validation)
-router.post('/', authMiddleware, familyCardValidation, async (req, res) => {
+router.post('/', requirePermission('family'), familyCardValidation, async (req, res) => {
   try {
     const card = new FamilyCard(req.body);
     await card.save();
@@ -70,7 +70,7 @@ router.post('/', authMiddleware, familyCardValidation, async (req, res) => {
 });
 
 // Family card güncelle (Admin korumalı + validation)
-router.put('/:id', authMiddleware, idParamValidation, familyCardValidation, async (req, res) => {
+router.put('/:id', requirePermission('family'), idParamValidation, familyCardValidation, async (req, res) => {
   try {
     const card = await FamilyCard.findByIdAndUpdate(
       req.params.id,
@@ -101,7 +101,7 @@ router.put('/:id', authMiddleware, idParamValidation, familyCardValidation, asyn
 });
 
 // Family card sil (Admin korumalı + validation)
-router.delete('/:id', authMiddleware, idParamValidation, async (req, res) => {
+router.delete('/:id', requirePermission('family'), idParamValidation, async (req, res) => {
   try {
     const card = await FamilyCard.findByIdAndDelete(req.params.id);
     

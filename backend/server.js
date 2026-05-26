@@ -126,6 +126,7 @@ const seoRoutes = require('./routes/seo');
 const legalRoutes = require('./routes/legal');
 const transactionRoutes = require('./routes/transactions');
 const businessRoutes = require('./routes/business');
+const usersRoutes = require('./routes/users');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/prices', priceRoutes);
@@ -140,6 +141,7 @@ app.use('/api/seo', seoRoutes);
 app.use('/api/legal', legalRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/business', businessRoutes);
+app.use('/api/users', usersRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

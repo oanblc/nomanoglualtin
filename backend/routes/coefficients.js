@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Coefficient = require('../models/Coefficient');
-const { authMiddleware } = require('../middleware/auth');
+const { requirePermission } = require('../middleware/auth');
 
 // Tüm katsayıları getir
 router.get('/', async (req, res) => {
@@ -22,7 +22,7 @@ router.get('/', async (req, res) => {
 });
 
 // Katsayı oluştur veya güncelle (Admin)
-router.post('/', authMiddleware, async (req, res) => {
+router.post('/', requirePermission('prices'), async (req, res) => {
   try {
     const { code, name, type, multiplier, addition, isVisible, order, category } = req.body;
 
@@ -68,7 +68,7 @@ router.post('/', authMiddleware, async (req, res) => {
 });
 
 // Toplu katsayı güncelle (Admin)
-router.post('/bulk', authMiddleware, async (req, res) => {
+router.post('/bulk', requirePermission('prices'), async (req, res) => {
   try {
     const { coefficients } = req.body;
 
@@ -121,7 +121,7 @@ router.post('/bulk', authMiddleware, async (req, res) => {
 });
 
 // Katsayı sil (Admin)
-router.delete('/:id', authMiddleware, async (req, res) => {
+router.delete('/:id', requirePermission('prices'), async (req, res) => {
   try {
     const { id } = req.params;
     await Coefficient.findByIdAndDelete(id);

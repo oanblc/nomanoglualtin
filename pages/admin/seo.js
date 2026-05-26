@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
 import { Search, BarChart3, Code, Save, ArrowLeft, Globe, FileText, Tag, Image, CheckCircle, AlertCircle } from 'lucide-react';
+import { getAuth, hasPermission } from '../../lib/auth';
 
 export default function AdminSeo() {
   const router = useRouter();
@@ -31,9 +32,13 @@ export default function AdminSeo() {
   });
 
   useEffect(() => {
-    const token = localStorage.getItem('adminToken');
-    if (!token) {
+    const a = getAuth();
+    if (!a) {
       router.push('/admin/login');
+      return;
+    }
+    if (!hasPermission(a, 'seo')) {
+      router.push('/admin/dashboard');
       return;
     }
     fetchSeoData();

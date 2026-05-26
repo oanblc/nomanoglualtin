@@ -1,4 +1,5 @@
 const { body, param, validationResult } = require('express-validator');
+const { SECTION_IDS } = require('../config/sections');
 
 // Validation sonuçlarını kontrol eden middleware
 const validate = (req, res, next) => {
@@ -235,10 +236,36 @@ const transactionValidation = [
   validate
 ];
 
+// Kullanıcı (staff) oluşturma/güncelleme validasyonu
+// password create'te zorunlu (route'ta kontrol edilir), update'te opsiyonel.
+const userValidation = [
+  body('username')
+    .trim()
+    .notEmpty().withMessage('Kullanıcı adı gerekli')
+    .isLength({ max: 50 }).withMessage('Kullanıcı adı çok uzun')
+    .matches(/^[a-zA-Z0-9._-]+$/).withMessage('Kullanıcı adı yalnızca harf, rakam, . _ - içerebilir'),
+  body('password')
+    .optional({ checkFalsy: true })
+    .isLength({ min: 6, max: 100 }).withMessage('Şifre en az 6, en fazla 100 karakter olmalı'),
+  body('name')
+    .optional()
+    .isLength({ max: 100 }).withMessage('İsim çok uzun')
+    .customSanitizer(sanitizeString),
+  body('permissions')
+    .optional()
+    .isArray().withMessage('İzinler dizi olmalı')
+    .custom((arr) => arr.every((p) => SECTION_IDS.includes(p))).withMessage('Geçersiz izin değeri'),
+  body('isActive')
+    .optional()
+    .isBoolean().withMessage('isActive boolean olmalı'),
+  validate
+];
+
 module.exports = {
   validate,
   sanitizeString,
   loginValidation,
+  userValidation,
   articleValidation,
   branchValidation,
   customPriceValidation,

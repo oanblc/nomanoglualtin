@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const Settings = require('../models/Settings');
-const { authMiddleware } = require('../middleware/auth');
+const { requirePermission } = require('../middleware/auth');
 
 // Şifre alanını hashle (zaten bcrypt formatındaysa dokunma; boşsa temizle)
 const normalizePasswordField = async (value) => {
@@ -43,7 +43,7 @@ router.get('/', async (req, res) => {
 });
 
 // Admin için tam settings (employeePassword dahil)
-router.get('/admin', authMiddleware, async (req, res) => {
+router.get('/admin', requirePermission('settings'), async (req, res) => {
   try {
     let settings = await Settings.findOne({ key: 'app_settings' });
     if (!settings) {
@@ -57,7 +57,7 @@ router.get('/admin', authMiddleware, async (req, res) => {
 });
 
 // Settings güncelle (singleton) - Admin korumalı
-router.post('/', authMiddleware, async (req, res) => {
+router.post('/', requirePermission('settings'), async (req, res) => {
   try {
     const payload = { ...req.body };
 

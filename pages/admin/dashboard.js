@@ -3,8 +3,9 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import axios from 'axios';
 import { useWebSocket } from '../../hooks/useWebSocket';
-import { TrendingUp, LogOut, Plus, Edit2, Trash2, X, Save, AlertCircle, RefreshCw, Settings, FileText, Users, GripVertical, Building2, MapPin, Phone, Mail, Clock, ExternalLink, Search, ClipboardList, Download, Eye, EyeOff, Calendar, Filter } from 'lucide-react';
+import { TrendingUp, LogOut, Plus, Edit2, Trash2, X, Save, AlertCircle, RefreshCw, Settings, FileText, Users, GripVertical, Building2, MapPin, Phone, Mail, Clock, ExternalLink, Search, ClipboardList, Download, Eye, EyeOff, Calendar, Filter, Menu, UserCog, ShieldCheck, PanelLeft, PanelLeftClose } from 'lucide-react';
 import Link from 'next/link';
+import { getAuth, hasPermission, ADMIN_SECTIONS } from '../../lib/auth';
 
 // Auth header ile axios instance oluştur
 const createAuthAxios = () => {
@@ -81,6 +82,26 @@ export default function AdminDashboard() {
 
   // Tab state
   const [activeTab, setActiveTab] = useState('prices'); // 'prices' | 'family' | 'articles' | 'branches' | 'transactions' | 'settings'
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  // Oturum & yetki
+  const [auth, setAuth] = useState(null);
+  const can = (section) => hasPermission(auth, section);
+
+  // Sekme tanımları (hem masaüstü nav hem mobil menü bunu kullanır)
+  const adminTabs = [
+    { id: 'prices',         label: 'Fiyat Yönetimi',    icon: TrendingUp },
+    { id: 'businessPrices', label: 'İşletme Fiyatları',  icon: Building2 },
+    { id: 'family',         label: 'NOMANOĞLU Ailesi',  icon: Users },
+    { id: 'articles',       label: 'Rehber Makaleleri', icon: FileText },
+    { id: 'branches',       label: 'Şubeler',           icon: Building2 },
+    { id: 'transactions',   label: 'İşlemler',          icon: ClipboardList },
+    { id: 'settings',       label: 'Ayarlar',           icon: Settings },
+    { id: 'users',          label: 'Kullanıcılar',      icon: UserCog, adminOnly: true },
+  ];
+  // Yalnızca yetkili olunan sekmeler (admin hepsini, kullanıcı yönetimi yalnızca admin)
+  const visibleTabs = adminTabs.filter((t) => (t.adminOnly ? (auth && auth.isAdmin) : can(t.id)));
 
   // Drag & Drop state
   const [draggedItem, setDraggedItem] = useState(null);
@@ -177,13 +198,25 @@ export default function AdminDashboard() {
   const [bulkSaving, setBulkSaving] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem('adminToken');
-    if (!token) {
+    const a = getAuth();
+    if (!a) {
       router.push('/admin/login');
       return;
     }
-    loadData();
+    setAuth(a);
+    loadData(a);
   }, []);
+
+  // Aktif sekme izinli değilse ilk izinli sekmeye geç
+  useEffect(() => {
+    if (!auth) return;
+    const allowed = adminTabs
+      .filter((t) => (t.adminOnly ? auth.isAdmin : hasPermission(auth, t.id)))
+      .map((t) => t.id);
+    if (allowed.length && !allowed.includes(activeTab)) {
+      setActiveTab(allowed[0]);
+    }
+  }, [auth]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // İlk açılışta MongoDB'den kaynak fiyatları yükle
   const loadSourcePricesFromDB = async () => {
@@ -299,31 +332,22 @@ export default function AdminDashboard() {
     return () => clearInterval(interval);
   }, [lastUpdate]);
 
-  const loadData = async () => {
-    try {
-      console.log('🔄 Admin Panel - Veri yükleniyor...');
-      const [customRes, settingsRes, familyRes, articlesRes, branchesRes] = await Promise.all([
-        axios.get(`${apiUrl}/api/custom-prices`),
-        authAxios.get(`${apiUrl}/api/settings/admin`),
-        axios.get(`${apiUrl}/api/family-cards`),
-        axios.get(`${apiUrl}/api/articles`),
-        authAxios.get(`${apiUrl}/api/branches/admin/all`)
-      ]);
-      
-      if (customRes.data.success) {
-        setCustomPrices(customRes.data.data);
-        console.log(`✅ ${customRes.data.data.length} custom fiyat yüklendi`);
-      }
+  const loadData = async (authArg) => {
+    const a = authArg || auth;
+    const allowed = (s) => Boolean(a && (a.isAdmin || (a.permissions || []).includes(s)));
+    console.log('🔄 Admin Panel - Veri yükleniyor...');
 
-      if (settingsRes.data.success) {
-        const s = settingsRes.data.data;
+    // --- Herkese açık veriler (logo/iletişim ve liste verileri) ---
+    try {
+      const sRes = await axios.get(`${apiUrl}/api/settings`);
+      if (sRes.data.success) {
+        const s = sRes.data.data;
         setMaxDisplayItems(s.maxDisplayItems || 20);
         setLogoBase64(s.logoBase64 || '');
         setLogoHeight(s.logoHeight || 48);
         setLogoWidth(s.logoWidth || 'auto');
         setFaviconBase64(s.faviconBase64 || '');
         setPriceTableImage(s.priceTableImage || '');
-        // İletişim bilgileri
         setContactPhone(s.contactPhone || '+90 (XXX) XXX XX XX');
         setContactEmail(s.contactEmail || 'info@nomanoglu.com');
         setContactAddress(s.contactAddress || 'Istanbul, Turkiye');
@@ -335,37 +359,118 @@ export default function AdminDashboard() {
         setSocialYoutube(s.socialYoutube || '');
         setSocialTiktok(s.socialTiktok || '');
         setSocialWhatsapp(s.socialWhatsapp || '905322904601');
-        setHasEmployeePassword(Boolean(s.employeePassword));
-        setHasBusinessPassword(Boolean(s.businessPassword));
-        setEmployeePassword('');
-        setBusinessPassword('');
-        console.log('✅ Ayarlar yüklendi');
       }
+    } catch (e) { console.error('Ayarlar (public) yüklenemedi:', e.message); }
 
-      if (familyRes.data.success) {
-        setFamilyCards(familyRes.data.data);
-        console.log(`✅ ${familyRes.data.data.length} family kart yüklendi`);
+    try {
+      const r = await axios.get(`${apiUrl}/api/custom-prices`);
+      if (r.data.success) setCustomPrices(r.data.data);
+    } catch (e) { console.error('Custom fiyat yüklenemedi:', e.message); }
+
+    try {
+      const r = await axios.get(`${apiUrl}/api/family-cards`);
+      if (r.data.success) setFamilyCards(r.data.data);
+    } catch (e) { console.error('Family kart yüklenemedi:', e.message); }
+
+    try {
+      const r = await axios.get(`${apiUrl}/api/articles`);
+      if (r.data.success) setArticles(r.data.data);
+    } catch (e) { console.error('Makale yüklenemedi:', e.message); }
+
+    // --- Yetki gerektiren veriler ---
+    if (allowed('settings')) {
+      try {
+        const r = await authAxios.get(`${apiUrl}/api/settings/admin`);
+        if (r.data.success) {
+          setHasEmployeePassword(Boolean(r.data.data.employeePassword));
+          setHasBusinessPassword(Boolean(r.data.data.businessPassword));
+          setEmployeePassword('');
+          setBusinessPassword('');
+        }
+      } catch (e) { console.error('Admin ayarları yüklenemedi:', e.message); }
+    }
+
+    if (allowed('branches')) {
+      try {
+        const r = await authAxios.get(`${apiUrl}/api/branches/admin/all`);
+        if (r.data.success) setBranches(r.data.data);
+      } catch (e) { console.error('Şubeler yüklenemedi:', e.message); }
+    }
+
+    if (a && a.isAdmin) {
+      try {
+        const r = await authAxios.get(`${apiUrl}/api/users`);
+        if (r.data.success) setUsers(r.data.data);
+      } catch (e) { console.error('Kullanıcılar yüklenemedi:', e.message); }
+    }
+
+    console.log('✅ Veriler yüklendi (yetkiye göre)');
+    setLoading(false);
+  };
+
+  // Kullanıcı (staff) yönetimi
+  const [users, setUsers] = useState([]);
+  const [showUserModal, setShowUserModal] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [userFormData, setUserFormData] = useState({ username: '', password: '', name: '', permissions: [], isActive: true });
+  const [userSaving, setUserSaving] = useState(false);
+
+  const openCreateUserModal = () => {
+    setEditingUser(null);
+    setUserFormData({ username: '', password: '', name: '', permissions: [], isActive: true });
+    setShowUserModal(true);
+  };
+
+  const openEditUserModal = (u) => {
+    setEditingUser(u);
+    setUserFormData({ username: u.username, password: '', name: u.name || '', permissions: u.permissions || [], isActive: u.isActive !== false });
+    setShowUserModal(true);
+  };
+
+  const toggleUserPermission = (sectionId) => {
+    setUserFormData((prev) => ({
+      ...prev,
+      permissions: prev.permissions.includes(sectionId)
+        ? prev.permissions.filter((p) => p !== sectionId)
+        : [...prev.permissions, sectionId],
+    }));
+  };
+
+  const handleSaveUser = async () => {
+    if (!userFormData.username.trim()) { alert('Kullanıcı adı gerekli'); return; }
+    if (!editingUser && !userFormData.password) { alert('Yeni kullanıcı için şifre gerekli'); return; }
+    setUserSaving(true);
+    try {
+      const payload = {
+        username: userFormData.username.trim(),
+        name: userFormData.name,
+        permissions: userFormData.permissions,
+        isActive: userFormData.isActive,
+      };
+      if (userFormData.password) payload.password = userFormData.password;
+
+      if (editingUser) {
+        await authAxios.put(`${apiUrl}/api/users/${editingUser.id}`, payload);
+      } else {
+        await authAxios.post(`${apiUrl}/api/users`, payload);
       }
-
-      if (articlesRes.data.success) {
-        setArticles(articlesRes.data.data);
-        console.log(`✅ ${articlesRes.data.data.length} makale yüklendi`);
-      }
-
-      if (branchesRes.data.success) {
-        setBranches(branchesRes.data.data);
-        console.log(`✅ ${branchesRes.data.data.length} şube yüklendi`);
-      }
-
-      console.log('✅ Tüm veriler başarıyla yüklendi! (Fiyatlar WebSocket\'ten gelecek)');
+      setShowUserModal(false);
+      const r = await authAxios.get(`${apiUrl}/api/users`);
+      if (r.data.success) setUsers(r.data.data);
     } catch (error) {
-      console.error('❌ Veri yükleme hatası:', error);
-      console.error('Error details:', error.response || error.message);
-      if (error.response?.status === 401) {
-        router.push('/admin/login');
-      }
+      alert('Hata: ' + (error.response?.data?.message || error.message));
     } finally {
-      setLoading(false);
+      setUserSaving(false);
+    }
+  };
+
+  const handleDeleteUser = async (id) => {
+    if (!confirm('Bu kullanıcıyı silmek istediğinize emin misiniz?')) return;
+    try {
+      await authAxios.delete(`${apiUrl}/api/users/${id}`);
+      setUsers((prev) => prev.filter((u) => u.id !== id));
+    } catch (error) {
+      alert('Hata: ' + (error.response?.data?.message || error.message));
     }
   };
 
@@ -1265,9 +1370,19 @@ export default function AdminDashboard() {
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
         <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
-          <div className="max-w-7xl mx-auto px-6">
+          <div className="px-6">
             <div className="flex items-center justify-between h-16">
               <div className="flex items-center space-x-4">
+                {!sidebarOpen && (
+                  <button
+                    onClick={() => setSidebarOpen(true)}
+                    className="hidden md:inline-flex p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                    title="Menüyü aç"
+                    aria-label="Menüyü aç"
+                  >
+                    <PanelLeft size={22} />
+                  </button>
+                )}
                 <div className="flex items-center space-x-3">
                   {logoBase64 ? (
                     <img 
@@ -1300,7 +1415,9 @@ export default function AdminDashboard() {
                   <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'} ${isConnected ? 'animate-pulse' : ''}`}></div>
                   <span className="text-xs font-semibold">{isConnected ? 'Canlı' : 'Bağlantı Yok'}</span>
                 </div>
-                
+
+                {/* Masaüstü aksiyonları */}
+                <div className="hidden md:flex items-center space-x-3">
                 <a
                   href="/"
                   target="_blank"
@@ -1311,6 +1428,7 @@ export default function AdminDashboard() {
                   <ExternalLink size={18} />
                   <span>Siteye Git</span>
                 </a>
+                {can('seo') && (
                 <Link
                   href="/admin/seo"
                   className="flex items-center space-x-2 px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-colors font-medium"
@@ -1319,6 +1437,8 @@ export default function AdminDashboard() {
                   <Search size={18} />
                   <span>SEO</span>
                 </Link>
+                )}
+                {can('legal') && (
                 <Link
                   href="/admin/legal"
                   className="flex items-center space-x-2 px-4 py-2 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-lg transition-colors font-medium"
@@ -1327,6 +1447,8 @@ export default function AdminDashboard() {
                   <FileText size={18} />
                   <span>Yasal</span>
                 </Link>
+                )}
+                {can('settings') && (
                 <button
                   onClick={() => setActiveTab('settings')}
                   className="flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors font-medium"
@@ -1335,6 +1457,7 @@ export default function AdminDashboard() {
                   <Settings size={18} />
                   <span>Ayarlar</span>
                 </button>
+                )}
                 <button
                   onClick={handleLogout}
                   className="flex items-center space-x-2 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors font-medium"
@@ -1342,112 +1465,124 @@ export default function AdminDashboard() {
                   <LogOut size={18} />
                   <span>Çıkış</span>
                 </button>
+                </div>
+
+                {/* Mobil hamburger */}
+                <button
+                  onClick={() => setMobileMenuOpen(o => !o)}
+                  className="md:hidden p-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                  aria-label="Menü"
+                >
+                  {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+                </button>
               </div>
             </div>
+
+            {/* Mobil açılır menü */}
+            {mobileMenuOpen && (
+              <div className="md:hidden py-3 border-t border-gray-200 animate-fade-in">
+                <nav className="flex flex-col space-y-1">
+                  {visibleTabs.map((tab) => {
+                    const Icon = tab.icon;
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => { setActiveTab(tab.id); setMobileMenuOpen(false); }}
+                        className={`flex items-center space-x-3 px-4 py-3 rounded-lg font-semibold text-sm transition-colors ${
+                          activeTab === tab.id
+                            ? 'bg-amber-50 text-amber-600'
+                            : 'text-gray-700 hover:bg-gray-100'
+                        }`}
+                      >
+                        <Icon size={18} />
+                        <span>{tab.label}</span>
+                      </button>
+                    );
+                  })}
+                </nav>
+
+                <div className="mt-3 pt-3 border-t border-gray-200 flex flex-col space-y-1">
+                  <a
+                    href="/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center space-x-3 px-4 py-3 rounded-lg font-medium text-sm text-amber-700 hover:bg-amber-50"
+                  >
+                    <ExternalLink size={18} />
+                    <span>Siteye Git</span>
+                  </a>
+                  {can('seo') && (
+                  <Link
+                    href="/admin/seo"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center space-x-3 px-4 py-3 rounded-lg font-medium text-sm text-blue-700 hover:bg-blue-50"
+                  >
+                    <Search size={18} />
+                    <span>SEO & Analytics</span>
+                  </Link>
+                  )}
+                  {can('legal') && (
+                  <Link
+                    href="/admin/legal"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center space-x-3 px-4 py-3 rounded-lg font-medium text-sm text-purple-700 hover:bg-purple-50"
+                  >
+                    <FileText size={18} />
+                    <span>Yasal Sayfalar</span>
+                  </Link>
+                  )}
+                  <button
+                    onClick={() => { setMobileMenuOpen(false); handleLogout(); }}
+                    className="flex items-center space-x-3 px-4 py-3 rounded-lg font-medium text-sm text-red-600 hover:bg-red-50 text-left"
+                  >
+                    <LogOut size={18} />
+                    <span>Çıkış</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </header>
 
-        {/* Tab Navigation */}
-        <div className="bg-white border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-6">
-            <nav className="flex space-x-1">
+        <div className="flex min-h-[calc(100vh-4rem)]">
+        {/* Sekme menüsü (masaüstü, sol dikey) */}
+        <aside className={`hidden ${sidebarOpen ? 'md:block' : ''} w-64 shrink-0 bg-white border-r border-gray-200`}>
+          <div className="sticky top-16 max-h-[calc(100vh-4rem)] overflow-y-auto">
+            <div className="flex justify-end px-2 pt-2">
               <button
-                onClick={() => setActiveTab('prices')}
-                className={`px-6 py-4 font-semibold text-sm border-b-2 transition-colors ${
-                  activeTab === 'prices'
-                    ? 'border-amber-500 text-amber-600'
-                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
-                }`}
+                onClick={() => setSidebarOpen(false)}
+                className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
+                title="Menüyü kapat"
+                aria-label="Menüyü kapat"
               >
-                <div className="flex items-center space-x-2">
-                  <TrendingUp size={18} />
-                  <span>Fiyat Yönetimi</span>
-                </div>
+                <PanelLeftClose size={20} />
               </button>
-              <button
-                onClick={() => setActiveTab('businessPrices')}
-                className={`px-6 py-4 font-semibold text-sm border-b-2 transition-colors ${
-                  activeTab === 'businessPrices'
-                    ? 'border-amber-500 text-amber-600'
-                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
-                }`}
-              >
-                <div className="flex items-center space-x-2">
-                  <Building2 size={18} />
-                  <span>İşletme Fiyatları</span>
-                </div>
-              </button>
-              <button
-                onClick={() => setActiveTab('family')}
-                className={`px-6 py-4 font-semibold text-sm border-b-2 transition-colors ${
-                  activeTab === 'family'
-                    ? 'border-amber-500 text-amber-600'
-                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
-                }`}
-              >
-                <div className="flex items-center space-x-2">
-                  <Users size={18} />
-                  <span>NOMANOĞLU Ailesi</span>
-                </div>
-              </button>
-              <button
-                onClick={() => setActiveTab('articles')}
-                className={`px-6 py-4 font-semibold text-sm border-b-2 transition-colors ${
-                  activeTab === 'articles'
-                    ? 'border-amber-500 text-amber-600'
-                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
-                }`}
-              >
-                <div className="flex items-center space-x-2">
-                  <FileText size={18} />
-                  <span>Rehber Makaleleri</span>
-                </div>
-              </button>
-              <button
-                onClick={() => setActiveTab('branches')}
-                className={`px-6 py-4 font-semibold text-sm border-b-2 transition-colors ${
-                  activeTab === 'branches'
-                    ? 'border-amber-500 text-amber-600'
-                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
-                }`}
-              >
-                <div className="flex items-center space-x-2">
-                  <Building2 size={18} />
-                  <span>Şubeler</span>
-                </div>
-              </button>
-              <button
-                onClick={() => setActiveTab('transactions')}
-                className={`px-6 py-4 font-semibold text-sm border-b-2 transition-colors ${
-                  activeTab === 'transactions'
-                    ? 'border-amber-500 text-amber-600'
-                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
-                }`}
-              >
-                <div className="flex items-center space-x-2">
-                  <ClipboardList size={18} />
-                  <span>İşlemler</span>
-                </div>
-              </button>
-              <button
-                onClick={() => setActiveTab('settings')}
-                className={`px-6 py-4 font-semibold text-sm border-b-2 transition-colors ${
-                  activeTab === 'settings'
-                    ? 'border-amber-500 text-amber-600'
-                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
-                }`}
-              >
-                <div className="flex items-center space-x-2">
-                  <Settings size={18} />
-                  <span>Ayarlar</span>
-                </div>
-              </button>
+            </div>
+            <nav className="flex flex-col px-3 pb-3 space-y-1">
+              {visibleTabs.map((tab) => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg font-semibold text-sm transition-colors ${
+                      activeTab === tab.id
+                        ? 'bg-amber-50 text-amber-600'
+                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                    }`}
+                  >
+                    <Icon size={18} />
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              })}
             </nav>
           </div>
-        </div>
+        </aside>
 
         {/* Main Content */}
-        <main className="max-w-7xl mx-auto px-6 py-8">
+        <main className="flex-1 min-w-0 px-6 py-8">
           {/* ==================== FIYAT YÖNETİMİ TAB ==================== */}
           {activeTab === 'prices' && (
           <>
@@ -3420,7 +3555,92 @@ export default function AdminDashboard() {
             </div>
           </>
           )}
+
+          {/* ==================== KULLANICILAR TAB ==================== */}
+          {activeTab === 'users' && auth && auth.isAdmin && (
+          <>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Kullanıcılar</h2>
+                <p className="text-gray-500 text-sm mt-1">Personel hesapları oluşturun ve hangi bölümlere erişebileceklerini belirleyin.</p>
+              </div>
+              <button
+                onClick={openCreateUserModal}
+                className="flex items-center space-x-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-semibold shadow-sm"
+              >
+                <Plus size={18} />
+                <span>Yeni Kullanıcı</span>
+              </button>
+            </div>
+
+            {users.length === 0 ? (
+              <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+                <UserCog size={48} className="mx-auto text-gray-300 mb-4" />
+                <h3 className="text-xl font-bold text-gray-900">Henüz kullanıcı yok</h3>
+                <p className="text-gray-500 mt-1">Yeni kullanıcı ekleyerek başlayın.</p>
+              </div>
+            ) : (
+              <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-gray-50 border-b-2 border-gray-200">
+                        <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Kullanıcı Adı</th>
+                        <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Ad</th>
+                        <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Yetkiler</th>
+                        <th className="text-center px-4 py-4 text-sm font-semibold text-gray-700">Durum</th>
+                        <th className="text-center px-4 py-4 text-sm font-semibold text-gray-700">İşlemler</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {users.map((u) => (
+                        <tr key={u.id} className="border-b border-gray-100">
+                          <td className="px-6 py-4 font-semibold text-gray-900">{u.username}</td>
+                          <td className="px-6 py-4 text-gray-700">{u.name || '-'}</td>
+                          <td className="px-6 py-4">
+                            <div className="flex flex-wrap gap-1 max-w-md">
+                              {(u.permissions || []).length === 0 ? (
+                                <span className="text-xs text-gray-400">Yetki yok</span>
+                              ) : (
+                                (u.permissions || []).map((pid) => {
+                                  const sec = ADMIN_SECTIONS.find((s) => s.id === pid);
+                                  return (
+                                    <span key={pid} className="text-xs bg-amber-100 text-amber-700 rounded-full px-2.5 py-0.5">
+                                      {sec ? sec.label : pid}
+                                    </span>
+                                  );
+                                })
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 text-center">
+                            {u.isActive ? (
+                              <span className="text-xs bg-green-100 text-green-700 rounded-full px-3 py-1 font-medium">Aktif</span>
+                            ) : (
+                              <span className="text-xs bg-gray-100 text-gray-500 rounded-full px-3 py-1 font-medium">Pasif</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-4">
+                            <div className="flex justify-center space-x-2">
+                              <button onClick={() => openEditUserModal(u)} className="p-2 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-lg" title="Düzenle">
+                                <Edit2 size={16} />
+                              </button>
+                              <button onClick={() => handleDeleteUser(u.id)} className="p-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg" title="Sil">
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </>
+          )}
         </main>
+        </div>
 
         {/* Modal */}
         {showModal && (
@@ -4176,6 +4396,114 @@ export default function AdminDashboard() {
                 >
                   <Save size={18} />
                   <span>{editingBranch ? 'Güncelle' : 'Kaydet'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Kullanıcı Modal */}
+        {showUserModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="border-b border-gray-200 px-6 py-4 flex justify-between items-center sticky top-0 bg-white">
+                <h2 className="text-xl font-bold text-gray-900">
+                  {editingUser ? 'Kullanıcıyı Düzenle' : 'Yeni Kullanıcı'}
+                </h2>
+                <button onClick={() => setShowUserModal(false)} className="p-2 hover:bg-gray-100 rounded-lg">
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Kullanıcı Adı *</label>
+                    <input
+                      type="text"
+                      value={userFormData.username}
+                      onChange={(e) => setUserFormData({ ...userFormData, username: e.target.value })}
+                      placeholder="örn. personel1"
+                      autoComplete="off"
+                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Ad (opsiyonel)</label>
+                    <input
+                      type="text"
+                      value={userFormData.name}
+                      onChange={(e) => setUserFormData({ ...userFormData, name: e.target.value })}
+                      placeholder="Ad Soyad"
+                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Şifre {editingUser ? '(değiştirmek için doldurun)' : '*'}
+                  </label>
+                  <input
+                    type="password"
+                    value={userFormData.password}
+                    onChange={(e) => setUserFormData({ ...userFormData, password: e.target.value })}
+                    placeholder={editingUser ? 'Boş bırakırsanız değişmez' : 'En az 6 karakter'}
+                    autoComplete="new-password"
+                    className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 mb-3">
+                    <ShieldCheck size={18} className="text-amber-600" />
+                    <span>Erişebileceği Bölümler</span>
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {ADMIN_SECTIONS.map((sec) => {
+                      const checked = userFormData.permissions.includes(sec.id);
+                      return (
+                        <label
+                          key={sec.id}
+                          className={`flex items-center space-x-3 px-4 py-2.5 rounded-lg border-2 cursor-pointer transition-colors ${
+                            checked ? 'border-amber-500 bg-amber-50' : 'border-gray-200 hover:bg-gray-50'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleUserPermission(sec.id)}
+                            className="w-4 h-4 accent-amber-600"
+                          />
+                          <span className="text-sm font-medium text-gray-800">{sec.label}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <label className="flex items-center space-x-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={userFormData.isActive}
+                    onChange={(e) => setUserFormData({ ...userFormData, isActive: e.target.checked })}
+                    className="w-4 h-4 accent-green-600"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Hesap aktif (kapatırsanız giriş yapamaz)</span>
+                </label>
+              </div>
+
+              <div className="bg-gray-50 border-t border-gray-200 px-6 py-4 flex justify-end space-x-3 sticky bottom-0">
+                <button onClick={() => setShowUserModal(false)} className="px-6 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium">
+                  İptal
+                </button>
+                <button
+                  onClick={handleSaveUser}
+                  disabled={userSaving || !userFormData.username.trim() || (!editingUser && !userFormData.password)}
+                  className="flex items-center space-x-2 px-6 py-2.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-lg transition-colors font-semibold"
+                >
+                  <Save size={18} />
+                  <span>{userSaving ? 'Kaydediliyor...' : (editingUser ? 'Güncelle' : 'Oluştur')}</span>
                 </button>
               </div>
             </div>

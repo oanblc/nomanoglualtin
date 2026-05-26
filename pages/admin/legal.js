@@ -5,6 +5,7 @@ import axios from 'axios';
 import Link from 'next/link';
 import { sanitize } from '../../lib/sanitize';
 import { FileText, ArrowLeft, Save, Edit2, Eye, EyeOff, AlertCircle, CheckCircle, RotateCcw } from 'lucide-react';
+import { getAuth, hasPermission } from '../../lib/auth';
 
 // Auth header ile axios instance oluştur
 const createAuthAxios = () => {
@@ -47,9 +48,13 @@ export default function LegalAdmin() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
 
   useEffect(() => {
-    const token = localStorage.getItem('adminToken');
-    if (!token) {
+    const a = getAuth();
+    if (!a) {
       router.push('/admin/login');
+      return;
+    }
+    if (!hasPermission(a, 'legal')) {
+      router.push('/admin/dashboard');
       return;
     }
     loadLegalPages();

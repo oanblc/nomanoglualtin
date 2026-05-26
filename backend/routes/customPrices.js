@@ -1,7 +1,7 @@
 const express = require('express');
 const CustomPrice = require('../models/CustomPrice');
 const priceService = require('../services/priceService');
-const { authMiddleware } = require('../middleware/auth');
+const { requirePermission } = require('../middleware/auth');
 const { customPriceValidation, idParamValidation } = require('../middleware/validation');
 
 module.exports = (io) => {
@@ -53,7 +53,7 @@ router.get('/:id', idParamValidation, async (req, res) => {
 });
 
 // Yeni custom fiyat oluştur (Admin korumalı + validation)
-router.post('/', authMiddleware, customPriceValidation, async (req, res) => {
+router.post('/', requirePermission('prices'), customPriceValidation, async (req, res) => {
   try {
     const price = new CustomPrice(req.body);
     await price.save();
@@ -77,7 +77,7 @@ router.post('/', authMiddleware, customPriceValidation, async (req, res) => {
 });
 
 // Toplu addition güncelleme (Admin korumalı) - /:id'den ÖNCE olmalı!
-router.put('/bulk-update', authMiddleware, async (req, res) => {
+router.put('/bulk-update', requirePermission('prices'), async (req, res) => {
   try {
     const { updates } = req.body;
     // updates: [{ id, alisAddition, satisAddition }]
@@ -116,7 +116,7 @@ router.put('/bulk-update', authMiddleware, async (req, res) => {
 });
 
 // Fiyat sıralamasını güncelle (Admin korumalı) - /:id'den ÖNCE olmalı!
-router.put('/reorder', authMiddleware, async (req, res) => {
+router.put('/reorder', requirePermission('prices'), async (req, res) => {
   try {
     const { orders } = req.body; // [{ id: '...', order: 0 }, { id: '...', order: 1 }, ...]
 
@@ -166,7 +166,7 @@ router.put('/reorder', authMiddleware, async (req, res) => {
 });
 
 // Toplu ekleme/çıkarma güncelleme (Admin korumalı) - /:id'den ÖNCE olmalı!
-router.put('/bulk-addition', authMiddleware, async (req, res) => {
+router.put('/bulk-addition', requirePermission('prices'), async (req, res) => {
   try {
     const { updates } = req.body;
     // updates: [{ id, alisAddition, satisAddition, backupAlisAddition, backupSatisAddition }]
@@ -225,7 +225,7 @@ router.put('/bulk-addition', authMiddleware, async (req, res) => {
 });
 
 // Custom fiyat güncelle (Admin korumalı + validation)
-router.put('/:id', authMiddleware, idParamValidation, customPriceValidation, async (req, res) => {
+router.put('/:id', requirePermission('prices'), idParamValidation, customPriceValidation, async (req, res) => {
   try {
     const price = await CustomPrice.findByIdAndUpdate(
       req.params.id,
@@ -260,7 +260,7 @@ router.put('/:id', authMiddleware, idParamValidation, customPriceValidation, asy
 });
 
 // Custom fiyat sil (Admin korumalı + validation)
-router.delete('/:id', authMiddleware, idParamValidation, async (req, res) => {
+router.delete('/:id', requirePermission('prices'), idParamValidation, async (req, res) => {
   try {
     const price = await CustomPrice.findByIdAndDelete(req.params.id);
 

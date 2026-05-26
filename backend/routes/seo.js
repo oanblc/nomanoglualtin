@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Seo = require('../models/Seo');
-const { authMiddleware } = require('../middleware/auth');
+const { requirePermission } = require('../middleware/auth');
 
 // Whitelist: 3. parti analytics ID format doğrulaması
 const idValidators = {
@@ -37,7 +37,7 @@ router.get('/', async (req, res) => {
 });
 
 // SEO ayarlarını güncelle (Admin korumalı)
-router.post('/', authMiddleware, async (req, res) => {
+router.post('/', requirePermission('seo'), async (req, res) => {
   try {
     let seo = await Seo.findOne({ key: 'seo_settings' });
 

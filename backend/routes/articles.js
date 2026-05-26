@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Article = require('../models/Article');
-const { authMiddleware } = require('../middleware/auth');
+const { requirePermission } = require('../middleware/auth');
 const { articleValidation, idParamValidation } = require('../middleware/validation');
 
 // Tüm makaleleri getir
@@ -50,7 +50,7 @@ router.get('/:id', idParamValidation, async (req, res) => {
 });
 
 // Yeni makale oluştur (Admin korumalı + validation)
-router.post('/', authMiddleware, articleValidation, async (req, res) => {
+router.post('/', requirePermission('articles'), articleValidation, async (req, res) => {
   try {
     const article = new Article(req.body);
     await article.save();
@@ -70,7 +70,7 @@ router.post('/', authMiddleware, articleValidation, async (req, res) => {
 });
 
 // Makale güncelle (Admin korumalı + validation)
-router.put('/:id', authMiddleware, idParamValidation, articleValidation, async (req, res) => {
+router.put('/:id', requirePermission('articles'), idParamValidation, articleValidation, async (req, res) => {
   try {
     const article = await Article.findByIdAndUpdate(
       req.params.id,
@@ -101,7 +101,7 @@ router.put('/:id', authMiddleware, idParamValidation, articleValidation, async (
 });
 
 // Makale sil (Admin korumalı + validation)
-router.delete('/:id', authMiddleware, idParamValidation, async (req, res) => {
+router.delete('/:id', requirePermission('articles'), idParamValidation, async (req, res) => {
   try {
     const article = await Article.findByIdAndDelete(req.params.id);
     

@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { loginValidation, employeeLoginValidation } = require('../middleware/validation');
 const Settings = require('../models/Settings');
+const User = require('../models/User');
 
 // Admin login (validation ile korumalı)
 router.post('/login', loginValidation, async (req, res) => {
@@ -18,41 +19,56 @@ router.post('/login', loginValidation, async (req, res) => {
     const adminHash = process.env.ADMIN_PASSWORD_HASH;
     const adminPasswordPlain = process.env.ADMIN_PASSWORD;
 
-    if (!adminUsername || (!adminHash && !adminPasswordPlain)) {
-      console.error('Admin kimliği yapılandırılmamış (ADMIN_USERNAME + ADMIN_PASSWORD_HASH veya ADMIN_PASSWORD gerekli)');
-      return res.status(500).json({ message: 'Sunucu yapılandırma hatası' });
+    // 1) Env tabanlı süper-admin
+    if (adminUsername && username === adminUsername) {
+      let passwordOk = false;
+      if (adminHash) {
+        passwordOk = await bcrypt.compare(password, adminHash);
+      } else if (adminPasswordPlain) {
+        // Geçiş dönemi: henüz ADMIN_PASSWORD_HASH tanımlı değil
+        passwordOk = (password === adminPasswordPlain);
+        if (passwordOk) {
+          console.warn('⚠️ ADMIN_PASSWORD_HASH tanımlı değil — plain fallback kullanıldı. Railway env\'e hash ekleyip ADMIN_PASSWORD\'ü silin.');
+        }
+      }
+
+      if (!passwordOk) {
+        return res.status(401).json({ message: 'Geçersiz kullanıcı adı veya şifre' });
+      }
+
+      const token = jwt.sign(
+        { role: 'admin' },
+        process.env.JWT_SECRET,
+        { expiresIn: '24h' }
+      );
+
+      return res.json({ success: true, token, message: 'Giriş başarılı' });
     }
 
-    if (username !== adminUsername) {
-      return res.status(401).json({ message: 'Geçersiz kullanıcı adı veya şifre' });
-    }
-
-    let passwordOk = false;
-    if (adminHash) {
-      passwordOk = await bcrypt.compare(password, adminHash);
-    } else {
-      // Geçiş dönemi: henüz ADMIN_PASSWORD_HASH tanımlı değil
-      passwordOk = (password === adminPasswordPlain);
+    // 2) DB tabanlı staff kullanıcısı (admin panelinden oluşturulan)
+    const user = await User.findOne({ username });
+    if (user && user.isActive) {
+      const passwordOk = await bcrypt.compare(password, user.password);
       if (passwordOk) {
-        console.warn('⚠️ ADMIN_PASSWORD_HASH tanımlı değil — plain fallback kullanıldı. Railway env\'e hash ekleyip ADMIN_PASSWORD\'ü silin.');
+        user.lastLogin = new Date();
+        await user.save();
+
+        const token = jwt.sign(
+          {
+            role: 'staff',
+            userId: user._id.toString(),
+            permissions: user.permissions || [],
+            name: user.name || ''
+          },
+          process.env.JWT_SECRET,
+          { expiresIn: '24h' }
+        );
+
+        return res.json({ success: true, token, message: 'Giriş başarılı' });
       }
     }
 
-    if (!passwordOk) {
-      return res.status(401).json({ message: 'Geçersiz kullanıcı adı veya şifre' });
-    }
-
-    const token = jwt.sign(
-      { role: 'admin' },
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' }
-    );
-
-    res.json({
-      success: true,
-      token,
-      message: 'Giriş başarılı'
-    });
+    return res.status(401).json({ message: 'Geçersiz kullanıcı adı veya şifre' });
   } catch (error) {
     console.error('Login hatası:', error.message);
     res.status(500).json({ message: 'Sunucu hatası' });
