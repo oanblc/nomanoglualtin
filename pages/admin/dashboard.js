@@ -4425,7 +4425,7 @@ export default function AdminDashboard() {
                       onChange={(e) => setUserFormData({ ...userFormData, username: e.target.value })}
                       placeholder="örn. personel1"
                       autoComplete="off"
-                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none"
+                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none"
                     />
                   </div>
                   <div>
@@ -4435,7 +4435,7 @@ export default function AdminDashboard() {
                       value={userFormData.name}
                       onChange={(e) => setUserFormData({ ...userFormData, name: e.target.value })}
                       placeholder="Ad Soyad"
-                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none"
+                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none"
                     />
                   </div>
                 </div>
@@ -4450,7 +4450,7 @@ export default function AdminDashboard() {
                     onChange={(e) => setUserFormData({ ...userFormData, password: e.target.value })}
                     placeholder={editingUser ? 'Boş bırakırsanız değişmez' : 'En az 6 karakter'}
                     autoComplete="new-password"
-                    className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none"
+                    className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none"
                   />
                 </div>
 
