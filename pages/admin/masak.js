@@ -20,9 +20,10 @@ const createAuthAxios = () => {
 };
 
 const LIST_LABELS = {
-  '6415_m5': '6415 s.K. m.5 (BMGK)',
-  '6415_m6': '6415 s.K. m.6 (Yurt içi)',
-  '7262': '7262 s.K. (Kitle imha fin.)'
+  '6415_m5': '6415 s.K. m.5 — BMGK Yaptırımları',
+  '6415_m6': '6415 s.K. m.6 — Yabancı ülke talebi',
+  '6415_m7': '6415 s.K. m.7 — İç Dondurma',
+  '7262':    '7262 s.K. — Kitle imha fin.'
 };
 
 export default function MasakAdmin() {
