@@ -59,7 +59,7 @@ async function loadCache(force = false) {
     return cache.entries;
   }
   const docs = await SanctionsEntry.find({ isActive: true })
-    .select('listCode fullName normalizedName normalizedAliases idNumbers')
+    .select('listCode fullName normalizedName normalizedAliases idNumbers nationality birthDate birthPlace organization decisionRef')
     .lean();
   cache = { entries: docs, loadedAt: Date.now() };
   return docs;
@@ -113,7 +113,12 @@ async function screen({ fullName, identityNumber }) {
         listCode: e.listCode,
         name: e.fullName,
         score: Math.round(score * 100) / 100,
-        reason
+        reason,
+        nationality: e.nationality || '',
+        birthDate: e.birthDate || '',
+        birthPlace: e.birthPlace || '',
+        organization: e.organization || '',
+        decisionRef: e.decisionRef || ''
       });
     }
   }
@@ -129,12 +134,22 @@ async function screen({ fullName, identityNumber }) {
   };
 }
 
-// Mobil/çalışana dönecek maskeli eşleşme bilgisi (PII sızdırmadan).
+// Mobil/çalışana dönecek eşleşme bilgisi. MASAK listesi kanun gereği public yayımlanıyor
+// (masak.hmb.gov.tr/bkk-ile-malvarliklari-dondurulanlar), bu yüzden disambig için gerekli
+// alanlar (uyruk, doğum tarihi/yeri, örgüt, karar no) çıkışa veriliyor — çalışan yanlış
+// pozitifte gerçek müşteri ile listedeki kişiyi karşılaştırabilsin. TCKN/pasaport no
+// gereksiz olduğundan dışarıya çıkarılmaz.
 function redactForClient(match) {
   return {
+    name: match.name,
     listCode: match.listCode,
     score: match.score,
-    reason: match.reason
+    reason: match.reason,
+    nationality: match.nationality || '',
+    birthDate: match.birthDate || '',
+    birthPlace: match.birthPlace || '',
+    organization: match.organization || '',
+    decisionRef: match.decisionRef || ''
   };
 }
 
