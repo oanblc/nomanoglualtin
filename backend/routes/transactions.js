@@ -4,14 +4,37 @@ const Transaction = require('../models/Transaction');
 const Branch = require('../models/Branch');
 const { employeeAuthMiddleware, requirePermission } = require('../middleware/auth');
 const { transactionValidation, idParamValidation } = require('../middleware/validation');
+const screeningService = require('../services/screeningService');
 
 // İşlem oluştur (çalışan veya admin)
 router.post('/', employeeAuthMiddleware, transactionValidation, async (req, res) => {
   try {
     const transaction = new Transaction(req.body);
+
+    // ── MASAK yaptırım taraması ──
+    const result = await screeningService.screen({
+      fullName: req.body.fullName,
+      identityNumber: req.body.identityNumber
+    });
+    transaction.screeningStatus = result.status; // cleared | blocked | error
+    transaction.screeningResult = result;
+
+    if (result.status === 'blocked') {
+      // İşlemi engelle ama denetim izi için kaydet (MASAK bildirim yükümlülüğü).
+      transaction.status = 'pending';
+      await transaction.save();
+      console.warn(`⛔ MASAK eşleşmesi — işlem engellendi: id=${transaction._id} branch=${transaction.branchId} score=${result.score}`);
+      return res.status(403).json({
+        success: false,
+        blocked: true,
+        message: 'Bu kişi MASAK yaptırım listesinde olası eşleşme verdi. İşlem engellendi. Lütfen yöneticinize başvurun.',
+        matches: result.matches.map(screeningService.redactForClient)
+      });
+    }
+
     await transaction.save();
     // PII log'lamıyoruz — yalnızca işlem ID ve şube
-    console.log(`✅ Yeni işlem oluşturuldu: id=${transaction._id} branch=${transaction.branchId}`);
+    console.log(`✅ Yeni işlem oluşturuldu: id=${transaction._id} branch=${transaction.branchId} screening=${result.status}`);
     res.status(201).json({
       success: true,
       data: transaction,
@@ -239,7 +262,7 @@ router.get('/pdf/:id', requirePermission('transactions'), async (req, res) => {
 // İşlem güncelle (sadece admin)
 router.put('/:id', requirePermission('transactions'), idParamValidation, async (req, res) => {
   try {
-    const allowedFields = ['fullName', 'identityNumber', 'phone', 'occupation', 'address', 'date', 'branchId', 'transactionType', 'totalAmount', 'details', 'additionalInfo', 'status'];
+    const allowedFields = ['fullName', 'identityNumber', 'phone', 'occupation', 'address', 'date', 'branchId', 'transactionType', 'totalAmount', 'details', 'additionalInfo', 'status', 'screeningStatus', 'screeningNotes'];
     const updates = {};
     allowedFields.forEach(field => {
       if (req.body[field] !== undefined) updates[field] = req.body[field];

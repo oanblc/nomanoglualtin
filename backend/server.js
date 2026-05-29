@@ -127,6 +127,7 @@ const legalRoutes = require('./routes/legal');
 const transactionRoutes = require('./routes/transactions');
 const businessRoutes = require('./routes/business');
 const usersRoutes = require('./routes/users');
+const masakRoutes = require('./routes/masak');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/prices', priceRoutes);
@@ -142,6 +143,7 @@ app.use('/api/legal', legalRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/business', businessRoutes);
 app.use('/api/users', usersRoutes);
+app.use('/api/masak', masakRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -177,6 +179,10 @@ io.on('connection', (socket) => {
 // VPS WebSocket bağlantısını başlat (Türk VPS'ten anlık fiyat çekme)
 const priceService = require('./services/priceService');
 priceService.startVpsWebSocket(io);
+
+// MASAK yaptırım listesi senkronizasyonunu başlat (periyodik liste güncelleme)
+const masakService = require('./services/masakService');
+masakService.startMasakSync();
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {

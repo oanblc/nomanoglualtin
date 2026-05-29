@@ -1451,6 +1451,16 @@ export default function AdminDashboard() {
                   <span>Yasal</span>
                 </Link>
                 )}
+                {can('masak') && (
+                <Link
+                  href="/admin/masak"
+                  className="flex items-center space-x-2 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors font-medium"
+                  title="MASAK Kontrolleri"
+                >
+                  <ShieldCheck size={18} />
+                  <span>MASAK</span>
+                </Link>
+                )}
                 {can('settings') && (
                 <button
                   onClick={() => setActiveTab('settings')}
@@ -1533,6 +1543,16 @@ export default function AdminDashboard() {
                   >
                     <FileText size={18} />
                     <span>Yasal Sayfalar</span>
+                  </Link>
+                  )}
+                  {can('masak') && (
+                  <Link
+                    href="/admin/masak"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center space-x-3 px-4 py-3 rounded-lg font-medium text-sm text-red-700 hover:bg-red-50"
+                  >
+                    <ShieldCheck size={18} />
+                    <span>MASAK Kontrolleri</span>
                   </Link>
                   )}
                   <button

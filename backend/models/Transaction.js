@@ -70,6 +70,29 @@ const transactionSchema = new mongoose.Schema({
     enum: ['pending', 'completed'],
     default: 'pending'
   },
+  // ── MASAK yaptırım taraması ──
+  screeningStatus: {
+    type: String,
+    enum: ['pending', 'cleared', 'blocked', 'review', 'overridden', 'error'],
+    default: 'pending',
+    index: true
+  },
+  screeningResult: {
+    type: mongoose.Schema.Types.Mixed,
+    default: null
+  },
+  screeningNotes: {
+    type: String,
+    default: ''
+  },
+  overriddenBy: {
+    type: String,
+    default: ''
+  },
+  overriddenAt: {
+    type: Date,
+    default: null
+  },
   createdAt: {
     type: Date,
     default: Date.now
