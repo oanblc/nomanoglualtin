@@ -5,7 +5,7 @@ const { employeeAuthMiddleware, requirePermission } = require('../middleware/aut
 const screeningService = require('../services/screeningService');
 const masakService = require('../services/masakService');
 
-const VALID_LISTS = ['6415_m5', '6415_m6', '7262'];
+const VALID_LISTS = ['6415_m5', '6415_m6', '6415_m7', '7262'];
 
 // Ön sorgu (çalışan veya admin): ad/TCKN ile MASAK kontrolü — işlem oluşturmadan.
 router.post('/check', employeeAuthMiddleware, async (req, res) => {

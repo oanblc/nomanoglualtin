@@ -3,10 +3,14 @@ const mongoose = require('mongoose');
 // MASAK yaptırım/malvarlığı dondurma listelerindeki tek bir kişi/kuruluş kaydı.
 // Birden çok liste tek koleksiyonda tutulur (listCode ile ayrışır).
 const sanctionsEntrySchema = new mongoose.Schema({
-  // Hangi liste: 6415 m.5 (BMGK), 6415 m.6 (yurt içi), 7262 (kitle imha finansmanı)
+  // Hangi liste:
+  //   6415_m5 → BMGK Yaptırımları (6415 s.K. m.5)
+  //   6415_m6 → Yabancı ülke talebi (6415 s.K. m.6)
+  //   6415_m7 → İç Dondurma (6415 s.K. m.7)
+  //   7262    → Kitle imha silahları finansmanı (7262 s.K.)
   listCode: {
     type: String,
-    enum: ['6415_m5', '6415_m6', '7262'],
+    enum: ['6415_m5', '6415_m6', '6415_m7', '7262'],
     required: true,
     index: true
   },

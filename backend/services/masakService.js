@@ -13,6 +13,7 @@ const { parse: parseCsvSync } = require('csv-parse/sync');
 
 const SanctionsEntry = require('../models/SanctionsEntry');
 const screeningService = require('./screeningService');
+const masakHmb = require('./masakAdapters/masakHmb');
 const {
   normalizeName,
   splitAliases,
@@ -172,34 +173,82 @@ async function fetchAndIngestUrl(url, listCode) {
   return ingestBuffer(buffer, { listCode, filename });
 }
 
-// Tüm yapılandırılmış MASAK kaynaklarını senkronize et
+// Hazır şekildeki doc'ları (adapter çıktısı) DB'ye yazar; stale kayıtları pasifleştirir.
+// Bulk upsert, kalan: isActive=false. CSV yolundaki ingestRows ile aynı sözleşmeyi paylaşır.
+async function ingestSanctionDocs(docs, listCode) {
+  const syncBatch = `${listCode}-${Date.now()}`;
+  const ops = [];
+
+  for (const base of docs) {
+    if (!base.fullName || base.fullName.length < 2) continue;
+    const doc = { ...base, syncBatch, updatedAt: Date.now() };
+    ops.push({
+      updateOne: {
+        filter: { listCode, fullName: doc.fullName },
+        update: { $set: doc, $setOnInsert: { createdAt: Date.now() } },
+        upsert: true
+      }
+    });
+  }
+
+  if (ops.length) {
+    await SanctionsEntry.bulkWrite(ops, { ordered: false });
+  }
+  await SanctionsEntry.updateMany(
+    { listCode, syncBatch: { $ne: syncBatch } },
+    { $set: { isActive: false, updatedAt: Date.now() } }
+  );
+
+  screeningService.invalidateCache();
+  return ops.length;
+}
+
+// Tek listenin MASAK API'den çekilip ingest edilmesi
+async function syncFromHmbApi(listCode) {
+  const raw = await masakHmb.fetchEntriesForList(listCode);
+  const docs = raw.map((entry) => masakHmb.toSanctionsDoc(entry, listCode));
+  return ingestSanctionDocs(docs, listCode);
+}
+
+// Tüm yapılandırılmış MASAK kaynaklarını senkronize et.
+// Birincil yol: HMB API adapter (4 listeyi tek tek çeker — varsayılan açık).
+// İkincil yol: MASAK_LIST_URLS env'inde dosya URL'leri varsa onlar da işlenir.
 async function syncMasakLists() {
   const results = [];
-  let sources = [];
-  try {
-    sources = JSON.parse(process.env.MASAK_LIST_URLS || '[]'); // [{url, listCode}, ...]
-  } catch (e) {
-    console.warn('⚠️ MASAK_LIST_URLS JSON parse edilemedi:', e.message);
+
+  // 1) HMB API üzerinden 4 liste (varsayılan açık)
+  if ((process.env.MASAK_AUTO_FETCH || 'true').toLowerCase() !== 'false') {
+    for (const listCode of Object.keys(masakHmb.LIST_TO_YAPTIRIM)) {
+      try {
+        const count = await syncFromHmbApi(listCode);
+        console.log(`✅ MASAK API senkron: ${listCode} — ${count} kayıt`);
+        results.push({ source: 'hmb_api', listCode, count, ok: true });
+      } catch (e) {
+        console.error(`❌ MASAK API senkron hatası (${listCode}):`, e.message);
+        results.push({ source: 'hmb_api', listCode, ok: false, error: e.message });
+      }
+    }
+  } else {
+    console.log('ℹ️ MASAK_AUTO_FETCH=false — HMB API çekimi devre dışı');
   }
 
-  if (!sources.length) {
-    console.warn('⚠️ MASAK_LIST_URLS tanımlı değil — otomatik çekim atlandı (manuel yükleme kullanılabilir).');
-    lastSync = { at: new Date(), ok: false, results: [], error: 'no_sources' };
-    return lastSync;
-  }
-
-  for (const src of sources) {
+  // 2) Ek dosya kaynakları (geriye dönük, opsiyonel)
+  let fileSources = [];
+  try { fileSources = JSON.parse(process.env.MASAK_LIST_URLS || '[]'); }
+  catch (e) { console.warn('⚠️ MASAK_LIST_URLS JSON parse edilemedi:', e.message); }
+  for (const src of fileSources) {
     try {
       const count = await fetchAndIngestUrl(src.url, src.listCode);
-      console.log(`✅ MASAK senkron: ${src.listCode} — ${count} kayıt`);
-      results.push({ listCode: src.listCode, count, ok: true });
+      console.log(`✅ MASAK dosya senkron: ${src.listCode} — ${count} kayıt`);
+      results.push({ source: 'file_url', listCode: src.listCode, count, ok: true });
     } catch (e) {
-      console.error(`❌ MASAK senkron hatası (${src.listCode}):`, e.message);
-      results.push({ listCode: src.listCode, ok: false, error: e.message });
+      console.error(`❌ MASAK dosya senkron hatası (${src.listCode}):`, e.message);
+      results.push({ source: 'file_url', listCode: src.listCode, ok: false, error: e.message });
     }
   }
 
-  lastSync = { at: new Date(), ok: results.every((r) => r.ok), results, error: null };
+  const ok = results.length > 0 && results.every((r) => r.ok);
+  lastSync = { at: new Date(), ok, results, error: results.length ? null : 'no_sources' };
   return lastSync;
 }
 
@@ -234,6 +283,8 @@ async function getStatus() {
 module.exports = {
   startMasakSync,
   syncMasakLists,
+  syncFromHmbApi,
+  ingestSanctionDocs,
   ingestBuffer,
   fetchAndIngestUrl,
   getStatus
